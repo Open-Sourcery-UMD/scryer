@@ -16,26 +16,30 @@ export default function Dashboard() {
       </div>
 
       {/* Summary Grid */}
-      <div className="flex flex-col md:flex-row gap-4 w-full">
+      <div className="grid gap-4 md:grid-cols-3">
         {stats.map((stat) => (
           <div 
             key={stat.label} 
-            className="flex-1 rounded-xl border bg-card p-6 shadow-sm flex flex-col justify-between min-h-[160px]"
+            className="rounded-xl border bg-card p-6 shadow-sm flex flex-col gap-6"
           >
-            <p className="text-sm font-medium text-muted-foreground mb-4">
+            {/* Top: Label */}
+            <p className="text-sm font-medium text-muted-foreground">
               {stat.label}
             </p>
             
-            <div className="flex flex-wrap items-baseline justify-between gap-2 mt-auto">
-              <h2 className="text-3xl font-bold tracking-tight shrink-0">
+            {/* Bottom: Value & Trend (Always Stacked) */}
+            <div className="flex flex-col gap-1">
+              <h2 className="text-3xl font-bold tracking-tight">
                 {stat.value}
               </h2>
-              <span className={cn(
-                "text-sm font-semibold px-2 py-1 rounded-md bg-secondary whitespace-nowrap",
-                stat.trend.startsWith('+') ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-              )}>
-                {stat.trend}
-              </span>
+              <div>
+                <span className={cn(
+                  "text-sm font-semibold px-2 py-1 rounded-md bg-secondary inline-block",
+                  stat.trend.startsWith('+') ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                )}>
+                  {stat.trend}
+                </span>
+              </div>
             </div>
           </div>
         ))}
