@@ -1,17 +1,54 @@
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
-export default function Home() {
+export default function Dashboard() {
+  const stats = [
+    { label: "Total Balance", value: "$12,450.00", trend: "+2.5%" },
+    { label: "Monthly Spend", value: "$2,100.40", trend: "-10.2%" },
+    { label: "Savings Rate", value: "32%", trend: "+4%" },
+  ];
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center space-y-6">
-        <h1 className="text-4xl font-bold">
-          Hello World 🚀
-        </h1>
-
-        <Button variant="default">
-          Click Me
-        </Button>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">Welcome back to your financial command center.</p>
       </div>
-    </main>
-  )
+
+      {/* Summary Grid */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {stats.map((stat) => (
+          <div 
+            key={stat.label} 
+            className="rounded-xl border bg-card p-6 shadow-sm flex flex-col gap-6"
+          >
+            {/* Top: Label */}
+            <p className="text-sm font-medium text-muted-foreground">
+              {stat.label}
+            </p>
+            
+            {/* Bottom: Value & Trend (Always Stacked) */}
+            <div className="flex flex-col gap-1">
+              <h2 className="text-3xl font-bold tracking-tight">
+                {stat.value}
+              </h2>
+              <div>
+                <span className={cn(
+                  "text-sm font-semibold px-2 py-1 rounded-md bg-secondary inline-block",
+                  stat.trend.startsWith('+') ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
+                )}>
+                  {stat.trend}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Placeholder for future charts/table */}
+      <div className="h-[300px] rounded-xl border border-dashed flex items-center justify-center text-muted-foreground">
+        Transaction feed placeholder...
+      </div>
+    </div>
+  );
 }
