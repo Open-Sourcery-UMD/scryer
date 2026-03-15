@@ -38,17 +38,27 @@ fuelRanges = {
     "Electric": (10, 30),
 }
 
-groceryStores = ["Trader Joe's", "Whole Foods", "Costco", "Walmart", "Target", "Aldi", "Safeway", "ShopRite", "Local Farmers Market"]
+groceryStores = [
+    "Trader Joe's", "Whole Foods", "Costco", "Walmart", "Target",
+    "Aldi", "Safeway", "ShopRite", "Local Farmers Market"
+]
 
 coffeeShops = ["Starbucks", "Dunkin", "Local Cafe"]
 
-restaurants = ["Chipotle", "Panera", "Sweetgreen", "Cava", "Subway", "Shake Shack", "Local Restaurant"]
+restaurants = [
+    "Chipotle", "Panera", "Sweetgreen", "Cava",
+    "Subway", "Shake Shack", "Local Restaurant"
+]
 
 shoppingStores = ["Amazon", "Target", "Best Buy", "Macy's", "CVS", "Walgreens", "Shopping Mall"]
 
 gasStations = ["Shell", "Exxon", "BP", "Sunoco", "Wawa", "Costco Gas", "Service Area"]
 
-evChargingVendors = ["Tesla Supercharger", "Rivian Adventure Network," "Ionna", "ChargePoint", "EVgo", "Electrify America", "Mercedes HyperPower", "Home Charging"]
+evChargingVendors = [
+    "Tesla Supercharger", "Rivian Adventure Network", "Ionna",
+    "ChargePoint", "EVgo", "Electrify America",
+    "Mercedes HyperPower", "Home Charging"
+]
 
 entertainmentVendors = ["AMC Theatres", "Spotify Event Ticket", "Apple", "Steam", "GameStop"]
 
@@ -170,18 +180,21 @@ while currentDate <= endDate:
 
     currentDate += timedelta(days=1)
 
-rows.sort(key=lambda x: x["date"])
+rows.sort(key=lambda x: (x["date"], x["category"]))
 
 finalRows = []
 
 for row in rows:
     runningBalance += row["amount"]
+    formatted_amount = "{:.2f}".format(row["amount"])
+    formatted_balance = "{:.2f}".format(runningBalance)
+
     finalRows.append([
         row["date"].strftime("%Y-%m-%d"),
         row["category"],
         row["description"],
-        round(row["amount"], 2),
-        round(runningBalance, 2)
+        formatted_amount,
+        formatted_balance
     ])
 
 with open(outputFile, mode="w", newline="", encoding="utf-8") as file:
