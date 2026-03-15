@@ -11,7 +11,7 @@ class GenericCSVParser:
             "posted date",
             "post date",
             "posting date",
-            "effective date"
+            "effective date",
         ],
         "details": [
             "description",
@@ -22,41 +22,37 @@ class GenericCSVParser:
             "narrative",
             "memo",
             "payee",
-            "name"
+            "name",
         ],
         "money": [
             "amount",
             "transaction amount",
             "value",
             "debit credit",
-            "amt"
+            "amt",
         ],
         "spent": [
             "debit",
             "withdrawal",
             "money out",
-            "charges"
+            "charges",
         ],
         "got": [
             "credit",
             "deposit",
             "money in",
-            "payments"
-        ]
+            "payments",
+        ],
     }
 
     def findBestName(self, cleanNames, kind):
-        options = []
-        for word in self.nameMap[kind]:
-            options.append(self.cleanName(word))
+        options = [self.cleanName(word) for word in self.nameMap[kind]]
 
-        for realName in cleanNames:
-            testName = cleanNames[realName]
+        for realName, testName in cleanNames.items():
             if testName in options:
                 return realName
 
-        for realName in cleanNames:
-            testName = cleanNames[realName]
+        for realName, testName in cleanNames.items():
             for word in options:
                 if word in testName or testName in word:
                     return realName
@@ -100,7 +96,7 @@ class GenericCSVParser:
             return abs(got)
 
         return ""
-    
+
     def readMoney(self, value):
         if not pd.notna(value):
             return ""
@@ -128,15 +124,12 @@ class GenericCSVParser:
             number = -number
 
         return number
-    
+
     def parseFile(self, filePath):
         splitChar = self.findSplitChar(filePath)
-        readFile = getattr(pd, "read" + chr(95) + "csv")
-        table = readFile(filePath, dtype=str, sep=splitChar)
+        table = pd.read_csv(filePath, dtype=str, sep=splitChar)
 
-        cleanNames = {}
-        for name in table.columns:
-            cleanNames[name] = self.cleanName(name)
+        cleanNames = {name: self.cleanName(name) for name in table.columns}
 
         dateName = self.findBestName(cleanNames, "date")
         detailsName = self.findBestName(cleanNames, "details")
@@ -155,30 +148,28 @@ class GenericCSVParser:
 
         result = []
 
-        for rowNumber in range(len(table)):
-            row = table.iloc[rowNumber]
-
-            date = self.cleanText(row[dateName]) if dateName != "" else ""
-            details = self.cleanText(row[detailsName]) if detailsName != "" else ""
+        for row in table.to_dict("records"):
+            date = self.cleanText(row.get(dateName, "")) if dateName != "" else ""
+            details = self.cleanText(row.get(detailsName, "")) if detailsName != "" else ""
 
             if date == "" and details == "":
                 continue
 
             if moneyName != "":
-                money = self.readMoney(row[moneyName])
+                money = self.readMoney(row.get(moneyName, ""))
             else:
-                spent = self.readMoney(row[spentName]) if spentName != "" else ""
-                got = self.readMoney(row[gotName]) if gotName != "" else ""
+                spent = self.readMoney(row.get(spentName, "")) if spentName != "" else ""
+                got = self.readMoney(row.get(gotName, "")) if gotName != "" else ""
                 money = self.joinMoney(spent, got)
+
+            parsedDate = pd.to_datetime(date, errors="coerce")
 
             result.append(
                 {
-                    "date": date,
+                    "date": parsedDate,
                     "description": details,
-                    "amount": money
+                    "amount": money,
                 }
             )
 
         return result
-
-    
