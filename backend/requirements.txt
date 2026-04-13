@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+pandas
+cryptography
+faker
+python-multipart
+# Add your DB driver if you're using one, e.g.,
+# psycopg2-binary

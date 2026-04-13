@@ -1,0 +1,45 @@
+services:
+  # Database: The source of truth
+  db:
+    image: postgres:15-alpine
+    container_name: scryer_db
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: scryer
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Backend: FastAPI + Your Parser/Encryption Utils
+  backend:
+    build: ./backend
+    container_name: scryer_backend
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@db:5432/scryer
+      - MASTER_KEY=your_super_secret_dev_key_123
+    depends_on:
+      - db
+
+  # Frontend: Next.js Dashboard
+  frontend:
+    build: ./frontend
+    container_name: scryer_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Prevents local node_modules from overriding container
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
