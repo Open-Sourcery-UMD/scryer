@@ -45,69 +45,60 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
   currency: "USD",
 });
 
-function formatAmount(amount: number) {
-  const formatted = currencyFormatter.format(Math.abs(amount));
-  return amount < 0 ? `-${formatted}` : formatted;
-}
-
 export default function TransactionTable() {
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          fontFamily: "Arial, sans-serif",
-          border: "1px solid #e5e7eb",
-          borderRadius: "8px",
-          overflow: "hidden",
-        }}
-      >
-        <thead>
-          <tr style={{ backgroundColor: "#f9fafb" }}>
-            <th style={headerCellStyle}>Date</th>
-            <th style={headerCellStyle}>Merchant</th>
-            <th style={headerCellStyle}>Category</th>
-            <th style={{ ...headerCellStyle, textAlign: "right" }}>Amount</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {transactions.map((transaction) => (
-            <tr key={`${transaction.date}-${transaction.merchant}-${transaction.amount}`}>
-              <td style={bodyCellStyle}>{transaction.date}</td>
-              <td style={bodyCellStyle}>{transaction.merchant}</td>
-              <td style={bodyCellStyle}>{transaction.category}</td>
-              <td
-                style={{
-                  ...bodyCellStyle,
-                  textAlign: "right",
-                  fontWeight: 600,
-                  color: transaction.amount < 0 ? "#dc2626" : "#16a34a",
-                }}
-              >
-                {formatAmount(transaction.amount)}
-              </td>
+    <div className="overflow-x-auto">
+      <div className="overflow-hidden rounded-xl border border-border bg-card text-card-foreground">
+        <table className="w-full border-collapse">
+          <thead className="bg-muted/50">
+            <tr>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">
+                Date
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">
+                Merchant
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-semibold text-muted-foreground">
+                Category
+              </th>
+              <th className="px-4 py-3 text-right text-sm font-semibold text-muted-foreground">
+                Amount
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {transactions.map((transaction, index) => (
+              <tr
+                key={index}
+                className="border-t border-border transition-colors hover:bg-accent"
+              >
+                <td className="px-4 py-3 text-sm text-muted-foreground">
+                  {transaction.date}
+                </td>
+                <td className="px-4 py-3 text-sm text-foreground">
+                  {transaction.merchant}
+                </td>
+                <td className="px-4 py-3 text-sm">
+                  <span className="inline-flex items-center rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+                    {transaction.category}
+                  </span>
+                </td>
+                <td
+                  className={[
+                    "px-4 py-3 text-right text-sm font-semibold",
+                    transaction.amount < 0
+                      ? "text-red-700 dark:text-red-400"
+                      : "text-green-700 dark:text-green-400",
+                  ].join(" ")}
+                >
+                  {currencyFormatter.format(transaction.amount)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
-
-const headerCellStyle: React.CSSProperties = {
-  padding: "12px 16px",
-  borderBottom: "1px solid #e5e7eb",
-  textAlign: "left",
-  fontSize: "14px",
-  fontWeight: 600,
-  color: "#374151",
-};
-
-const bodyCellStyle: React.CSSProperties = {
-  padding: "12px 16px",
-  borderBottom: "1px solid #e5e7eb",
-  fontSize: "14px",
-  color: "#111827",
-};
