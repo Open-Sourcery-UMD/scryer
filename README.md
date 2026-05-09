@@ -27,7 +27,7 @@ We use a modern, decoupled stack designed for high performance and easy contribu
 
 ## Getting Started (The 2-Minute Setup)
 
-You don't need to install 10 different compilers. Just ensure you have **Docker** and **Node.js** installed.
+You don't need to install 10 different compilers. Just ensure you have **Docker** with Docker Compose available locally.
 
 1. **Clone the repo**:
 
@@ -36,13 +36,21 @@ git clone https://github.com/Open-Sourcery-UMD/scryer.git
 cd scryer
 ```
 
-2. **Launch the environment**:
+2. **Create your local environment file**:
 
 ```bash
-docker-compose up --build
+cp .env.example .env
 ```
 
-3. **Access the Magic**:
+3. **Launch the environment**:
+
+```bash
+./setup.sh
+```
+
+This script builds the Docker services, starts them in the background, and prints the local app URL when everything is ready.
+
+4. **Access the Magic**:
 
 - Frontend: <http://localhost:3000>
 - API Docs: <http://localhost:8000/docs>
