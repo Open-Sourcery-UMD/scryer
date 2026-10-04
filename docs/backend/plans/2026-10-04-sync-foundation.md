@@ -57,9 +57,9 @@
 
 **Interfaces:** `stage_chunk(conn, account_id, idempotency_key, body) -> Receipt`; `commit_manifest(conn, account_id, idempotency_key, body, precondition) -> Receipt`; `get_head(conn, account_id, case_id) -> Head`; `delete_case(conn, account_id, case_id, precondition, idempotency_key) -> Receipt`.
 
-- [ ] Write integration tests for lost response retry, key/content conflict, concurrent same-key requests, absent/stale head, missing or corrupt staged chunk, quota race, and delete/retry nonresurrection.
-- [ ] Observe the intended failures; implement short transactions with account-row locking, revision/CAS checks, immutable idempotency results, and quota accounting.
-- [ ] Run targeted and full tests, inspect the complete diff, and commit M7-3.
+- [x] Write integration tests for lost response retry, key/content conflict, concurrent same-key requests, absent/stale head, missing or corrupt staged chunk, quota race, and delete/retry nonresurrection.
+- [x] Observe the intended failures; implement short transactions with account-row locking, revision/CAS checks, immutable idempotency results, and quota accounting.
+- [x] Run targeted and full tests, inspect the complete diff, and commit M7-3.
 
 ### Task 4: Token boundary and versioned HTTP API
 

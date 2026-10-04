@@ -890,17 +890,9 @@
         "M7",
         "M8"
       ],
-      "tests": [
-        "tests/sync/test_protocol.py — strict ciphertext chunk/manifest validation and exact package assembly",
-        "tests/browser/test_sync_wire.mjs — Chrome outbox accepted by independent Python parser",
-        "tests/sync/test_rls.py — real app-role direct-SQL isolation under forced RLS",
-        "tests/sync/test_migrations.py — checksum, rollback, forward repair, and future-version rejection"
-      ],
-      "evidence": [
-        "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass",
-        "M7-2 six direct app-role RLS tests and four migration tests pass on fresh private PostgreSQL 15.11; OIDC/HTTP sync remain open"
-      ],
-      "status": "IN_PROGRESS"
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
     },
     {
       "id": "S-57",
@@ -963,9 +955,19 @@
         "M7",
         "M8"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/sync/test_protocol.py — strict ciphertext chunk/manifest validation and exact package assembly",
+        "tests/browser/test_sync_wire.mjs — Chrome outbox accepted by independent Python parser",
+        "tests/sync/test_rls.py — real app-role direct-SQL isolation under forced RLS",
+        "tests/sync/test_migrations.py — checksum, rollback, forward repair, and future-version rejection",
+        "tests/sync/test_store.py — atomic ciphertext publication, CAS, idempotency, quota, deletion, and tenant isolation"
+      ],
+      "evidence": [
+        "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass",
+        "M7-2 six direct app-role RLS tests and four migration tests pass on fresh private PostgreSQL 15.11",
+        "M7-3 thirteen PostgreSQL store tests pass; OIDC/HTTP sync remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-60",
@@ -980,10 +982,11 @@
       ],
       "tests": [
         "tests/browser/test_storage.mjs — two-tab local revision CAS, atomic outbox, byte-identical retry after reload",
-        "tests/browser/test_rotation.mjs — journaled stale-head/account-wrapper checks and two-case atomic switch"
+        "tests/browser/test_rotation.mjs — journaled stale-head/account-wrapper checks and two-case atomic switch",
+        "tests/sync/test_store.py — two distinct updates racing one head preserve the losing ciphertext branch"
       ],
       "evidence": [
-        "M6-3 local encrypted conflict/outbox behavior and M6-5 two-case rotation switch pass Chrome; remote multi-device conflicts remain open"
+        "M6-3 local encrypted conflict/outbox behavior and M6-5 two-case rotation switch pass Chrome; M7-3 server CAS race passes PostgreSQL; remote multi-device review remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1018,9 +1021,13 @@
         "M7",
         "M8"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/sync/test_store.py — case tombstone, ciphertext removal, and old retry nonresurrection"
+      ],
+      "evidence": [
+        "M7-3 local case deletion and update race pass PostgreSQL; account/provider deletion, backup retention, and public policy review remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-63",
@@ -1033,9 +1040,13 @@
         "M7",
         "M8"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/sync/test_store.py — concurrent quota staging admits one bounded write and rejects the other"
+      ],
+      "evidence": [
+        "M7-3 private PostgreSQL account-row quota race passes; HTTP streaming limit and rate limiting remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-64",
