@@ -49,15 +49,15 @@
 
 **Interfaces:** `parse_minor(std::string_view)->int64_t`, `parse_us_decimal(std::string_view)->int64_t`, `checked_add(int64_t,int64_t)->int64_t`, `checked_negate(int64_t)->int64_t`; errors carry a stable code without private input text.
 
-- [ ] Write `tests/engine/test_money.cpp` and a minimal `engine/Makefile` test target for canonical zero, malformed signs/leading zeros, US commas/parentheses, precision rejection, i64 limits, addition overflow, and `INT64_MIN` negation.
-- [ ] Compile/run the test expecting missing money declarations: `make -C engine test-money` exits nonzero for the intended missing interface.
-- [ ] Implement `error.hpp`, `money.hpp`, and `money.cpp` using only C++20 standard library; no floating point or locale dependency.
-- [ ] Run `make -C engine test-money`, then the Python reference suite; require both exit 0.
-- [ ] Self-review signed overflow and string-view lifetimes; commit Task M3-1.
+- [x] Write `tests/engine/test_money.cpp` and a minimal `engine/Makefile` test target for canonical zero, malformed signs/leading zeros, US commas/parentheses, precision rejection, i64 limits, addition overflow, and `INT64_MIN` negation.
+- [x] Compile/run the test expecting missing money declarations: `make -C engine test-money` exits nonzero for the intended missing interface.
+- [x] Implement `error.hpp`, `money.hpp`, and `money.cpp` using only C++20 standard library; no floating point or locale dependency.
+- [x] Run `make -C engine test-money`, then the Python reference suite; require both exit 0.
+- [x] Self-review signed overflow and string-view lifetimes; commit Task M3-1.
 
 ## Task 2 — Bounded JSON boundary and pinned parser
 
-**Interfaces:** `parse_document(std::string_view)->Json`, `canonical_json(const Json&)->std::string`, with exact duplicate-key, UTF-8, depth, size, and number-type checks. Use nlohmann/json only if the downloaded header matches the pinned SHA-256 and license; do not relax validation to accommodate its defaults.
+**Interfaces:** `using Json = nlohmann::json` in `json_boundary.hpp`; `parse_document(std::string_view)->Json`, `canonical_json(const Json&)->std::string`, with exact duplicate-key, UTF-8, depth, size, and number-type checks. Use nlohmann/json only if the downloaded header matches the pinned SHA-256 and license; do not relax validation to accommodate its defaults.
 
 - [ ] Write `tests/engine/test_json_boundary.cpp`: duplicate key fails, 65-level nesting fails at documented max 64, malformed UTF-8 fails, 20 MiB bound fails, semantically equivalent object key order produces identical canonical bytes.
 - [ ] Run `make -C engine test-json` expecting failure before implementation.
@@ -67,7 +67,7 @@
 
 ## Task 3 — Strict case parser and causal snapshots
 
-**Interfaces:** `parse_case(const Json&)->Case`, `snapshot(const Case&, std::span<const std::string> heads)->std::vector<const Event*>`, `heads_as_known(const Case&, std::string_view utc)->HistoryResult`. Mirror `case-v1.schema.json` fields and stable Python error categories.
+**Interfaces:** `using Heads = std::span<const std::string>` in `case.hpp`; `parse_case(const Json&)->Case`, `snapshot(const Case&, Heads)->std::vector<const Event*>`, `heads_as_known(const Case&, std::string_view utc)->HistoryResult`. Mirror `case-v1.schema.json` fields and stable Python error categories.
 
 - [ ] Write tests for the golden case, absent references, duplicate IDs, term/account/recipient/proposal bindings, duplicate review IDs, cycle/missing parent, event permutation, and incomparable correction branches.
 - [ ] Run native tests expecting failures.

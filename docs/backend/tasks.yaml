@@ -456,7 +456,7 @@
     {
       "id": "M3",
       "title": "Native C++20 production engine",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "dependsOn": [
         "M2-7c"
       ],
