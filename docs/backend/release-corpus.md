@@ -32,7 +32,7 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-26 | REFERENCE | Independent checker catches arithmetic, digest, source, proposal, and aid-item tampering. |
 | RC-27 | PARTIAL | Browser helper reports `SOURCE_UNAVAILABLE` without local original, `HASH_MISMATCH` for wrong bytes, and `AVAILABLE` after a SHA-256 match; durable device workflow remains open. |
 | RC-28 | PARTIAL | WebCrypto and Chrome reject changed bindings, bad tags, wrong keys, chunk loss, later-chunk tamper, and an at-rest package digest mismatch without returning partial plaintext; sync transport and independent review remain open. |
-| RC-29 | PARTIAL | A fresh Chrome page unwraps a synthetic case with the 32-byte recovery secret; encrypted archive and complete second-device workflow remain open. |
+| RC-29 | PARTIAL | A fresh Chrome profile verifies an archive with the 32-byte recovery secret and restores its encrypted case and new outbox; frontend recovery UX and remote sync remain open. |
 | RC-30 | PARTIAL | Re-encrypting an equal case/revision generates fresh package IDs and nonces and both versions decrypt; IndexedDB budget exhaustion is enforced, while generation rotation remains open. |
 | RC-31 | OPEN | Official-client/server plaintext sentinel test remains open. |
 | RC-32 | OPEN | Real identity and cross-tenant API tests remain open. |
@@ -43,8 +43,8 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-37 | OPEN | Concurrent quota/storage tests remain open. |
 | RC-38 | OPEN | Deletion/tombstone stale-client test remains open. |
 | RC-39 | OPEN | Interrupted cross-service deletion recovery test remains open. |
-| RC-40 | OPEN | Encrypted export/restore test remains open. |
-| RC-41 | OPEN | Persistent schema migration and failed-upgrade recovery tests remain open. |
+| RC-40 | PARTIAL | Chrome exports a canonical HMAC-authenticated archive, verifies optional encrypted originals, rejects wrong secrets/tamper, previews without mutation, and restores one or two cases atomically; frontend save/restore UX and production WASM validator remain open. |
+| RC-41 | PARTIAL | A populated v1 IndexedDB refuses automatic upgrade; Chrome requires an exact current encrypted backup, rolls an interrupted v2 upgrade back to v1, and verifies data after retry. Broader browser/version matrix remains open. |
 | RC-42 | OPEN | Fresh-stack backup/restore and deletion replay test remains open. |
 | RC-43 | REFERENCE | Candidate cap returns `COMPUTATION_LIMIT`. |
 | RC-44 | PARTIAL | Real Chrome tests cover file-read cancellation, in-flight worker termination, timeout, blocked worker creation, and no approved-event output. Storage cancellation/recovery remains open. |

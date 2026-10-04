@@ -12,5 +12,5 @@
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["import/**/*.ts", "crypto/**/*.ts", "storage/**/*.ts"]
+  "include": ["import/**/*.ts", "crypto/**/*.ts", "storage/**/*.ts", "export/**/*.ts"]
 }

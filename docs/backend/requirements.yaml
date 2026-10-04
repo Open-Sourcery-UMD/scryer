@@ -776,10 +776,11 @@
         "M6"
       ],
       "tests": [
-        "tests/browser/test_storage.mjs — encrypted local case and import ledger round trip, reload, lock, and atomic abort"
+        "tests/browser/test_storage.mjs — encrypted local case and import ledger round trip, reload, lock, and atomic abort",
+        "tests/browser/test_archive.mjs — authenticated portable export and atomic restore"
       ],
       "evidence": [
-        "M6-3 encrypted IndexedDB repository passes local Chrome tests; export/restore and browser native validation remain open"
+        "M6-3 encrypted IndexedDB repository and M6-4 portable archive pass local Chrome tests; browser native validation and visual workspace remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -907,13 +908,15 @@
       "tests": [
         "tests/crypto/test_vectors.mjs — fixed independent Node/OpenSSL HKDF/AES-GCM bytes",
         "tests/client/test_crypto.mjs — WebCrypto interop, strict envelopes, tamper, chunk atomicity",
-        "tests/browser/test_crypto.mjs — real Chrome fixed-vector open and independent browser-to-Node decrypt"
+        "tests/browser/test_crypto.mjs — real Chrome fixed-vector open and independent browser-to-Node decrypt",
+        "tests/browser/test_archive.mjs — independent Node/OpenSSL verification of Chrome archive HMAC"
       ],
       "evidence": [
         "M6 design selected locally in docs/backend/security/local-storage-design.md; independent review remains open",
         "M6-1 crypto-v1 format frozen; three Node vector checks and generator/fixture equality exit 0",
         "M6-2 WebCrypto primitives pass headless and Chrome interop/tamper checks",
-        "M6-3 encrypted IndexedDB persistence and durable encryption-use budgets pass Chrome failure tests; official-client sync and independent review remain open"
+        "M6-3 encrypted IndexedDB persistence and durable encryption-use budgets pass Chrome failure tests",
+        "M6-4 archive-wide HMAC membership check passes Chrome and independent Node/OpenSSL; official-client sync and independent review remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -930,10 +933,11 @@
       ],
       "tests": [
         "tests/client/test_crypto.mjs — recovery re-entry, wrong secret and second-device unlock",
-        "tests/browser/test_crypto.mjs — fresh Chrome page recovery"
+        "tests/browser/test_crypto.mjs — fresh Chrome page recovery",
+        "tests/browser/test_archive.mjs — recovery-secret-gated fresh-device archive restore"
       ],
       "evidence": [
-        "M6-2 high-entropy recovery secret and authenticated root wrapper pass local tests; backup and end-to-end recovery flow remain open"
+        "M6-2 high-entropy recovery secret and authenticated root wrapper pass local tests; M6-4 Chrome archive restore works in a fresh profile; frontend key-save UX and rotation remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -982,9 +986,13 @@
         "M7",
         "M8"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/browser/test_archive.mjs — canonical HMAC archive, optional originals, conflict preview, two-case atomic restore, and v1-to-v2 migration"
+      ],
+      "evidence": [
+        "M6-4 Chrome archive tag independently verifies in Node/OpenSSL; wrong-key/tamper/interruption/fresh-device checks pass; frontend UX and independent review remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-62",

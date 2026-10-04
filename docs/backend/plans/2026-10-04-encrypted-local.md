@@ -77,10 +77,12 @@ Task 3 tests inject a synthetic semantic validator because the M4 browser WASM v
 
 **Requirements:** S-58, S-61, S-62; depends on Task 3. **Interfaces:** `exportEncrypted`, `previewRestore`, `restoreEncrypted`, versioned migration. **Risk:** high, irreversible user-data replacement.
 
-- [ ] Write failing browser tests for portable archive round trip, fresh-device recovery, wrong secret, header/ciphertext tamper, conflict preview without mutation, default originals omission, explicit bounded encrypted originals inclusion, interrupted restore, and pre-upgrade export/rollback.
-- [ ] Run tests expecting missing archive commands.
-- [ ] Implement exact archive validation, full decrypt/semantic-validation preview, separate expected-revision restore transaction, and reversible schema migration.
-- [ ] Run full browser and independent interop suites, review backup semantics, and commit M6-4.
+- [x] Write failing browser tests for portable archive round trip, fresh-device recovery, wrong secret, header/ciphertext tamper, conflict preview without mutation, default originals omission, explicit bounded encrypted originals inclusion, interrupted restore, and pre-upgrade export/rollback.
+- [x] Run tests expecting missing archive commands.
+- [x] Implement exact archive validation, full decrypt/semantic-validation preview, separate expected-revision restore transaction, and reversible schema migration.
+- [x] Run full browser and independent interop suites, review backup semantics, and commit M6-4.
+
+The archive authenticates its complete member list with a root-derived HMAC, independently checked by Node/OpenSSL. The v1→v2 upgrade requires an exact verified backup, aborts without mutation on interruption, and can recover forward into a fresh database from the archive. A backup is not proof of newest remote state. Browser tests inject a synthetic case validator until M4 is available.
 
 ## Task 5 — Generation rotation and complete recovery gate
 

@@ -1,5 +1,5 @@
 import { MAX_CASE_BYTES, MAX_CHUNK_BYTES, MAX_CHUNKS, CryptoError,
-  base64UrlEncode, exactKeys, utf8Bytes, validId } from '../crypto/codec.ts';
+  base64UrlEncode, exactKeys, randomBytes, utf8Bytes, validId } from '../crypto/codec.ts';
 import { openCase, sealCase } from '../crypto/envelope.ts';
 import type { CasePackageV1 } from '../crypto/envelope.ts';
 import { AccountSession, verifyRecoverySecret } from '../crypto/keys.ts';
@@ -18,7 +18,7 @@ export type ReviewedCommit = { case: CaseV1; ledger: ImportLedger; revisionId: s
   keyGeneration?: number };
 
 type AccountRecord = { accountId: string; recoveryEnvelope: RecoveryEnvelopeV1; rootProof: string };
-type CaseRecord = { accountId: string; caseId: string; revisionId: string;
+export type CaseRecord = { accountId: string; caseId: string; revisionId: string;
   keyGeneration: number; localSequence: number; package: CasePackageV1; digest: string };
 type AnchorRecord = { accountId: string; caseId: string; revisionId: string; digest: string };
 type BudgetRecord = { accountId: string; caseId: string; keyGeneration: number; deviceId: string; used: number };
@@ -159,6 +159,190 @@ export class LocalRepository {
         const record = request.result as AccountRecord | undefined;
         if (!record) fail(new StorageError('CORRUPT_RECORD'));
         else finish(structuredClone(record.recoveryEnvelope));
+      };
+    });
+  }
+
+  async encryptedSnapshot(): Promise<{ recoveryEnvelope: RecoveryEnvelopeV1; cases: CaseRecord[] }> {
+    const db = this.db();
+    const accountId = this.session.accountId;
+    const snapshot = await transactionResult<{
+      account: AccountRecord | undefined; cases: CaseRecord[]; anchors: AnchorRecord[];
+    }>(db, ['accounts', 'cases', 'anchors'], 'readonly', (tx, finish) => {
+      let account: AccountRecord | undefined;
+      let cases: CaseRecord[] = [];
+      const accountRequest = tx.objectStore('accounts').get(accountId);
+      const caseRequest = tx.objectStore('cases').getAll();
+      const anchorRequest = tx.objectStore('anchors').getAll();
+      accountRequest.onsuccess = () => { account = accountRequest.result as AccountRecord | undefined; };
+      caseRequest.onsuccess = () => { cases = caseRequest.result as CaseRecord[]; };
+      anchorRequest.onsuccess = () => finish({ account, cases,
+        anchors: anchorRequest.result as AnchorRecord[] });
+    });
+    if (!snapshot.account || snapshot.account.accountId !== accountId) throw new StorageError('CORRUPT_RECORD');
+    const cases = snapshot.cases.filter((item) => item.accountId === accountId);
+    const anchors = snapshot.anchors.filter((item) => item.accountId === accountId);
+    if (cases.length > 64 || cases.length !== anchors.length) throw new StorageError('CORRUPT_RECORD');
+    const anchorByCase = new Map(anchors.map((anchor) => [anchor.caseId, anchor]));
+    for (const item of cases) {
+      const anchor = anchorByCase.get(item.caseId);
+      if (!validId(item.caseId) || !validId(item.revisionId) ||
+          item.package?.accountId !== accountId || item.package?.caseId !== item.caseId ||
+          item.package?.revisionId !== item.revisionId ||
+          item.package?.keyGeneration !== item.keyGeneration ||
+          !anchor || anchor.revisionId !== item.revisionId || anchor.digest !== item.digest ||
+          !HEX_256.test(item.digest) || await digestText(checkedStringify(item.package)) !== item.digest) {
+        throw new StorageError('CORRUPT_RECORD');
+      }
+      try {
+        const plaintext = await openCase(this.session, item.package, item.caseId, item.revisionId);
+        await validateStored(parseStored(plaintext), item.caseId, this.#validateCase);
+      } catch { throw new StorageError('CORRUPT_RECORD'); }
+    }
+    return { recoveryEnvelope: structuredClone(snapshot.account.recoveryEnvelope), cases };
+  }
+
+  async currentRevision(caseId: string): Promise<string | null> {
+    const loaded = await this.loadCase(caseId);
+    return loaded?.revisionId ?? null;
+  }
+
+  async inspectArchivedCases(records: CaseRecord[]): Promise<Array<{
+    caseId: string; archivedRevision: string; currentRevision: string | null;
+    sameCiphertext: boolean; artifacts: Array<{ artifactId: string; sha256: string }>;
+  }>> {
+    this.db();
+    const result = [];
+    for (const record of records) {
+      if (!record || record.accountId !== this.session.accountId ||
+          !validId(record.caseId) || !validId(record.revisionId) || !HEX_256.test(record.digest) ||
+          record.package?.accountId !== record.accountId ||
+          record.package?.caseId !== record.caseId ||
+          record.package?.revisionId !== record.revisionId ||
+          record.package?.keyGeneration !== record.keyGeneration ||
+          await digestText(checkedStringify(record.package)) !== record.digest) {
+        throw new StorageError('CORRUPT_ARCHIVE');
+      }
+      let stored: StoredCaseV1;
+      try {
+        const plaintext = await openCase(this.session, record.package, record.caseId, record.revisionId);
+        stored = await validateStored(parseStored(plaintext), record.caseId, this.#validateCase);
+      } catch { throw new StorageError('CORRUPT_ARCHIVE'); }
+      const current = await this.loadCase(record.caseId);
+      const currentDigest = current ? await this.caseDigest(record.caseId) : null;
+      result.push({ caseId: record.caseId, archivedRevision: record.revisionId,
+        currentRevision: current?.revisionId ?? null,
+        sameCiphertext: currentDigest === record.digest,
+        artifacts: stored.case.artifacts.map((artifact) => ({
+          artifactId: artifact.artifactId, sha256: artifact.sha256,
+        })) });
+    }
+    return result;
+  }
+
+  async caseDigest(caseId: string): Promise<string | null> {
+    const db = this.db();
+    if (!validId(caseId)) throw new StorageError('INVALID_CASE_ID');
+    return transactionResult(db, ['anchors'], 'readonly', (tx, finish) => {
+      const request = tx.objectStore('anchors').get([this.session.accountId, caseId]);
+      request.onsuccess = () => finish((request.result as AnchorRecord | undefined)?.digest ?? null);
+    });
+  }
+
+  async replaceEncryptedCases(
+    inputRecords: CaseRecord[], expectedLocalRevisions: Record<string, string | null>,
+  ): Promise<{ restored: number; unchanged: number }> {
+    const db = this.db();
+    if (!Array.isArray(inputRecords) || inputRecords.length < 1 || inputRecords.length > 64 ||
+        !expectedLocalRevisions || typeof expectedLocalRevisions !== 'object' ||
+        Array.isArray(expectedLocalRevisions)) throw new StorageError('INVALID_RESTORE');
+    const accountId = this.session.accountId;
+    const caseIds = new Set<string>();
+    const prepared: Array<{ record: CaseRecord; operationId: string; steps: SyncStep[] }> = [];
+    for (const record of inputRecords) {
+      if (!record || !validId(record.caseId) || !validId(record.revisionId) ||
+          record.accountId !== accountId || caseIds.has(record.caseId) ||
+          record.package?.accountId !== accountId || record.package?.caseId !== record.caseId ||
+          record.package?.revisionId !== record.revisionId ||
+          record.package?.keyGeneration !== record.keyGeneration ||
+          !Object.hasOwn(expectedLocalRevisions, record.caseId) ||
+          !HEX_256.test(record.digest) ||
+          await digestText(checkedStringify(record.package)) !== record.digest) {
+        throw new StorageError('INVALID_RESTORE');
+      }
+      caseIds.add(record.caseId);
+      try {
+        const plaintext = await openCase(this.session, record.package, record.caseId, record.revisionId);
+        await validateStored(parseStored(plaintext), record.caseId, this.#validateCase);
+      } catch { throw new StorageError('CORRUPT_ARCHIVE'); }
+      const operationId = `restore_${base64UrlEncode(randomBytes(16))}`;
+      if (prepared.some((item) => item.operationId === operationId)) {
+        throw new StorageError('OPERATION_CONFLICT');
+      }
+      const steps = await prepareSteps(record.package, operationId, record.digest);
+      prepared.push({ record: structuredClone(record), operationId, steps });
+    }
+    if (Object.keys(expectedLocalRevisions).length !== caseIds.size ||
+        Object.values(expectedLocalRevisions).some((value) => value !== null && !validId(value))) {
+      throw new StorageError('INVALID_RESTORE');
+    }
+    return transactionResult(db, ['cases', 'anchors', 'outbox'], 'readwrite', (tx, finish, fail) => {
+      const cases = tx.objectStore('cases');
+      const anchors = tx.objectStore('anchors');
+      const outbox = tx.objectStore('outbox');
+      let currentCases: CaseRecord[] = [];
+      let currentAnchors: AnchorRecord[] = [];
+      const caseRequest = cases.getAll();
+      const anchorRequest = anchors.getAll();
+      const outboxRequest = outbox.getAll();
+      caseRequest.onsuccess = () => { currentCases = caseRequest.result as CaseRecord[]; };
+      anchorRequest.onsuccess = () => { currentAnchors = anchorRequest.result as AnchorRecord[]; };
+      outboxRequest.onsuccess = () => {
+        const currentOutbox = outboxRequest.result as OutboxRecord[];
+        const byCase = new Map(currentCases.filter((item) => item.accountId === accountId)
+          .map((item) => [item.caseId, item]));
+        const anchorByCase = new Map(currentAnchors.filter((item) => item.accountId === accountId)
+          .map((item) => [item.caseId, item]));
+        for (const { record } of prepared) {
+          const prior = byCase.get(record.caseId);
+          const anchor = anchorByCase.get(record.caseId);
+          if ((prior?.revisionId ?? null) !== expectedLocalRevisions[record.caseId]) {
+            fail(new StorageError('STALE_LOCAL_REVISION')); return;
+          }
+          if ((prior && (!anchor || anchor.digest !== prior.digest ||
+              anchor.revisionId !== prior.revisionId)) || (!prior && anchor)) {
+            fail(new StorageError('CORRUPT_RECORD')); return;
+          }
+        }
+        let restored = 0;
+        let unchanged = 0;
+        for (const { record, operationId, steps } of prepared) {
+          const prior = byCase.get(record.caseId);
+          if (prior?.revisionId === record.revisionId && prior.digest === record.digest) {
+            unchanged++;
+            continue;
+          }
+          if (currentOutbox.some((item) => item.accountId === accountId &&
+              item.operationId === operationId)) {
+            fail(new StorageError('OPERATION_CONFLICT')); return;
+          }
+          for (const existing of currentOutbox) {
+            if (existing.accountId === accountId && existing.caseId === record.caseId) {
+              outbox.delete([accountId, existing.operationId]);
+            }
+          }
+          const localSequence = (prior?.localSequence ?? 0) + 1;
+          const nextCase: CaseRecord = { ...record, localSequence };
+          const nextAnchor: AnchorRecord = { accountId, caseId: record.caseId,
+            revisionId: record.revisionId, digest: record.digest };
+          const nextOutbox: OutboxRecord = { accountId, caseId: record.caseId,
+            operationId, revisionId: record.revisionId, expectedServerRevision: null,
+            localSequence, steps };
+          try { cases.put(nextCase); anchors.put(nextAnchor); outbox.put(nextOutbox); }
+          catch (error) { fail(storageFault(error)); return; }
+          restored++;
+        }
+        finish({ restored, unchanged });
       };
     });
   }

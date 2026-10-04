@@ -31,7 +31,7 @@ test('real browser encrypted repository has atomic revisions, durable outbox, an
       const loaded = await repo.loadCase('case-storage');
       const outbox = await repo.prepareSync('case-storage');
       const raw = await new Promise((resolve, reject) => {
-        const request = indexedDB.open(dbName, 1);
+        const request = indexedDB.open(dbName);
         request.onerror = () => reject(request.error);
         request.onsuccess = () => {
           const db = request.result;
@@ -240,7 +240,7 @@ test('real browser encrypted repository has atomic revisions, durable outbox, an
       const session = await unlockRecovery(wrapper, recoverySecret, 'acct-storage');
       const repo = await openLocalRepository({ dbName, session, validateCase: async () => {} });
       const db = await new Promise((resolve, reject) => {
-        const request = indexedDB.open(dbName, 1);
+        const request = indexedDB.open(dbName);
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });

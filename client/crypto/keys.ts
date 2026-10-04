@@ -31,6 +31,11 @@ function caseInfo(accountId: string, caseId: string, keyGeneration: number, devi
   }));
 }
 
+function archiveInfo(accountId: string): Uint8Array<ArrayBuffer> {
+  return utf8Bytes(JSON.stringify({ schemaVersion: CRYPTO_VERSION,
+    purpose: 'archive-auth-v1', accountId }));
+}
+
 async function importHkdf(bytes: Uint8Array): Promise<CryptoKey> {
   return cryptoApi().subtle.importKey('raw', new Uint8Array(bytes), 'HKDF', false, ['deriveBits', 'deriveKey']);
 }
@@ -116,6 +121,22 @@ export class AccountSession {
       info: verificationInfo(this.accountId),
     }, this.root(), 256);
     return new Uint8Array(bits);
+  }
+
+  private async archiveKey(): Promise<CryptoKey> {
+    return cryptoApi().subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256',
+      salt: utf8Bytes('scryer:archive-auth:v1'), info: archiveInfo(this.accountId) },
+    this.root(), { name: 'HMAC', hash: 'SHA-256', length: 256 }, false, ['sign', 'verify']);
+  }
+
+  async signArchive(bytes: Uint8Array): Promise<Uint8Array<ArrayBuffer>> {
+    const signature = await cryptoApi().subtle.sign('HMAC', await this.archiveKey(), new Uint8Array(bytes));
+    return new Uint8Array(signature);
+  }
+
+  async verifyArchive(bytes: Uint8Array, signature: Uint8Array): Promise<boolean> {
+    return cryptoApi().subtle.verify('HMAC', await this.archiveKey(),
+      new Uint8Array(signature), new Uint8Array(bytes));
   }
 }
 
