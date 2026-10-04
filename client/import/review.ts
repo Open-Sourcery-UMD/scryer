@@ -1,4 +1,5 @@
 import { extractBankCsv } from './bank.ts';
+import { maximalHeads, validCaseShape } from './case-shape.ts';
 import { CSV_LIMITS } from './csv.ts';
 import { ImportError } from './errors.ts';
 import { sha256Hex } from './hash.ts';
@@ -7,23 +8,9 @@ import type {
   CaseEvent, CaseV1, CaseValidator, ExtractedBatch, ImportLedger, ImportReview,
   ReviewCommand, ReviewDecision, ReviewResult,
 } from './types.ts';
-import { ID, exactKeys, validInstant } from './validation.ts';
+import { exactKeys, validId, validInstant } from './validation.ts';
 
 const SHA256 = /^[0-9a-f]{64}$/;
-
-function validCaseShape(caseData: CaseV1): void {
-  if (!caseData || caseData.schemaVersion !== '1' || caseData.currency !== 'USD' ||
-      !Array.isArray(caseData.accountRefs) || !Array.isArray(caseData.artifacts) ||
-      !Array.isArray(caseData.proposals) || !Array.isArray(caseData.events)) {
-    throw new ImportError('INVALID_CASE');
-  }
-  for (const event of caseData.events) {
-    if (!event || !ID.test(event.eventId) || !Array.isArray(event.parents) ||
-        event.parents.some((parent: unknown) => typeof parent !== 'string' || !ID.test(parent))) {
-      throw new ImportError('INVALID_CASE');
-    }
-  }
-}
 
 function validLedger(ledger: ImportLedger): void {
   if (!ledger || !exactKeys(ledger, ['schemaVersion', 'reviews']) ||
@@ -33,7 +20,7 @@ function validLedger(ledger: ImportLedger): void {
   const seenArtifacts = new Set<string>();
   const seenCommands = new Set<string>();
   for (const review of ledger.reviews) {
-    if (!review || !ID.test(review.artifactId) || !ID.test(review.commandId) ||
+    if (!review || !validId(review.artifactId) || !validId(review.commandId) ||
         !SHA256.test(review.sha256) || !SHA256.test(review.decisionDigest) ||
         !Array.isArray(review.decisions) || seenArtifacts.has(review.artifactId) ||
         seenCommands.has(review.commandId)) {
@@ -49,7 +36,7 @@ function validBatch(batch: ExtractedBatch): void {
       !batch.artifact || !Array.isArray(batch.proposals) ||
       !Array.isArray(batch.candidates) || batch.proposals.length !== batch.candidates.length ||
       batch.proposals.length > 100_000 || batch.artifact.kind !== 'bank_transactions' ||
-      !ID.test(batch.artifact.artifactId) || !ID.test(batch.artifact.accountRefId) ||
+      !validId(batch.artifact.artifactId) || !validId(batch.artifact.accountRefId) ||
       !SHA256.test(batch.artifact.sha256) || !validInstant(batch.artifact.observedAt)) {
     throw new ImportError('INVALID_BATCH');
   }
@@ -59,8 +46,8 @@ function validBatch(batch: ExtractedBatch): void {
     const candidate = batch.candidates[index];
     const expectedLocationPrefix = `row:${index + 2}:col:`;
     if (!proposal || !candidate || !Array.isArray(candidate.rawFields) ||
-        !Array.isArray(candidate.warningCodes) || typeof proposal.proposalId !== 'string' ||
-        typeof proposal.sourceLocation !== 'string' || !ID.test(proposal.proposalId) ||
+        !Array.isArray(candidate.warningCodes) || typeof proposal.sourceLocation !== 'string' ||
+        !validId(proposal.proposalId) ||
         proposal.artifactId !== batch.artifact.artifactId ||
         proposal.proposalId !== candidate.proposalId ||
         proposal.sourceLocation !== candidate.sourceLocation ||
@@ -113,20 +100,10 @@ function sameExtractedBatch(left: ExtractedBatch, right: ExtractedBatch): boolea
 
 function validCommand(command: ReviewCommand): void {
   if (!exactKeys(command, ['commandId', 'recordedAt', 'baseHead']) ||
-      !ID.test(command.commandId) || !validInstant(command.recordedAt) ||
-      (command.baseHead !== null && !ID.test(command.baseHead))) {
+      !validId(command.commandId) || !validInstant(command.recordedAt) ||
+      (command.baseHead !== null && !validId(command.baseHead))) {
     throw new ImportError('INVALID_REVIEW_COMMAND');
   }
-}
-
-function maximalHeads(events: readonly CaseEvent[]): string[] {
-  const ids = new Set<string>();
-  const parents = new Set<string>();
-  for (const event of events) {
-    ids.add(event.eventId);
-    for (const parent of event.parents) parents.add(parent);
-  }
-  return [...ids].filter((id) => !parents.has(id)).sort();
 }
 
 function normalizeDecisions(batch: ExtractedBatch, decisions: readonly ReviewDecision[]): ReviewDecision[] {
@@ -135,7 +112,7 @@ function normalizeDecisions(batch: ExtractedBatch, decisions: readonly ReviewDec
   }
   const byId = new Map<string, ReviewDecision>();
   for (const decision of decisions) {
-    if (!decision || !ID.test(decision.proposalId)) throw new ImportError('INVALID_REVIEW_DECISION');
+    if (!decision || !validId(decision.proposalId)) throw new ImportError('INVALID_REVIEW_DECISION');
     if (byId.has(decision.proposalId)) throw new ImportError('DUPLICATE_DECISION');
     byId.set(decision.proposalId, decision);
   }
@@ -159,7 +136,7 @@ function normalizeDecisions(batch: ExtractedBatch, decisions: readonly ReviewDec
         !isPositiveMinor(proposal.proposedAmountMinor)) {
       throw new ImportError('UNAPPROVABLE_CANDIDATE');
     }
-    if (!ID.test(decision.factId) || !ID.test(decision.eventId) || !ID.test(decision.reviewId)) {
+    if (!validId(decision.factId) || !validId(decision.eventId) || !validId(decision.reviewId)) {
       throw new ImportError('INVALID_REVIEW_DECISION');
     }
     if (decision.action === 'approve') {

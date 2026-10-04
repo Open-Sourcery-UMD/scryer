@@ -62,7 +62,7 @@ export type CaseEvent = {
   recordedAt: string;
   kind: string;
   fact?: { factId: string; reviewId: string; proposalId: string | null; [key: string]: unknown };
-  correction?: { reviewId: string };
+  correction?: { reviewId: string; [key: string]: unknown };
   coverage?: { reviewId: string };
   retraction?: { reviewId: string };
   decision?: { reviewId: string };
@@ -123,3 +123,35 @@ export type ImportReview = {
 export type ImportLedger = { schemaVersion: '1'; reviews: readonly ImportReview[] };
 export type ReviewResult = { case: CaseV1; ledger: ImportLedger; applied: boolean };
 export type CaseValidator = (caseData: CaseV1) => Promise<void>;
+
+export type ManualRole = 'school_credit' | 'school_charge' | 'refund_issued' | 'bank_credit_observed';
+export type RecipientKind = 'student' | 'parent' | 'third_party' | 'unknown';
+export type ManualFactInput = {
+  eventId: string;
+  factId: string;
+  reviewId: string;
+  sourceEntryId: string;
+  recordedAt: string;
+  baseHead: string | null;
+  role: ManualRole;
+  termId: string | null;
+  accountRefId: string;
+  recipientKind: RecipientKind | null;
+  amountMinor: string;
+  effectiveDate: string | null;
+};
+export type ManualCorrectionInput = {
+  eventId: string;
+  reviewId: string;
+  sourceEntryId: string;
+  factId: string;
+  recordedAt: string;
+  baseHead: string | null;
+  cancelled: boolean;
+  replacementAmountMinor: string | null;
+};
+
+export type SourceDetection =
+  | { outcome: 'SUPPORTED_CSV'; adapter: 'generic-bank-csv-1'; reasonCode: 'MAPPING_REQUIRED' }
+  | { outcome: 'MANUAL_REQUIRED'; adapter: null; reasonCode: 'PDF_LAYOUT_UNVERIFIED' }
+  | { outcome: 'UNSUPPORTED_INPUT'; adapter: null; reasonCode: string };

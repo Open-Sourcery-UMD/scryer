@@ -60,10 +60,10 @@
 
 **Requirements:** S-37, S-38, S-39, S-40, S-45; depends on Task 2. **Interfaces:** `manualFact` and `detectSource` return typed `SUPPORTED_CSV`, `MANUAL_REQUIRED`, or `UNSUPPORTED_INPUT` outcomes; no claimed UMD layout selector. **Risk:** high, false source confidence.
 
-- [ ] Write failing tests for reviewed manual bank/school/refund facts, scanned/encrypted/ambiguous PDF detection, source-authenticity limitations, and invalid manual corrections.
-- [ ] Run tests expecting missing interfaces.
-- [ ] Implement conservative detection and manual command using the same validator; document UMD format compatibility as `BLOCKED_EXTERNAL`.
-- [ ] Run focused, native/reference, and type checks; commit M5-3.
+- [x] Write failing tests for reviewed manual bank/school/refund facts, conservative PDF routing, source-authenticity limitations, and invalid manual corrections.
+- [x] Run tests expecting missing interfaces.
+- [x] Implement conservative detection and manual command using the same validator; document UMD format compatibility as `BLOCKED_EXTERNAL`. Precise scanned/encrypted/corrupt PDF diagnostics remain open because this slice has no PDF parser.
+- [x] Run focused, native/reference, and type checks; commit M5-3.
 
 ## Task 4 — Browser worker and release scenarios
 

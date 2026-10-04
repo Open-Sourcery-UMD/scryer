@@ -112,6 +112,7 @@ test('incomplete or invalid decisions and stale heads leave both inputs unchange
   assert.equal(await codeOf(() => reviewImport(original, ledger, source, [...decisions, decisions[0]], command, nativeValidate)), 'DUPLICATE_DECISION');
   assert.equal(await codeOf(() => reviewImport(original, ledger, source, decisions, { ...command, baseHead: 'event-extra-charge' }, nativeValidate)), 'STALE_HEAD');
   assert.equal(await codeOf(() => reviewImport(original, ledger, source, decisions, { ...command, commandId: 'bad id' }, nativeValidate)), 'INVALID_REVIEW_COMMAND');
+  assert.equal(await codeOf(() => reviewImport(original, ledger, source, decisions, { ...command, commandId: 123 }, nativeValidate)), 'INVALID_REVIEW_COMMAND');
   assert.equal(await codeOf(() => reviewImport(original, ledger, source, decisions, { ...command, recordedAt: '2026-09-31T10:00:00Z' }, nativeValidate)), 'INVALID_REVIEW_COMMAND');
   assert.equal(await codeOf(() => reviewImport(original, ledger, source, decisions,
     { ...command, recordedAt: '2026-09-08T10:00:00Z' }, nativeValidate)), 'INVALID_REVIEW_COMMAND');

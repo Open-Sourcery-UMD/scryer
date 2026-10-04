@@ -561,9 +561,13 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/client/test_manual.mjs — PDFs route to reviewed manual entry; no UMD offer layout declared"
+      ],
+      "evidence": [
+        "M5-3 permitted representative UMD offer layout absent; real-format extraction remains blocked"
+      ],
+      "status": "BLOCKED_EXTERNAL"
     },
     {
       "id": "S-38",
@@ -574,9 +578,13 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/client/test_manual.mjs — PDFs route to reviewed manual entry; no UMD bill layout declared"
+      ],
+      "evidence": [
+        "M5-3 permitted representative UMD bill layout absent; real-format extraction remains blocked"
+      ],
+      "status": "BLOCKED_EXTERNAL"
     },
     {
       "id": "S-39",
@@ -587,9 +595,13 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/client/test_manual.mjs — reviewed manual refund fact and explicit recipient category"
+      ],
+      "evidence": [
+        "M5-3 manual refund capture passes native case validation; notice layout extraction remains blocked"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-40",
@@ -600,9 +612,13 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/client/test_manual.mjs — reviewed manual school, refund, bank facts and corrections"
+      ],
+      "evidence": [
+        "M5-3 headless manual events and corrections pass native case validation; browser and persistence remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-41",
@@ -614,10 +630,12 @@
         "M5"
       ],
       "tests": [
-        "tests/client/test_review.mjs — headless approve/edit/reject/exclude decision command"
+        "tests/client/test_review.mjs — headless approve/edit/reject/exclude decision command",
+        "tests/client/test_manual.mjs — headless manual facts and correction commands"
       ],
       "evidence": [
-        "M5-2 headless review operation passes; visual review screen remains open"
+        "M5-2 headless review operation passes; visual review screen remains open",
+        "M5-3 manual review commands pass; visual review screen remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -682,10 +700,12 @@
         "M5"
       ],
       "tests": [
-        "tests/client/test_review.mjs — typed invalid batch, missing ledger, invalid decision, stale head and native validation failure"
+        "tests/client/test_review.mjs — typed invalid batch, missing ledger, invalid decision, stale head and native validation failure",
+        "tests/client/test_manual.mjs — conservative PDF-to-manual and invalid-input outcomes"
       ],
       "evidence": [
-        "M5-2 typed review failures leave case and ledger inputs unchanged; unsupported-file continuation remains open"
+        "M5-2 typed review failures leave case and ledger inputs unchanged; unsupported-file continuation remains open",
+        "M5-3 all PDFs route to manual without compatibility claims; precise PDF diagnostics remain open"
       ],
       "status": "IN_PROGRESS"
     },

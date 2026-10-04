@@ -27,7 +27,7 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-21 | REFERENCE | Competing correction fixture remains contradictory and historically ambiguous. |
 | RC-22 | REFERENCE | Unrelated refund evidence does not alter school-surplus fact attribution. |
 | RC-23 | REFERENCE | Exact-money, overflow, precision, canonical form, and currency rejection tests. |
-| RC-24 | PARTIAL | Headless CSV rejects malformed UTF-8/quotes and byte/row/column/field/cell limits; failed review leaves both input objects unchanged. Browser/PDF failure and atomic storage remain open. |
+| RC-24 | PARTIAL | Headless CSV rejects malformed UTF-8/quotes and byte/row/column/field/cell limits; failed review and manual commands leave inputs unchanged. PDFs route to manual entry without source compatibility claims. Precise PDF diagnostics, browser cancellation, and atomic storage remain open. |
 | RC-25 | PARTIAL | Native CLI is built and 33 fixed operations plus 200 seeded cases pass locally; WASM and real-browser parity remain open. |
 | RC-26 | REFERENCE | Independent checker catches arithmetic, digest, source, proposal, and aid-item tampering. |
 | RC-27 | OPEN | Device source-unavailable and hash reattachment workflow remains open. |

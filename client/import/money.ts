@@ -7,6 +7,10 @@ export function isPositiveMinor(value: unknown): value is string {
     value.length <= 19 && BigInt(value) <= MAX_MINOR;
 }
 
+export function isNonnegativeMinor(value: unknown): value is string {
+  return value === '0' || isPositiveMinor(value);
+}
+
 export function parseUsAmount(raw: string): ParsedAmount | null {
   let value = raw.trim();
   let negative = false;

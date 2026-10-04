@@ -2,16 +2,8 @@ import { parseBoundedCsv } from './csv.ts';
 import { ImportError } from './errors.ts';
 import { sha256Hex } from './hash.ts';
 import { parseUsAmount } from './money.ts';
-import { ID, VERSION, exactKeys, validInstant } from './validation.ts';
+import { ID, VERSION, exactKeys, validDate, validInstant } from './validation.ts';
 import type { BankCsvMapping, BankCsvMetadata, Candidate, ExtractedBatch, Proposal } from './types.ts';
-
-const ISO_DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
-
-function validDate(value: string): boolean {
-  if (!ISO_DATE.test(value) || value.startsWith('0000-')) return false;
-  const parsed = new Date(`${value}T00:00:00Z`);
-  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
-}
 
 function validateInputs(metadata: BankCsvMetadata, mapping: BankCsvMapping): void {
   if (!exactKeys(metadata, ['accountRefId', 'observedAt']) ||
