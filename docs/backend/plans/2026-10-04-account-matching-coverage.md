@@ -58,11 +58,11 @@
 
 **Interfaces:** `suggest_refund_deposits(case: Case, heads: tuple[str,...], refund_fact_id: str, bank_account_ref_id: str, candidate_limit: int = 1000, window_days: int = 30) -> MatchResult`. New `decide_match` journal event names one refund fact, one bank fact, nonnegative `allocatedMinor`, decision `confirm` or `reject`, and review ID. `MatchResult` carries explicit status, ordered candidate IDs, confirmed allocations, exact remaining minor units, coverage result, and reason codes. Candidate dates are from the refund-issued source date through day 30 inclusive by default; this is a search heuristic, not a payment deadline. `window_days` is bounded to 0–90; a missing refund source date prevents a confident time-window conclusion. Amount/date equality gives a suggestion only. No automatic confirmation is claimed in this profile.
 
-- [ ] Write failing tests for one suggestion without confirmation, two equal candidates ambiguity, wrong account/term, split deposits, duplicate allocation, reviewed rejection, reversal/correction effect, a coverage gap, and candidate cap.
-- [ ] Run targeted tests. Expected: missing operation/event failure.
-- [ ] Implement bounded candidate filtering by term/account/currency/explicit date window; replay reviewed decisions causally and check refund/bank allocation sums before output.
-- [ ] Run targeted and full reference suite. Expected: exit 0; no false definite nonpayment outcome.
-- [ ] Inspect diff and commit `feat(reference): reconcile reviewed refund allocations` with task ID M2-5c and verification.
+- [x] Write failing tests for suggestions, ambiguity, account isolation, split deposits, overallocations, rejection, reversal, corrections, coverage gaps, candidate caps, manual sources, empty approved sets, and bounded parameters.
+- [x] Run targeted tests. The missing matching module failed before implementation; additional trust-label tests failed before the follow-up fixes.
+- [x] Implement bounded candidate filtering by account/date within the USD-only case, causal reviewed decisions, and cross-refund/bank allocation capacity checks.
+- [x] Run targeted and full reference suite: 85 tests passed; no status claims definitive nonpayment.
+- [x] Inspect diff and commit `feat(reference): reconcile reviewed refund allocations` with task ID M2-5c and verification.
 
 ## Continuation gate
 

@@ -140,6 +140,22 @@
         "reviewId": {"$ref": "#/$defs/id"}
       }
     },
+    "matchDecision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["refundFactId", "bankFactId", "allocatedMinor", "action", "reviewId"],
+      "properties": {
+        "refundFactId": {"$ref": "#/$defs/id"},
+        "bankFactId": {"$ref": "#/$defs/id"},
+        "allocatedMinor": {"$ref": "#/$defs/nonnegativeMinor"},
+        "action": {"enum": ["confirm", "reject"]},
+        "reviewId": {"$ref": "#/$defs/id"}
+      },
+      "allOf": [{
+        "if": {"properties": {"action": {"const": "reject"}}},
+        "then": {"properties": {"allocatedMinor": {"const": "0"}}},
+        "else": {"properties": {"allocatedMinor": {"pattern": "^[1-9][0-9]*$"}}}
+      }]
+    },
     "event": {
       "oneOf": [
         {
@@ -184,6 +200,17 @@
             "recordedAt": {"$ref": "#/$defs/utc"},
             "kind": {"const": "retract_coverage"},
             "retraction": {"$ref": "#/$defs/coverageRetraction"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "decision"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "decide_match"},
+            "decision": {"$ref": "#/$defs/matchDecision"}
           }
         }
       ]

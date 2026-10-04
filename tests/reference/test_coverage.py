@@ -10,7 +10,17 @@ _FIXTURE = Path(__file__).parent / "fixtures" / "golden-case.json"
 
 
 def raw_case():
-    return json.loads(_FIXTURE.read_text())
+    raw = json.loads(_FIXTURE.read_text())
+    raw["artifacts"].append(
+        {
+            "artifactId": "bank-period",
+            "sha256": "4" * 64,
+            "kind": "bank_statement",
+            "observedAt": "2026-10-02T09:00:00Z",
+            "accountRefId": "bank-a",
+        }
+    )
+    return raw
 
 
 def parsed(raw):
@@ -27,7 +37,7 @@ def assert_coverage(
     source=None,
 ):
     if source is None:
-        source = {"kind": "artifact", "artifactId": "bank-a", "location": "statement-period"}
+        source = {"kind": "artifact", "artifactId": "bank-period", "location": "statement-period"}
     return {
         "eventId": event_id,
         "parents": ["event-bank-credit"],
@@ -108,7 +118,7 @@ class CoverageTests(unittest.TestCase):
     def test_source_assertion_on_wrong_account_artifact_is_rejected(self):
         raw = raw_case()
         raw["accountRefs"].append({"accountRefId": "bank-b", "kind": "bank", "institutionId": None})
-        other_statement = copy.deepcopy(raw["artifacts"][3])
+        other_statement = copy.deepcopy(raw["artifacts"][-1])
         other_statement["artifactId"] = "bank-b-statement"
         other_statement["accountRefId"] = "bank-b"
         raw["artifacts"].append(other_statement)
@@ -121,7 +131,7 @@ class CoverageTests(unittest.TestCase):
 
     def test_source_assertion_requires_bank_statement_artifact(self):
         raw = raw_case()
-        raw["artifacts"][3]["kind"] = "untyped_csv"
+        raw["artifacts"][-1]["kind"] = "untyped_csv"
         raw["events"].append(assert_coverage())
         with self.assertRaises(ModelError) as raised:
             parsed(raw)
@@ -138,6 +148,14 @@ class CoverageTests(unittest.TestCase):
         with self.assertRaises(ModelError) as raised:
             parsed(raw)
         self.assertEqual(raised.exception.code, "ACCOUNT_KIND_MISMATCH")
+
+    def test_source_statement_observed_before_period_end_is_rejected(self):
+        raw = raw_case()
+        raw["artifacts"][-1]["observedAt"] = "2026-09-07T09:00:00Z"
+        raw["events"].append(assert_coverage())
+        with self.assertRaises(ModelError) as raised:
+            parsed(raw)
+        self.assertEqual(raised.exception.code, "INVALID_COVERAGE_CHRONOLOGY")
 
     def test_coverage_assertion_can_be_retracted_without_deleting_history(self):
         raw = raw_case()

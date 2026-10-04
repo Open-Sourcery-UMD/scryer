@@ -125,6 +125,15 @@ class CoverageRetraction:
 
 
 @dataclass(frozen=True)
+class MatchDecision:
+    refund_fact_id: str
+    bank_fact_id: str
+    allocated_minor: int
+    action: str
+    review_id: str
+
+
+@dataclass(frozen=True)
 class Event:
     event_id: str
     parents: tuple[str, ...]
@@ -134,6 +143,7 @@ class Event:
     correction: Correction | None = None
     coverage: CoverageAssertion | None = None
     retraction: CoverageRetraction | None = None
+    decision: MatchDecision | None = None
 
 
 @dataclass(frozen=True)
@@ -429,6 +439,8 @@ def _coverage(value: Any, accounts: dict[str, AccountRef], artifacts: dict[str, 
             raise ModelError("INVALID_COVERAGE_SOURCE")
         if artifacts[source.artifact_id].account_ref_id != account_id:
             raise ModelError("SOURCE_ACCOUNT_MISMATCH")
+        if artifacts[source.artifact_id].observed_at[:10] < end:
+            raise ModelError("INVALID_COVERAGE_CHRONOLOGY")
     elif source.kind != "manual":
         raise ModelError("INVALID_COVERAGE_SOURCE")
     return CoverageAssertion(
@@ -455,6 +467,23 @@ def _retraction(value: Any) -> CoverageRetraction:
     )
 
 
+def _match_decision(value: Any) -> MatchDecision:
+    value = _fields(value, {"refundFactId", "bankFactId", "allocatedMinor", "action", "reviewId"})
+    action = value["action"]
+    if type(action) is not str or action not in {"confirm", "reject"}:
+        raise ModelError("INVALID_MATCH_ACTION")
+    amount = _nonnegative_money(value["allocatedMinor"])
+    if (action == "confirm" and amount == 0) or (action == "reject" and amount != 0):
+        raise ModelError("INVALID_MATCH_ALLOCATION")
+    return MatchDecision(
+        refund_fact_id=_identifier(value["refundFactId"]),
+        bank_fact_id=_identifier(value["bankFactId"]),
+        allocated_minor=amount,
+        action=action,
+        review_id=_identifier(value["reviewId"]),
+    )
+
+
 def _event(
     value: Any,
     terms: dict[str, AcademicTerm],
@@ -471,24 +500,35 @@ def _event(
         correction = None
         coverage = None
         retraction = None
+        decision = None
     elif kind == "correct_fact":
         value = _fields(value, common | {"correction"})
         fact = None
         correction = _correction(value["correction"], set(artifacts))
         coverage = None
         retraction = None
+        decision = None
     elif kind == "assert_coverage":
         value = _fields(value, common | {"coverage"})
         fact = None
         correction = None
         coverage = _coverage(value["coverage"], accounts, artifacts)
         retraction = None
+        decision = None
     elif kind == "retract_coverage":
         value = _fields(value, common | {"retraction"})
         fact = None
         correction = None
         coverage = None
         retraction = _retraction(value["retraction"])
+        decision = None
+    elif kind == "decide_match":
+        value = _fields(value, common | {"decision"})
+        fact = None
+        correction = None
+        coverage = None
+        retraction = None
+        decision = _match_decision(value["decision"])
     else:
         raise ModelError("UNSUPPORTED_EVENT")
     return Event(
@@ -500,6 +540,7 @@ def _event(
         correction=correction,
         coverage=coverage,
         retraction=retraction,
+        decision=decision,
     )
 
 
@@ -584,7 +625,8 @@ def load_case_json(document: str) -> Case:
         event.fact.review_id if event.fact is not None else
         event.correction.review_id if event.correction is not None else
         event.coverage.review_id if event.coverage is not None else
-        event.retraction.review_id
+        event.retraction.review_id if event.retraction is not None else
+        event.decision.review_id
         for event in ordered
     ]
     if len(reviews) != len(set(reviews)):
@@ -606,6 +648,19 @@ def load_case_json(document: str) -> Case:
             approval_id = coverage_approvals.get(event.retraction.coverage_id)
             if approval_id is None or approval_id not in event.parents:
                 raise ModelError("INVALID_RETRACTION_CAUSALITY")
+        if event.decision is not None:
+            decision = event.decision
+            refund = facts_by_id.get(decision.refund_fact_id)
+            bank = facts_by_id.get(decision.bank_fact_id)
+            if refund is None or bank is None:
+                raise ModelError("MISSING_FACT")
+            if refund.role != "refund_issued" or bank.role != "bank_credit_observed":
+                raise ModelError("MATCH_ROLE_MISMATCH")
+            if (
+                fact_approvals[decision.refund_fact_id] not in event.parents
+                or fact_approvals[decision.bank_fact_id] not in event.parents
+            ):
+                raise ModelError("INVALID_MATCH_CAUSALITY")
     return Case(
         schema_version="1",
         case_id=_identifier(raw["caseId"]),
