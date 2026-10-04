@@ -87,10 +87,10 @@
 
 **Interfaces:** `make_receipt(const Case&, Heads, term_id, producer_version)->Json`, `reproduce_receipt(const Case&, const Json&)->Json`, `reanalyze_receipt(const Case&, const Json&, Heads)->ReanalysisResult`.
 
-- [ ] Add independent expected digest cases from the manifest, tampered arithmetic/source/unknown-version negatives, and old-receipt-after-correction tests.
-- [ ] Run focused tests expecting failures.
-- [ ] Pin a portable licensed SHA-256 implementation, verify NIST vectors, and emit canonical ASCII JSON matching the Python receipt subset exactly.
-- [ ] Compare receipt bytes and digests across all fixed receipts; run independent Python checker on native output; commit Task M3-5.
+- [x] Add independent expected digest cases from the manifest, tampered arithmetic/source/unknown-version negatives, and old-receipt-after-correction tests.
+- [x] Run focused tests expecting failures.
+- [x] Pin a portable licensed SHA-256 implementation, verify NIST vectors, and emit canonical ASCII JSON matching the Python receipt subset exactly.
+- [x] Compare receipt bytes and digests across all fixed receipts; run independent Python checker on native output; commit Task M3-5.
 
 ## Task 6 — Coverage, matching, and aid lifecycle
 

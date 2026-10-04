@@ -1,7 +1,7 @@
 CXX ?= clang++
 CXXFLAGS ?= -std=c++20 -O2 -Wall -Wextra -Werror -pedantic
 
-.PHONY: test-money test-json test-case test-projection case-probe projection-probe
+.PHONY: test-money test-json test-case test-projection test-receipt case-probe projection-probe receipt-probe
 
 test-money:
 	@mkdir -p build
@@ -34,3 +34,13 @@ test-projection:
 projection-probe:
 	@mkdir -p build
 	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor ../tests/engine/projection_probe.cpp src/projection.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/projection_probe
+
+test-receipt:
+	@mkdir -p build
+	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor -fsyntax-only ../tests/engine/test_receipt.cpp
+	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor ../tests/engine/test_receipt.cpp src/receipt.cpp src/projection.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/test_receipt
+	./build/test_receipt
+
+receipt-probe:
+	@mkdir -p build
+	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor ../tests/engine/receipt_probe.cpp src/receipt.cpp src/projection.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/receipt_probe
