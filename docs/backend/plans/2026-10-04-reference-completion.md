@@ -49,7 +49,7 @@
 - [x] Implement lifecycle evidence projection and deterministic finding/next-action codes with approved fact/source links.
 - [x] Test corrected/canceled/split aid and multiple terms; run full suite and commit coherent passing change.
 
-### Task 4 — M2-6d: Historical mapping and release corpus
+### Task 4 — M2-6d: Historical mapping and reference parity corpus
 
 **Requirements:** S-16, S-19, S-22, S-23, S-24, S-26. **Depends on:** M2-6c.
 
@@ -57,7 +57,7 @@
 
 **Interface:** `heads_as_known(case, cutoff_utc)` returns an explicit unique approved head or typed ambiguity; historical queries retain schema/rule/engine versions and source identities. Reanalysis under a later rule is a separate operation.
 
-- [ ] Add hand checked current/historical goldens and event enumeration permutation tests distinct from changed review histories.
-- [ ] Test simultaneous/incomparable branches, uncertain timestamps, corrections, source reimport, repeated equal movements, and interaction limits.
-- [ ] Build a deterministic seeded corpus manifest and expected results for native/WASM parity; record unsupported scenarios as open requirements.
-- [ ] Run reference and corpus gates, inspect diff, and commit a passing, reviewable change.
+- [x] Add fixed current/historical goldens and event enumeration permutation tests distinct from changed review histories.
+- [x] Test incomparable branches, timestamp inversions, corrections, manual sources, split matching, and annual aid; source reimport and interaction limits remain separate open RC gates.
+- [x] Build a fixed 22-operation synthetic parity manifest and 200-seed generated receipt smoke; map all 48 RC scenarios and record missing gates.
+- [x] Run reference and corpus gates, inspect diff, and commit a passing, reviewable change.

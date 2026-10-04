@@ -274,10 +274,13 @@
         "M2"
       ],
       "tests": [
-        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens"
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens",
+        "tests/reference/test_history.py — explicit UTC cutoff, permutation, divergent heads, timestamp inversion",
+        "tests/reference/test_corpus.py — fixed current and historical parity operations"
       ],
       "evidence": [
-        "M2-3 red-green run; 36-test reference suite exit 0 before commit"
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit",
+        "M2-6d red-green run; 116-test reference suite and 22 fixed parity operations exit 0 before local commit"
       ],
       "status": "IN_PROGRESS"
     },
@@ -639,13 +642,17 @@
       "scope": "LOCAL",
       "risk": "MEDIUM",
       "implementationTasks": [
-        "M5"
+        "M2-6d",
+        "M5",
+        "M9"
       ],
       "tests": [
-        "tests/reference/test_receipt.py — canonical digest, independent arithmetic/source checks, seeded generator"
+        "tests/reference/test_receipt.py — canonical digest, independent arithmetic/source checks, seeded generator",
+        "tests/reference/test_corpus.py — 22 literal synthetic parity operations across seven case fixtures"
       ],
       "evidence": [
-        "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit"
+        "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit",
+        "docs/backend/release-corpus.md maps all RC-01 through RC-48; many browser/server/crypto gates remain OPEN"
       ],
       "status": "IN_PROGRESS"
     },

@@ -391,11 +391,11 @@
     },
     {
       "id": "M2-6d",
-      "title": "Historical mapping and release corpus",
-      "status": "IN_PROGRESS",
+      "title": "Historical mapping and reference parity corpus",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": ["M2-6c"],
       "requirements": ["S-16", "S-19", "S-22", "S-23", "S-24", "S-26"],
-      "scope": "Map declared as-known cutoffs to approved causal heads and freeze hand-checked synthetic parity scenarios.",
+      "scope": "Map declared as-known cutoffs to approved causal heads and freeze a scoped, hand-checked synthetic native-port corpus; track the remaining release RC gates separately.",
       "files": ["scryer_reference/history.py", "scryer_reference/scenarios.py", "tests/reference/", "docs/backend/verification.md"],
       "interface": "heads_as_known(Case, cutoff_utc)->unique head or typed ambiguity; deterministic corpus manifest for C++/WASM parity.",
       "invariants": ["No wall-clock tie winner", "Unreviewed proposals cannot enter history", "Same event set permutation has identical result"],
@@ -403,14 +403,62 @@
       "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
       "expected": "Historical and corpus tests pass locally",
       "risk": "HIGH",
-      "done": "Native-port corpus has unambiguous expected semantics and unresolved scenarios remain open."
+      "done": "Native-port corpus has fixed expected semantics and unresolved RC scenarios are explicitly mapped."
+    },
+    {
+      "id": "M2-7a",
+      "title": "Recipient-aware refund matching",
+      "status": "IN_PROGRESS",
+      "dependsOn": ["M2-6d"],
+      "requirements": ["S-18", "S-20", "S-21", "S-24"],
+      "scope": "Prevent parent/third-party or unknown-recipient refund evidence from silently matching a student bank account.",
+      "files": ["scryer_reference/model.py", "scryer_reference/matching.py", "docs/backend/contracts/case-v1.schema.json", "tests/reference/test_matching.py"],
+      "interface": "Reviewed refund recipient and bank holder kinds plus an explicit evidence-bound exception rule; see reference-gap-closure plan.",
+      "invariants": ["No cross-recipient automatic candidate", "Unknown identity is incomplete", "Reviewed exceptions remain source-linked"],
+      "tests": ["parent refund to student bank", "unknown recipient", "permitted evidence exception"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "Recipient gates and full reference suite pass",
+      "risk": "HIGH",
+      "done": "RC-08 has a synthetic negative and permitted-evidence case without false student-account claims."
+    },
+    {
+      "id": "M2-7b",
+      "title": "Gross-net aid evidence",
+      "status": "NOT_STARTED",
+      "dependsOn": ["M2-7a"],
+      "requirements": ["S-18", "S-19", "S-22", "S-24"],
+      "scope": "Separate gross loan offer, source-backed withheld fee, and net posted school credit.",
+      "files": ["scryer_reference/model.py", "scryer_reference/lifecycle.py", "docs/backend/contracts/case-v1.schema.json", "tests/reference/test_lifecycle.py"],
+      "interface": "Aid lifecycle reports gross snapshot, withheld fee evidence, net posted movement, and unresolved difference separately.",
+      "invariants": ["No fabricated payment", "No fee as school charge", "No annual half-split"],
+      "tests": ["hand-calculated gross/fee/net", "missing fee unresolved", "school surplus unchanged by gross offer"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "RC-07 and full reference suite pass",
+      "risk": "HIGH",
+      "done": "Gross/net evidence is exact and unresolved gaps are explicitly labeled."
+    },
+    {
+      "id": "M2-7c",
+      "title": "Reversal and historical rule evidence",
+      "status": "NOT_STARTED",
+      "dependsOn": ["M2-7b"],
+      "requirements": ["S-16", "S-19", "S-22", "S-23", "S-24"],
+      "scope": "Freeze corrected-source/reversal fixtures and explicit original-version reproduction versus reanalysis behavior.",
+      "files": ["scryer_reference/projection.py", "scryer_reference/receipt.py", "scryer_reference/check_receipt.py", "tests/reference/corpus/"],
+      "interface": "Typed rule-version support and fixed historical receipts; see reference-gap-closure plan.",
+      "invariants": ["Original receipt preserved", "No silent new-rule rewrite", "Reversal amount exact"],
+      "tests": ["RC-14", "RC-15", "RC-46"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "Reference corpus and old-version checks pass",
+      "risk": "HIGH",
+      "done": "Rule-version and reversal evidence is frozen for native port."
     },
     {
       "id": "M3",
       "title": "Native C++20 production engine",
       "status": "NOT_STARTED",
       "dependsOn": [
-        "M2-6d"
+        "M2-7c"
       ],
       "requirements": [
         "S-25",

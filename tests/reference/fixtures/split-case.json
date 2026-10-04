@@ -1,0 +1,340 @@
+{
+  "schemaVersion": "1",
+  "caseId": "case-split-corpus",
+  "artifacts": [
+    {
+      "artifactId": "aid-a",
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "kind": "aid_statement",
+      "observedAt": "2026-09-01T10:00:00Z",
+      "accountRefId": null
+    },
+    {
+      "artifactId": "bill-a",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "kind": "school_bill",
+      "observedAt": "2026-09-01T11:00:00Z",
+      "accountRefId": "school-a"
+    },
+    {
+      "artifactId": "refund-a",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "kind": "refund_notice",
+      "observedAt": "2026-09-06T10:00:00Z",
+      "accountRefId": "school-a"
+    },
+    {
+      "artifactId": "bank-a",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "kind": "bank_statement",
+      "observedAt": "2026-09-07T10:00:00Z",
+      "accountRefId": "bank-a"
+    },
+    {
+      "artifactId": "bank-period",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "kind": "bank_statement",
+      "observedAt": "2026-10-08T09:00:00Z",
+      "accountRefId": "bank-a"
+    },
+    {
+      "artifactId": "bank-second",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "kind": "bank_statement",
+      "observedAt": "2026-09-08T09:00:00Z",
+      "accountRefId": "bank-a"
+    }
+  ],
+  "proposals": [
+    {
+      "proposalId": "proposal-unreviewed",
+      "artifactId": "bill-a",
+      "sourceLocation": "row:99",
+      "rawValue": "10000.00",
+      "parserVersion": "synthetic.1",
+      "mappingVersion": "school-map.1",
+      "proposedAmountMinor": "1000000"
+    }
+  ],
+  "events": [
+    {
+      "eventId": "event-grant",
+      "parents": [],
+      "recordedAt": "2026-09-02T10:00:00Z",
+      "kind": "approve_fact",
+      "fact": {
+        "factId": "grant",
+        "termId": "2026-fall",
+        "role": "school_credit",
+        "amountMinor": "300000",
+        "effectiveDate": "2026-08-20",
+        "source": {
+          "kind": "artifact",
+          "artifactId": "aid-a",
+          "location": "row:1"
+        },
+        "reviewId": "review-grant",
+        "accountRefId": "school-a",
+        "currency": "USD",
+        "proposalId": null,
+        "aidItemId": null
+      }
+    },
+    {
+      "eventId": "event-other-credit",
+      "parents": [
+        "event-grant"
+      ],
+      "recordedAt": "2026-09-02T10:01:00Z",
+      "kind": "approve_fact",
+      "fact": {
+        "factId": "other-credit",
+        "termId": "2026-fall",
+        "role": "school_credit",
+        "amountMinor": "350000",
+        "effectiveDate": "2026-08-20",
+        "source": {
+          "kind": "artifact",
+          "artifactId": "aid-a",
+          "location": "row:2"
+        },
+        "reviewId": "review-other-credit",
+        "accountRefId": "school-a",
+        "currency": "USD",
+        "proposalId": null,
+        "aidItemId": null
+      }
+    },
+    {
+      "eventId": "event-base-charge",
+      "parents": [
+        "event-other-credit"
+      ],
+      "recordedAt": "2026-09-02T10:02:00Z",
+      "kind": "approve_fact",
+      "fact": {
+        "factId": "base-charge",
+        "termId": "2026-fall",
+        "role": "school_charge",
+        "amountMinor": "500000",
+        "effectiveDate": "2026-08-20",
+        "source": {
+          "kind": "artifact",
+          "artifactId": "bill-a",
+          "location": "row:1"
+        },
+        "reviewId": "review-base-charge",
+        "accountRefId": "school-a",
+        "currency": "USD",
+        "proposalId": null,
+        "aidItemId": null
+      }
+    },
+    {
+      "eventId": "event-grant-correction",
+      "parents": [
+        "event-grant",
+        "event-base-charge"
+      ],
+      "recordedAt": "2026-09-03T10:00:00Z",
+      "kind": "correct_fact",
+      "correction": {
+        "factId": "grant",
+        "replacementAmountMinor": "270000",
+        "cancelled": false,
+        "source": {
+          "kind": "artifact",
+          "artifactId": "aid-a",
+          "location": "row:1-revised"
+        },
+        "reviewId": "review-grant-correction"
+      }
+    },
+    {
+      "eventId": "event-extra-charge",
+      "parents": [
+        "event-grant-correction"
+      ],
+      "recordedAt": "2026-09-04T10:00:00Z",
+      "kind": "approve_fact",
+      "fact": {
+        "factId": "extra-charge",
+        "termId": "2026-fall",
+        "role": "school_charge",
+        "amountMinor": "30000",
+        "effectiveDate": "2026-08-20",
+        "source": {
+          "kind": "artifact",
+          "artifactId": "bill-a",
+          "location": "row:2"
+        },
+        "reviewId": "review-extra-charge",
+        "accountRefId": "school-a",
+        "currency": "USD",
+        "proposalId": null,
+        "aidItemId": null
+      }
+    },
+    {
+      "eventId": "event-refund-issued",
+      "parents": [
+        "event-extra-charge"
+      ],
+      "recordedAt": "2026-09-06T10:01:00Z",
+      "kind": "approve_fact",
+      "fact": {
+        "factId": "issued-refund",
+        "termId": "2026-fall",
+        "role": "refund_issued",
+        "amountMinor": "90000",
+        "effectiveDate": "2026-09-06",
+        "source": {
+          "kind": "artifact",
+          "artifactId": "refund-a",
+          "location": "page:1"
+        },
+        "reviewId": "review-issued-refund",
+        "accountRefId": "school-a",
+        "currency": "USD",
+        "proposalId": null,
+        "aidItemId": null
+      }
+    },
+    {
+      "eventId": "event-bank-credit",
+      "parents": [
+        "event-refund-issued"
+      ],
+      "recordedAt": "2026-09-07T10:01:00Z",
+      "kind": "approve_fact",
+      "fact": {
+        "factId": "bank-credit",
+        "termId": null,
+        "role": "bank_credit_observed",
+        "amountMinor": "40000",
+        "effectiveDate": "2026-09-07",
+        "source": {
+          "kind": "artifact",
+          "artifactId": "bank-a",
+          "location": "row:1"
+        },
+        "reviewId": "review-bank-credit",
+        "accountRefId": "bank-a",
+        "currency": "USD",
+        "proposalId": null,
+        "aidItemId": null
+      }
+    },
+    {
+      "eventId": "event-coverage",
+      "parents": [
+        "event-bank-credit",
+        "event-bank-credit-b"
+      ],
+      "recordedAt": "2026-10-08T10:00:00Z",
+      "kind": "assert_coverage",
+      "coverage": {
+        "coverageId": "coverage-a",
+        "accountRefId": "bank-a",
+        "recordType": "bank_transactions",
+        "startDate": "2026-09-06",
+        "endDateExclusive": "2026-10-07",
+        "basis": "source_asserted",
+        "source": {
+          "kind": "artifact",
+          "artifactId": "bank-period",
+          "location": "statement-period"
+        },
+        "reviewId": "review-coverage-a"
+      }
+    },
+    {
+      "eventId": "event-bank-credit-b",
+      "parents": [
+        "event-bank-credit"
+      ],
+      "recordedAt": "2026-09-08T10:00:00Z",
+      "kind": "approve_fact",
+      "fact": {
+        "factId": "bank-credit-b",
+        "termId": null,
+        "role": "bank_credit_observed",
+        "amountMinor": "50000",
+        "effectiveDate": "2026-09-08",
+        "source": {
+          "kind": "artifact",
+          "artifactId": "bank-second",
+          "location": "row:1"
+        },
+        "reviewId": "review-bank-credit-b",
+        "accountRefId": "bank-a",
+        "currency": "USD",
+        "proposalId": null,
+        "aidItemId": null
+      }
+    },
+    {
+      "eventId": "event-confirm-a",
+      "parents": [
+        "event-refund-issued",
+        "event-bank-credit",
+        "event-coverage"
+      ],
+      "recordedAt": "2026-10-09T10:00:00Z",
+      "kind": "decide_match",
+      "decision": {
+        "refundFactId": "issued-refund",
+        "bankFactId": "bank-credit",
+        "allocatedMinor": "40000",
+        "action": "confirm",
+        "reviewId": "review-confirm-a"
+      }
+    },
+    {
+      "eventId": "event-confirm-b",
+      "parents": [
+        "event-refund-issued",
+        "event-bank-credit-b",
+        "event-coverage",
+        "event-confirm-a"
+      ],
+      "recordedAt": "2026-10-09T10:01:00Z",
+      "kind": "decide_match",
+      "decision": {
+        "refundFactId": "issued-refund",
+        "bankFactId": "bank-credit-b",
+        "allocatedMinor": "50000",
+        "action": "confirm",
+        "reviewId": "review-confirm-b"
+      }
+    }
+  ],
+  "institutions": [
+    {
+      "institutionId": "institution-a"
+    }
+  ],
+  "accountRefs": [
+    {
+      "accountRefId": "school-a",
+      "kind": "school",
+      "institutionId": "institution-a"
+    },
+    {
+      "accountRefId": "bank-a",
+      "kind": "bank",
+      "institutionId": null
+    }
+  ],
+  "terms": [
+    {
+      "termId": "2026-fall",
+      "institutionId": "institution-a",
+      "schoolAccountRefId": "school-a",
+      "startDate": "2026-08-20",
+      "endDateExclusive": "2026-12-21"
+    }
+  ],
+  "currency": "USD",
+  "aidItems": []
+}
