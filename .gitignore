@@ -21,6 +21,9 @@ node_modules/
 
 # testing
 coverage/
+.pytest_cache/
+.backend-artifacts/
+.superpowers/
 
 # next.js
 .next/

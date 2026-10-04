@@ -1,0 +1,1079 @@
+{
+  "schemaVersion": 1,
+  "source": "User-provided Scryer backend master execution prompt, Appendix A",
+  "meaning": "Traceability inventory; empty tests/evidence are unimplemented, not passing.",
+  "requirements": [
+    {
+      "id": "S-01",
+      "sourceResponsibility": "Adopt v1 product contract",
+      "treatment": "LOCAL: encode the backend contract and explicit non-goals; do not claim maintainer approval not given.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-02",
+      "sourceResponsibility": "Audit existing repository",
+      "treatment": "LOCAL: inspect actual code and record retain/adapt/replace/retire decisions.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-03",
+      "sourceResponsibility": "Interview students",
+      "treatment": "EXTERNAL: prepare a research protocol only if needed; no fabricated interviews or results.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-04",
+      "sourceResponsibility": "Compare alternatives",
+      "treatment": "MIXED: prepare a reproducible synthetic evaluation dataset; actual competitor/user findings remain unverified unless independently obtained within authorization.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-05",
+      "sourceResponsibility": "Verify real source formats",
+      "treatment": "MIXED: conformance harness and fixture inventory locally; authentic format validation needs permitted evidence.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-06",
+      "sourceResponsibility": "Test clickable prototype",
+      "treatment": "FRONTEND/EXTERNAL: support the synthetic scenario; no claim of prototype usability testing.",
+      "scope": "FRONTEND",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "OUT_OF_BACKEND_SCOPE"
+    },
+    {
+      "id": "S-07",
+      "sourceResponsibility": "Product-value gate",
+      "treatment": "EXTERNAL: keep user-value validation open; permit reversible synthetic local engineering.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-08",
+      "sourceResponsibility": "Aid terminology and conclusions",
+      "treatment": "MIXED: implement explicit states and limitations; institutional/legal interpretation remains qualified-review work.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-09",
+      "sourceResponsibility": "Privacy/legal/safety review",
+      "treatment": "MIXED: threat model and technical controls locally; qualified legal/privacy review is external.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-10",
+      "sourceResponsibility": "$0 hosting/operations proof",
+      "treatment": "EXTERNAL: no hosting purchase/provisioning; document future capacity and operator dependencies.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-11",
+      "sourceResponsibility": "Architecture/release contract",
+      "treatment": "LOCAL/MIXED: freeze local contracts; separate public-release approval.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-12",
+      "sourceResponsibility": "CI/review gates",
+      "treatment": "LOCAL: implement equivalent local pipelines and review checks; run no remote CI.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-13",
+      "sourceResponsibility": "Local development/secrets",
+      "treatment": "LOCAL: reliable setup, private generated secrets, safe service bindings.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-14",
+      "sourceResponsibility": "Source/fact schema",
+      "treatment": "LOCAL: versioned schemas and cross-language contract tests.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-15",
+      "sourceResponsibility": "Money/time rules",
+      "treatment": "LOCAL: exact integers, explicit time axes, validated dates and overflow.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-16",
+      "sourceResponsibility": "Journal/corrections",
+      "treatment": "LOCAL: immutable approved history, correction conflicts, deterministic replay.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-17",
+      "sourceResponsibility": "Provenance/review status",
+      "treatment": "LOCAL: proposals, approval records, source locations, missing-original behavior.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-18",
+      "sourceResponsibility": "Aid lifecycle",
+      "treatment": "LOCAL: evidence states, partial/out-of-order history, financial edge cases.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-19",
+      "sourceResponsibility": "Term projections",
+      "treatment": "LOCAL: current/historical projections under explicit fixed-history semantics.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-20",
+      "sourceResponsibility": "Matching/review rules",
+      "treatment": "LOCAL: allocations, ambiguity, evidence rules, review decisions, bounded search.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-21",
+      "sourceResponsibility": "Coverage/uncertainty",
+      "treatment": "LOCAL: explicit coverage assertions and no unsupported missing-payment claims.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-22",
+      "sourceResponsibility": "Change attribution",
+      "treatment": "LOCAL: exact deltas, interacting changes, no hidden unexplained residual.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-23",
+      "sourceResponsibility": "Evidence receipts",
+      "treatment": "LOCAL: canonical derivation receipts and a scoped independent checker.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-24",
+      "sourceResponsibility": "Python reference/generator",
+      "treatment": "LOCAL: independent algorithms, hand-computed golden cases, seeded generators.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-25",
+      "sourceResponsibility": "C++ primitives",
+      "treatment": "LOCAL: checked money, schema validation, bounded ownership/lifetimes.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-26",
+      "sourceResponsibility": "C++ projections",
+      "treatment": "LOCAL: deterministic current and historical projections.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-27",
+      "sourceResponsibility": "C++ matching/coverage",
+      "treatment": "LOCAL: matching/allocation/uncertainty with reference parity.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-28",
+      "sourceResponsibility": "C++ explanations/receipts",
+      "treatment": "LOCAL: attributed differences and versioned evidence output.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-29",
+      "sourceResponsibility": "Native/WASM packaging",
+      "treatment": "LOCAL: same production sources, typed ABI, canonical semantic agreement.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-30",
+      "sourceResponsibility": "Differential tests",
+      "treatment": "LOCAL: reference/native/browser comparisons and minimized failures.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-31",
+      "sourceResponsibility": "Fuzzing/hardening",
+      "treatment": "LOCAL: bounded fuzz targets, supported sanitizers, resource tests.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-32",
+      "sourceResponsibility": "Performance/memory study",
+      "treatment": "LOCAL: actual reproducible results; no HFT-style unsupported claims.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-33",
+      "sourceResponsibility": "Adapter contract",
+      "treatment": "LOCAL: stable plugin-free adapter interface and public-ready local conformance suite.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-34",
+      "sourceResponsibility": "Browser file safety",
+      "treatment": "LOCAL: headless worker/file validation, bounds, cancellation, malicious content handling.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-35",
+      "sourceResponsibility": "Bank CSV import",
+      "treatment": "LOCAL: exact parsing, mapping proposals, review commands, account identity.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-36",
+      "sourceResponsibility": "Statement coverage",
+      "treatment": "LOCAL: source/user-asserted periods; no coverage inference from transaction extrema.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-37",
+      "sourceResponsibility": "UMD offer import",
+      "treatment": "MIXED: implement verified layouts; unsupported real formats remain blocked, manual entry remains functional.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-38",
+      "sourceResponsibility": "UMD bill import",
+      "treatment": "MIXED: same compatibility gate; distinguish snapshots, pending aid, postings, charges.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-39",
+      "sourceResponsibility": "Refund notices",
+      "treatment": "MIXED: verified extraction or explicit reviewed manual capture; never invent source status.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-40",
+      "sourceResponsibility": "Generic manual entry",
+      "treatment": "LOCAL: typed, source-labeled reviewed facts for unsupported institutions.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-41",
+      "sourceResponsibility": "Import review screen",
+      "treatment": "FRONTEND/MIXED: implement full headless review/correction commands, not the finished screen.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-42",
+      "sourceResponsibility": "Repeat-import idempotence",
+      "treatment": "LOCAL: artifact/event identity, overlap ambiguity, multiplicity, atomic approval.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-43",
+      "sourceResponsibility": "Refund/bank reconciliation",
+      "treatment": "LOCAL: candidate/confirmed/rejected/unresolved match flows and coverage.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-44",
+      "sourceResponsibility": "Release corpus",
+      "treatment": "LOCAL: synthetic adversarial fixtures only; real-record pilot corpus needs separate consent/evidence.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-45",
+      "sourceResponsibility": "Unsupported-input failures",
+      "treatment": "LOCAL: typed failure states and manual-entry continuation contracts.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-46",
+      "sourceResponsibility": "Visual/language system",
+      "treatment": "FRONTEND/MIXED: machine-readable statuses and safe default explanation language only.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-47",
+      "sourceResponsibility": "Onboarding/first case",
+      "treatment": "FRONTEND/MIXED: seed demo and headless case/recovery contracts; no UI completion claim.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-48",
+      "sourceResponsibility": "Local case workspace",
+      "treatment": "LOCAL/MIXED: encrypted local store, offline commands, exports; visual workspace remains frontend.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-49",
+      "sourceResponsibility": "Timeline",
+      "treatment": "FRONTEND/MIXED: complete timeline projection model; finished rendering remains frontend.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-50",
+      "sourceResponsibility": "Why did this change?",
+      "treatment": "LOCAL/MIXED: complete comparison/explanation APIs and fixtures; visual interaction remains frontend.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-51",
+      "sourceResponsibility": "Discrepancy queue",
+      "treatment": "LOCAL/MIXED: deterministic findings/priorities/action codes; visual queue remains frontend.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-52",
+      "sourceResponsibility": "Evidence inspector",
+      "treatment": "LOCAL/MIXED: source/calculation traversal contracts; visual inspector remains frontend.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-53",
+      "sourceResponsibility": "Inquiry brief",
+      "treatment": "LOCAL/MIXED: redacted structured/text generation and export; editing UI and office usefulness remain later.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-54",
+      "sourceResponsibility": "Synthetic demo",
+      "treatment": "LOCAL/MIXED: complete native/headless-browser scenario; public demo hosting/UI excluded.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-55",
+      "sourceResponsibility": "Mobile/assistive use",
+      "treatment": "FRONTEND/EXTERNAL: no accessibility certification from headless backend tests.",
+      "scope": "FRONTEND",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "OUT_OF_BACKEND_SCOPE"
+    },
+    {
+      "id": "S-56",
+      "sourceResponsibility": "Managed signup/auth",
+      "treatment": "LOCAL/MIXED: real local identity integration; public signup/deployed sessions not enabled.",
+      "scope": "MIXED",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-57",
+      "sourceResponsibility": "Client encryption",
+      "treatment": "LOCAL: reviewed design, official-client encrypted requests, tamper/interop tests.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-58",
+      "sourceResponsibility": "Recovery key",
+      "treatment": "LOCAL/MIXED: tested recovery protocol and headless verification; user-facing key-save UX remains frontend.",
+      "scope": "MIXED",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-59",
+      "sourceResponsibility": "Encrypted sync/isolation",
+      "treatment": "LOCAL: authenticated API, PostgreSQL/RLS, real two-account tests.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-60",
+      "sourceResponsibility": "Device conflicts",
+      "treatment": "LOCAL: revision CAS, durable outbox, typed conflict, no silent overwrite.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-61",
+      "sourceResponsibility": "Portable export/restore",
+      "treatment": "LOCAL: encrypted archive, optional originals, atomic restore, semantic parity.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-62",
+      "sourceResponsibility": "Deletion/retention",
+      "treatment": "LOCAL/MIXED: tested lifecycle and tombstones; published legal promises require review.",
+      "scope": "MIXED",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-63",
+      "sourceResponsibility": "Quotas/abuse",
+      "treatment": "LOCAL: bounded local enforcement/concurrency tests; no public abuse-resistance guarantee.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-64",
+      "sourceResponsibility": "Deployment/configuration",
+      "treatment": "LOCAL/MIXED: local packaging/config checks and migration rehearsal only, no remote deployment.",
+      "scope": "MIXED",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-65",
+      "sourceResponsibility": "Backup/restore",
+      "treatment": "LOCAL/MIXED: fresh-stack local drills; independent hosted destination/operator remain external.",
+      "scope": "MIXED",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-66",
+      "sourceResponsibility": "Observability",
+      "treatment": "LOCAL: privacy-preserving logs/metrics; no hosted telemetry.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-67",
+      "sourceResponsibility": "Internal security",
+      "treatment": "LOCAL: threat-model tests, eligible local scans, actual finding resolution.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-68",
+      "sourceResponsibility": "Policies/terms",
+      "treatment": "MIXED: technical facts/limitations draft; qualified approval and publication remain external.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-69",
+      "sourceResponsibility": "Multi-user journey",
+      "treatment": "LOCAL: full headless/browser synthetic integration with actual local services.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-70",
+      "sourceResponsibility": "Real-record pilot",
+      "treatment": "EXTERNAL: no invented consenting users, outcomes, or real-data operation.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-71",
+      "sourceResponsibility": "Pilot blockers",
+      "treatment": "MIXED: fix actual known engineering defects; pilot-derived closure cannot precede a pilot.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-72",
+      "sourceResponsibility": "Load/quotas/client performance",
+      "treatment": "LOCAL: measured synthetic load/failure behavior on declared hardware.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-73",
+      "sourceResponsibility": "Independent security review",
+      "treatment": "EXTERNAL: additional AI review is not independent human review; keep the gate open.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-74",
+      "sourceResponsibility": "Operator/runbooks",
+      "treatment": "LOCAL/MIXED: write/test local procedures; real operator/on-call assignment remains external.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-75",
+      "sourceResponsibility": "Documentation",
+      "treatment": "LOCAL/MIXED: backend/contributor/local run docs; complete product UI docs wait for UI.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-76",
+      "sourceResponsibility": "Release rehearsal",
+      "treatment": "LOCAL/MIXED: local release-candidate drill, not approval of public service.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-77",
+      "sourceResponsibility": "Public signups",
+      "treatment": "EXCLUDED/EXTERNAL: explicitly forbidden during this assignment.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-78",
+      "sourceResponsibility": "Engineering/postlaunch report",
+      "treatment": "LOCAL/MIXED: local evidence package and tradeoffs; do not fabricate publication or postlaunch history.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    }
+  ]
+}

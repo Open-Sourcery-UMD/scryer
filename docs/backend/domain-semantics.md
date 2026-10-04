@@ -1,0 +1,27 @@
+# Domain semantics v1
+
+## Money and roles
+
+Only `USD` is supported. The cross-language monetary value is an integer number of cents in the signed 64-bit range `[-9223372036854775808, 9223372036854775807]`. JSON carries it as a canonical base-10 string: `0` or `-?[1-9][0-9]*`; `-0`, leading plus, leading zeros, exponents, fractions, and JSON numeric money are invalid. Intermediate arithmetic is checked before narrowing. A positive fact amount means magnitude, not an accounting sign. `school_credit` adds to school surplus; `school_charge` subtracts. `refund_issued` and `bank_credit_observed` are distinct evidence and never silently change the school surplus metric. `aid_offer`, `aid_pending`, `balance_snapshot`, and `work_study_offer` are not posted movements.
+
+Source decimal parsing accepts explicit US-style decimal point and optional grouped comma thousands only when grouping is valid, with at most two fractional digits. Parentheses or one leading minus may indicate a negative source value, but an adapter must state its column/sign convention before assigning a fact role. A value with both debit and credit, unknown locale, or more than two fractional digits needs review or an unsupported result. No binary float path is permitted.
+
+The source-based school surplus for one term and one approved knowledge snapshot is `sum(current approved school_credit magnitudes) - sum(current approved school_charge magnitudes)`. It is an accounting view of uploaded/reviewed evidence, not an entitlement or an expected refund. A `refund_issued` record and an observed bank credit are reported separately. No half-year allocation or institution-specific interpretation is inferred.
+
+## Identity and history
+
+Artifact identity, source location, proposal identity, fact identity, event identity, real-world movement identity, and sync identity are distinct. Exact unchanged source reimport is idempotent at the reviewed-command boundary; equal amount/date/description from separate source positions is not automatically a duplicate. Original source strings are retained locally and never normalized in place. A manually entered fact remains user asserted.
+
+The approved journal is an immutable directed acyclic graph. Each event has a unique ASCII ID, parent event IDs, an explicit UTC approval/record time, and one payload. A query identifies one or more approved heads. Its knowledge snapshot is the transitive ancestor closure of those heads, independent of input enumeration order. A wall-clock cutoff is only a mapping to recorded local snapshots; divergent offline branches can yield multiple candidates and must be labeled ambiguous rather than ordered by untrusted device clocks.
+
+`approve_fact` introduces one reviewed fact. `correct_fact` names the fact and replaces its magnitude or cancels it; it never adds a second financial movement. Two corrections to the same fact are ordered only when one causally descends the other. Concurrent incomparable corrections produce `CONTRADICTORY_EVIDENCE` until an explicit resolution event names the chosen branch. A cycle, missing parent, duplicate event ID, or event referring to a nonexistent fact is invalid. Observation/effective dates and approval times are distinct; an unreviewed proposal has no effect at any head.
+
+The first reference implementation supports the single-term school surplus and direct per-fact attribution. Later matching, coverage, and lifecycle queries must use the same journal and exact money primitives; their requirements remain open until tests and implementation exist. A future engine version may reanalyze old facts, but historical reproduction uses the recorded engine/rule version.
+
+## Attribution and uncertainty
+
+For school surplus, each current fact has signed contribution `+credit` or `-charge`. Comparing two heads computes each fact's before/after contribution and groups the exact difference by fact ID. The sum must equal the overall delta exactly. A match or coverage change with no monetary movement has zero monetary contribution and may alter evidence quality separately. Conflicting corrections make the comparison incomplete, never a guessed residual.
+
+`OBSERVED` means a source observation exists, without external authentication. `SUPPORTED_BY_UPLOADED_RECORDS` means the stated computation follows the selected reviewed uploads, without a completeness claim. `USER_ASSERTED` means a material fact depends on manual entry or user assertion. `PENDING`, `AMBIGUOUS`, `INSUFFICIENT_COVERAGE`, `CONTRADICTORY_EVIDENCE`, `UNSUPPORTED_INPUT`, and `COMPUTATION_LIMIT` have distinct typed meanings. A bank CSV's transaction extrema never establish full statement-period coverage. “No matching deposit in uploaded records” cannot become “never paid.”
+
+The synthetic golden case has approved school credits `650000` cents and charges `500000` cents, giving `150000` cents. A reviewed grant correction of `-30000` cents and a new charge of `30000` cents yield `90000` cents. The exact delta `-60000` cents has two `-30000` contributions. Refund issuance and bank observation are separate facts.
