@@ -105,10 +105,10 @@
 
 **Interfaces:** `evaluate(const Request&)->Response` supports capability/schema inspection, validate, current/historical/timeline, comparison, coverage, matching, discrepancy queue, source/calculation traversal, receipt, batch, and synthetic demo. CLI has `--help`, `--version`, `--input`, `--output`, stdin/stdout, typed nonzero failures, and no partial success output. Freeze each request/response variant in `docs/backend/contracts/engine-v1.md` before its implementation.
 
-- [ ] Add CLI integration tests for all named operations, error exit codes, 20 MiB input limit, stdout atomicity, explicit output paths, and the complete synthetic $1,500→$900 demo.
-- [ ] Run tests expecting missing operations.
-- [ ] Implement only contract-defined semantics; unsupported domain cases return typed unsupported/incomplete results, never placeholder success.
-- [ ] Run all 33 fixed corpus operations through the native CLI, 200 seeded differential cases, sanitizer build, and repeatability check; document any blocked coverage and commit Task M3-7.
+- [x] Add CLI integration tests for all named operations, error exit codes, 20 MiB input limit, stdout atomicity, explicit output paths, and the complete synthetic $1,500→$900 demo.
+- [x] Run tests expecting the missing CLI executable; the first run failed at that boundary.
+- [x] Implement only contract-defined semantics; unsupported domain cases return typed unsupported/incomplete errors, never placeholder success.
+- [x] Run all 33 fixed corpus operations through the native CLI, 200 seeded differential cases, sanitizer build, and repeatability check; record native-only limits and commit Task M3-7.
 
 ## Gate to M4
 

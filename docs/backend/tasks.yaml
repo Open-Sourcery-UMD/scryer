@@ -456,7 +456,7 @@
     {
       "id": "M3",
       "title": "Native C++20 production engine",
-      "status": "IN_PROGRESS",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": [
         "M2-7c"
       ],
@@ -474,7 +474,7 @@
         "tests/engine/",
         "docs/backend/contracts/engine-v1.md"
       ],
-      "interface": "Versioned JSON CLI operations validate, project, compare, receipt, demo; typed library API documented before implementation.",
+      "interface": "evaluate(Request)->Response and versioned JSON CLI for all operations in contracts/engine-v1.md.",
       "invariants": [
         "Checked i64 math",
         "No hidden time/network",
@@ -486,8 +486,8 @@
         "differential 200-case smoke",
         "sanitizer boundary tests"
       ],
-      "command": "Local engine build/test command to be frozen with chosen installed build tool",
-      "expected": "Native tests and parity pass; no skipped mandatory check is called PASS",
+      "command": "make -C engine cli; PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.engine.test_cli -q; make -C engine cli-sanitize; SCRYER_NATIVE_BIN=engine/build/scryer-native-sanitized PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.engine.test_cli -q",
+      "expected": "Native tests, 33 fixed corpus operations, 200 seeded cases, and sanitizer pass; WASM/browser remains M4",
       "risk": "HIGH",
       "done": "Native executable, CLI, and measured parity are locally verified."
     },

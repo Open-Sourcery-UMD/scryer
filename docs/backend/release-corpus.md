@@ -28,7 +28,7 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-22 | REFERENCE | Unrelated refund evidence does not alter school-surplus fact attribution. |
 | RC-23 | REFERENCE | Exact-money, overflow, precision, canonical form, and currency rejection tests. |
 | RC-24 | OPEN | Browser/PDF/CSV import failure and atomicity gates remain open. |
-| RC-25 | OPEN | Native and WASM engines are not built; no parity claim. |
+| RC-25 | PARTIAL | Native CLI is built and 33 fixed operations plus 200 seeded cases pass locally; WASM and real-browser parity remain open. |
 | RC-26 | REFERENCE | Independent checker catches arithmetic, digest, source, proposal, and aid-item tampering. |
 | RC-27 | OPEN | Device source-unavailable and hash reattachment workflow remains open. |
 | RC-28 | OPEN | Cryptographic envelope implementation and negative tests remain open. |
@@ -49,7 +49,7 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-43 | REFERENCE | Candidate cap returns `COMPUTATION_LIMIT`. |
 | RC-44 | OPEN | Browser worker/storage cancellation and recovery tests remain open. |
 | RC-45 | REFERENCE | Divergent heads and cutoff time inversions do not produce a global time winner. |
-| RC-46 | REFERENCE | Explicit local reproduction rebuilds the archived `school-surplus-1` receipt at its recorded heads and reference producer version. Reanalysis at new heads emits a separate `reference-0.2.0` receipt linked by prior digest; unknown versions are typed unsupported. This is reference behavior, not a production engine migration. |
+| RC-46 | PARTIAL | Reference and native CLI reproduce an archived `school-surplus-1` receipt at its recorded heads. Native reanalysis emits a separate `native-0.1.0` receipt linked by prior digest; reference compatibility labels are test-only. WASM/browser migration remains open. |
 | RC-47 | OPEN | Identity-provider account-disablement integration remains open. |
 | RC-48 | OPEN | Full local journey with external product network blocked remains open. |
 

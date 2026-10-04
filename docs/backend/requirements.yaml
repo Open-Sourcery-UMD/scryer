@@ -383,9 +383,9 @@
         "M4",
         "M9"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/engine/test_money.cpp", "tests/engine/test_json_boundary.cpp", "tests/engine/test_case.cpp"],
+      "evidence": ["M3 native unit targets and sanitizer CLI suite exit 0; WASM and broader hardening remain open"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-26",
@@ -398,9 +398,9 @@
         "M4",
         "M9"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/engine/test_projection.cpp", "tests/engine/test_cli.py"],
+      "evidence": ["M3 fixed and 200-seed native projection/history parity; native CLI suite exit 0"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-27",
@@ -413,9 +413,9 @@
         "M4",
         "M9"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/engine/test_coverage.cpp", "tests/engine/test_matching.cpp", "tests/engine/test_cli.py"],
+      "evidence": ["M3 fixed and 200-seed native evidence parity; native CLI suite exit 0"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-28",
@@ -428,9 +428,9 @@
         "M4",
         "M9"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/engine/test_receipt.cpp", "tests/engine/test_cli.py", "tests/reference/test_receipt.py"],
+      "evidence": ["M3 native receipts independently checked, fixed digests matched, CLI trace/compare verified"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-29",
@@ -443,9 +443,9 @@
         "M4",
         "M9"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/engine/test_cli.py"],
+      "evidence": ["M3 native CLI and shared core source built; WASM ABI/browser parity remains M4"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-30",
@@ -458,9 +458,9 @@
         "M4",
         "M9"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/engine/test_cli.py", "tests/reference/test_corpus.py"],
+      "evidence": ["M3 33 fixed manifest operations and 200 generated cases pass through native CLI; browser and 10000-case tier open"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-31",
@@ -473,9 +473,9 @@
         "M4",
         "M9"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/engine/test_cli.py", "tests/engine/test_json_boundary.cpp"],
+      "evidence": ["M3 address/undefined sanitizer CLI suite and bounded JSON inputs pass; fuzzing remains open"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-32",
@@ -488,9 +488,9 @@
         "M4",
         "M9"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/engine/benchmark_cli.py"],
+      "evidence": ["M3 reproducible native CLI golden and 2007-event synthetic latency/RSS baseline in verification.md; broader M9 study open"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-33",
