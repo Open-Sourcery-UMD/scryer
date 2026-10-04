@@ -36,6 +36,7 @@ def generate_case(seed: int) -> Case:
                 "role": role,
                 "amountMinor": str(amount),
                 "proposalId": None,
+                "aidItemId": None,
                 "effectiveDate": "2026-08-20",
                 "source": {"kind": "artifact", "artifactId": artifact_id, "location": f"row:{row}"},
                 "reviewId": f"review-{fact_id}",
@@ -47,6 +48,7 @@ def generate_case(seed: int) -> Case:
         "caseId": f"case-{tag}",
         "currency": "USD",
         "institutions": [{"institutionId": "institution-a"}],
+        "aidItems": [],
         "accountRefs": [{"accountRefId": "school-a", "kind": "school", "institutionId": "institution-a"}],
         "terms": [{
             "termId": "2026-fall",

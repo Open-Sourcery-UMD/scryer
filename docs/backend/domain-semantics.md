@@ -24,7 +24,9 @@ The approved journal is an immutable directed acyclic graph. Each event has a un
 
 Every correction event directly names the original fact-approval event as a parent. A later correction also names the earlier correction as a parent when it supersedes that decision. This keeps causal validation bounded and makes concurrent branches visible.
 
-The first reference implementation supports the single-term school surplus and direct per-fact attribution. Later matching, coverage, and lifecycle queries must use the same journal and exact money primitives; their requirements remain open until tests and implementation exist. A future engine version may reanalyze old facts, but historical reproduction uses the recorded engine/rule version.
+The local Python reference supports single-term school surplus, per-fact attribution, reviewed bank coverage, conservative matching, and evidence-only aid-item lifecycle views. C++/WASM parity and the full historical release corpus remain open. A future engine version may reanalyze old facts, but historical reproduction uses the recorded engine/rule version.
+
+An aid item links only facts explicitly assigned to it. Its institution, optional term, and recipient kind are local reviewed metadata, not institution authentication. Annual offers are not split into term amounts. `aid_offer`, `aid_accepted`, `aid_pending`, and `work_study_offer` remain snapshot/evidence stages, not posted credits; linked `school_credit` facts are the only posted amount in the item lifecycle. Canceled snapshots remain in observations but no longer supply an active current snapshot. Two unreconciled active offer snapshots are ambiguous. Later observed stages do not create missing earlier stages. Parent/third-party recipient metadata requires a recipient verification action before any student-account claim. The lifecycle projection never computes legal entitlement or an expected refund.
 
 ## Attribution and uncertainty
 

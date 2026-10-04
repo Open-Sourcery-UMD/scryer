@@ -11,6 +11,7 @@ def minimal_case():
         "caseId": "case-a",
         "currency": "USD",
         "institutions": [{"institutionId": "institution-a"}],
+        "aidItems": [],
         "accountRefs": [
             {"accountRefId": "school-a", "kind": "school", "institutionId": "institution-a"},
             {"accountRefId": "bank-a", "kind": "bank", "institutionId": None},
@@ -48,6 +49,7 @@ def minimal_case():
                     "role": "school_credit",
                     "amountMinor": "650000",
                     "proposalId": None,
+                    "aidItemId": None,
                     "effectiveDate": "2026-08-20",
                     "source": {"kind": "artifact", "artifactId": "bill-a", "location": "row:1"},
                     "reviewId": "review-credit",
@@ -198,6 +200,7 @@ class CaseParserTests(unittest.TestCase):
                     "role": "school_charge",
                     "amountMinor": "500000",
                     "proposalId": None,
+                    "aidItemId": None,
                     "effectiveDate": "2026-08-21",
                     "source": {"kind": "artifact", "artifactId": "bill-a", "location": "row:2"},
                     "reviewId": "review-charge",

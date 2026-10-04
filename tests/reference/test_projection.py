@@ -128,6 +128,7 @@ class ProjectionTests(unittest.TestCase):
                     "role": "school_credit",
                     "amountMinor": "5000",
                     "proposalId": None,
+                    "aidItemId": None,
                     "effectiveDate": "2026-08-20",
                     "source": {"kind": "manual", "entryId": "b-credit-entry"},
                     "reviewId": "review-b-credit",

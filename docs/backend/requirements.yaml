@@ -255,10 +255,12 @@
         "M2"
       ],
       "tests": [
-        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens"
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens",
+        "tests/reference/test_lifecycle.py — split postings, annual offers, accepted/pending snapshots, parent recipient, work-study, corrections"
       ],
       "evidence": [
-        "M2-3 red-green run; 36-test reference suite exit 0 before commit"
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit",
+        "M2-6c red-green run; 107-test reference suite exit 0 before local commit"
       ],
       "status": "IN_PROGRESS"
     },

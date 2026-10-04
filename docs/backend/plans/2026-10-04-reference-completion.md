@@ -43,11 +43,11 @@
 
 **Files:** case contract/model, `scryer_reference/lifecycle.py`, finding contract, synthetic fixtures, `tests/reference/test_lifecycle.py`.
 
-**Interface:** A stable aid-item identity links only explicitly related offer/acceptance/pending/posting evidence; unknown links remain unknown. `project_aid_lifecycle(case, heads, term_id, aid_item_id)` returns observed state facts and stable findings/next-action codes. It must not infer eligibility, a mandatory sequence, or an expected refund from surplus alone.
+**Interface:** `AidItem(aidItemId, institutionId, termId|null, recipientKind)` stores a local explicit relationship, not institutional authentication. `Fact.aidItemId` is nullable; only linked aid offer, acceptance, pending, work-study offer, and school credit facts enter an item lifecycle. Annual items have a null term and cannot be allocated to a term implicitly. `project_aid_lifecycle(case, heads, term_id, aid_item_id)` returns observed stages, exact posted cents, and stable finding/next-action codes. Multiple offer snapshots without an explicit correction remain ambiguous. It must not infer eligibility, a mandatory sequence, or an expected refund from surplus alone.
 
-- [ ] Freeze role and aid-item schema with negative tests for no implicit annual-to-term split, work-study, parent/third-party recipient, pending replacement, balance snapshot, and out-of-order evidence.
-- [ ] Implement lifecycle evidence projection and deterministic finding categories with source references.
-- [ ] Test corrected/canceled/split aid and multiple terms; run full suite and commit coherent passing change.
+- [x] Freeze role and aid-item schema with negative tests for no implicit annual-to-term split, work-study, parent recipient, pending replacement, balance snapshot, and out-of-order evidence.
+- [x] Implement lifecycle evidence projection and deterministic finding/next-action codes with approved fact/source links.
+- [x] Test corrected/canceled/split aid and multiple terms; run full suite and commit coherent passing change.
 
 ### Task 4 — M2-6d: Historical mapping and release corpus
 

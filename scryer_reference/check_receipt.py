@@ -22,7 +22,7 @@ _TOP_KEYS = frozenset(
 )
 _STEP_KEYS = frozenset(
     {
-        "factId", "proposalId", "proposedAmountMinor", "parserVersion", "mappingVersion", "role", "originalAmountMinor", "currentAmountMinor",
+        "factId", "aidItemId", "proposalId", "proposedAmountMinor", "parserVersion", "mappingVersion", "role", "originalAmountMinor", "currentAmountMinor",
         "contributionMinor", "approvalEventId", "correctionEventId", "sourceRef",
         "originalSourceRef",
         "approvalReviewId", "approvalRecordedAt", "correctionReviewId", "correctionRecordedAt", "effectiveDate",
@@ -211,6 +211,8 @@ def check_receipt(case: Case, receipt: dict[str, object]) -> CheckResult:
         fact = approval.fact
         if fact is None:
             return _failed("INVALID_REFERENCE")
+        if step["aidItemId"] != fact.aid_item_id:
+            return _failed("AID_ITEM_MISMATCH")
         latest = _latest_correction(corrections.get(fact_id, []))
         if latest is False:
             return _failed("CONTRADICTORY_EVIDENCE")

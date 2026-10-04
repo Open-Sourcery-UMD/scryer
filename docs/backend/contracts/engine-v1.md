@@ -6,6 +6,8 @@ The versioned request is UTF-8 JSON with duplicate object keys rejected at the b
 
 An extraction proposal retains its raw source value, source artifact and position, parser/mapping versions, and nullable normalized proposed cents. An approved fact has nullable `proposalId`. A linked approval must cite the same artifact and source location and each proposal may create at most one approved fact. A null link denotes manual transcription from the cited artifact or a separately marked manual fact. The approved amount may differ from proposed cents after review; the proposal and its original value remain unchanged. Corrections retain their own source/review event. The supported receipt includes proposal ID, proposed cents, and parser/mapping versions for each participating fact, or nulls for manual transcription; raw strings remain in the local case rather than the canonical receipt.
 
+The local reference now has explicit `AidItem(aidItemId, institutionId, termId|null, recipientKind)` records and nullable `Fact.aidItemId`. Linked aid offer, accepted, pending, work-study offer, and school credit facts may form an evidence-only lifecycle. An annual item has a null term and cannot be silently allocated to a term. Offer/accepted/pending records are snapshots, not school-account movements; only linked posted school credits sum into `postedMinor`. Multiple active offer snapshots are ambiguous until reviewed resolution. Parent/third-party recipient metadata produces a verification finding and does not prove a student refund. Surplus receipts include the aid-item ID of each participating fact and the independent checker validates it.
+
 For M2 the executable operations are:
 
 - `validate_case(case) -> validated case | typed error`.

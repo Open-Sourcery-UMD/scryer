@@ -376,7 +376,7 @@
     {
       "id": "M2-6c",
       "title": "Aid lifecycle evidence and findings",
-      "status": "IN_PROGRESS",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": ["M2-6b"],
       "requirements": ["S-18", "S-19", "S-21", "S-22", "S-24"],
       "scope": "Model explicitly linked aid-item evidence stages and deterministic non-entitlement findings.",
@@ -392,7 +392,7 @@
     {
       "id": "M2-6d",
       "title": "Historical mapping and release corpus",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "dependsOn": ["M2-6c"],
       "requirements": ["S-16", "S-19", "S-22", "S-23", "S-24", "S-26"],
       "scope": "Map declared as-known cutoffs to approved causal heads and freeze hand-checked synthetic parity scenarios.",

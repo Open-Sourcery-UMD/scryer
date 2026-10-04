@@ -22,6 +22,7 @@ _ROLES = frozenset(
         "refund_issued",
         "bank_credit_observed",
         "aid_offer",
+        "aid_accepted",
         "aid_pending",
         "balance_snapshot",
         "work_study_offer",
@@ -78,6 +79,14 @@ class AcademicTerm:
 
 
 @dataclass(frozen=True)
+class AidItem:
+    aid_item_id: str
+    institution_id: str
+    term_id: str | None
+    recipient_kind: str
+
+
+@dataclass(frozen=True)
 class Proposal:
     proposal_id: str
     artifact_id: str
@@ -97,6 +106,7 @@ class Fact:
     role: str
     amount_minor: int
     proposal_id: str | None
+    aid_item_id: str | None
     effective_date: str | None
     source: SourceRef
     review_id: str
@@ -159,6 +169,7 @@ class Case:
     currency: str
     institutions: tuple[Institution, ...]
     terms: tuple[AcademicTerm, ...]
+    aid_items: tuple[AidItem, ...]
     account_refs: tuple[AccountRef, ...]
     artifacts: tuple[Artifact, ...]
     proposals: tuple[Proposal, ...]
@@ -318,6 +329,25 @@ def _term(value: Any, institution_ids: set[str], account_refs: dict[str, Account
     )
 
 
+def _aid_item(value: Any, institution_ids: set[str], terms: dict[str, AcademicTerm]) -> AidItem:
+    value = _fields(value, {"aidItemId", "institutionId", "termId", "recipientKind"})
+    institution_id = _identifier(value["institutionId"])
+    if institution_id not in institution_ids:
+        raise ModelError("MISSING_INSTITUTION")
+    term_id = value["termId"]
+    if term_id is not None:
+        term_id = _identifier(term_id)
+        term = terms.get(term_id)
+        if term is None:
+            raise ModelError("MISSING_TERM")
+        if term.institution_id != institution_id:
+            raise ModelError("AID_ITEM_INSTITUTION_MISMATCH")
+    recipient = value["recipientKind"]
+    if type(recipient) is not str or recipient not in {"student", "parent", "third_party", "unknown"}:
+        raise ModelError("INVALID_RECIPIENT_KIND")
+    return AidItem(_identifier(value["aidItemId"]), institution_id, term_id, recipient)
+
+
 def _artifact(value: Any, account_refs: dict[str, AccountRef]) -> Artifact:
     value = _fields(value, {"artifactId", "sha256", "kind", "observedAt", "accountRefId"})
     sha256 = value["sha256"]
@@ -373,10 +403,11 @@ def _fact(
     accounts: dict[str, AccountRef],
     artifacts: dict[str, Artifact],
     proposals: dict[str, Proposal],
+    aid_items: dict[str, AidItem],
 ) -> Fact:
     value = _fields(
         value,
-        {"factId", "termId", "accountRefId", "currency", "role", "amountMinor", "proposalId", "effectiveDate", "source", "reviewId"},
+        {"factId", "termId", "accountRefId", "aidItemId", "currency", "role", "amountMinor", "proposalId", "effectiveDate", "source", "reviewId"},
     )
     role = value["role"]
     if type(role) is not str or role not in _ROLES:
@@ -384,6 +415,8 @@ def _fact(
     if role == "bank_credit_observed":
         if value["termId"] is not None:
             raise ModelError("INVALID_TERM_BINDING")
+        term_id = None
+    elif role in {"aid_offer", "aid_accepted", "aid_pending", "work_study_offer"} and value["termId"] is None:
         term_id = None
     else:
         term_id = _identifier(value["termId"])
@@ -405,8 +438,18 @@ def _fact(
         if account_id != terms[term_id].school_account_ref_id:
             raise ModelError("TERM_ACCOUNT_MISMATCH")
     elif account is not None:
-        if account.kind != "school" or account_id != terms[term_id].school_account_ref_id:
+        if term_id is None or account.kind != "school" or account_id != terms[term_id].school_account_ref_id:
             raise ModelError("TERM_ACCOUNT_MISMATCH")
+    aid_item_id = value["aidItemId"]
+    if aid_item_id is not None:
+        aid_item_id = _identifier(aid_item_id)
+        item = aid_items.get(aid_item_id)
+        if item is None:
+            raise ModelError("MISSING_AID_ITEM")
+        if role not in {"aid_offer", "aid_accepted", "aid_pending", "work_study_offer", "school_credit"}:
+            raise ModelError("ROLE_AID_ITEM_MISMATCH")
+        if item.term_id != term_id:
+            raise ModelError("AID_ITEM_TERM_MISMATCH")
     source = _source(value["source"], set(artifacts))
     if source.artifact_id is not None:
         artifact_account_id = artifacts[source.artifact_id].account_ref_id
@@ -432,6 +475,7 @@ def _fact(
         role=role,
         amount_minor=_nonnegative_money(value["amountMinor"]),
         proposal_id=proposal_id,
+        aid_item_id=aid_item_id,
         effective_date=_source_date(value["effectiveDate"]),
         source=source,
         review_id=_identifier(value["reviewId"]),
@@ -532,6 +576,7 @@ def _event(
     accounts: dict[str, AccountRef],
     artifacts: dict[str, Artifact],
     proposals: dict[str, Proposal],
+    aid_items: dict[str, AidItem],
 ) -> Event:
     if type(value) is not dict:
         raise ModelError("INVALID_SCHEMA")
@@ -539,7 +584,7 @@ def _event(
     common = {"eventId", "parents", "recordedAt", "kind"}
     if kind == "approve_fact":
         value = _fields(value, common | {"fact"})
-        fact = _fact(value["fact"], terms, accounts, artifacts, proposals)
+        fact = _fact(value["fact"], terms, accounts, artifacts, proposals, aid_items)
         correction = None
         coverage = None
         retraction = None
@@ -632,7 +677,7 @@ def load_case_json(document: str) -> Case:
         raise ModelError("INVALID_JSON") from error
     raw = _fields(
         raw,
-        {"schemaVersion", "caseId", "currency", "institutions", "accountRefs", "terms", "artifacts", "proposals", "events"},
+        {"schemaVersion", "caseId", "currency", "institutions", "accountRefs", "terms", "aidItems", "artifacts", "proposals", "events"},
     )
     if raw["schemaVersion"] != "1":
         raise ModelError("UNSUPPORTED_VERSION")
@@ -649,6 +694,10 @@ def load_case_json(document: str) -> Case:
     terms_by_id = {term.term_id: term for term in terms}
     if len(terms_by_id) != len(terms):
         raise ModelError("DUPLICATE_TERM_ID")
+    aid_items = tuple(_aid_item(value, institution_ids, terms_by_id) for value in _array(raw["aidItems"]))
+    aid_items_by_id = {item.aid_item_id: item for item in aid_items}
+    if len(aid_items_by_id) != len(aid_items):
+        raise ModelError("DUPLICATE_AID_ITEM_ID")
     artifacts = tuple(_artifact(value, accounts_by_id) for value in _array(raw["artifacts"]))
     artifacts_by_id = {artifact.artifact_id: artifact for artifact in artifacts}
     if len(artifacts_by_id) != len(artifacts):
@@ -658,7 +707,7 @@ def load_case_json(document: str) -> Case:
     if len(proposals_by_id) != len(proposals):
         raise ModelError("DUPLICATE_PROPOSAL_ID")
     events = tuple(
-        _event(value, terms_by_id, accounts_by_id, artifacts_by_id, proposals_by_id)
+        _event(value, terms_by_id, accounts_by_id, artifacts_by_id, proposals_by_id, aid_items_by_id)
         for value in _array(raw["events"])
     )
     ordered = _ordered_events(events)
@@ -721,6 +770,7 @@ def load_case_json(document: str) -> Case:
         currency=currency,
         institutions=tuple(sorted(institutions, key=lambda institution: institution.institution_id)),
         terms=tuple(sorted(terms, key=lambda term: term.term_id)),
+        aid_items=tuple(sorted(aid_items, key=lambda item: item.aid_item_id)),
         account_refs=tuple(sorted(accounts, key=lambda account: account.account_ref_id)),
         artifacts=tuple(sorted(artifacts, key=lambda artifact: artifact.artifact_id)),
         proposals=tuple(sorted(proposals, key=lambda proposal: proposal.proposal_id)),

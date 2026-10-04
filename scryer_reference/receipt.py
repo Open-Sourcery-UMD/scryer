@@ -93,6 +93,7 @@ def make_school_surplus_receipt(case: Case, heads: tuple[str, ...], term_id: str
         steps.append(
             {
                 "factId": fact_id,
+                "aidItemId": fact.aid_item_id,
                 "proposalId": fact.proposal_id,
                 "proposedAmountMinor": (
                     str(proposal.proposed_amount_minor)
