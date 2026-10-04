@@ -158,7 +158,7 @@
     {
       "id": "M2-3",
       "title": "School-surplus projection and attribution",
-      "status": "NOT_STARTED",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": [
         "M2-2"
       ],

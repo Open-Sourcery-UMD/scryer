@@ -252,9 +252,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens"
+      ],
+      "evidence": [
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-19",
@@ -265,9 +269,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens"
+      ],
+      "evidence": [
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-20",
@@ -291,9 +299,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens"
+      ],
+      "evidence": [
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-22",
@@ -304,9 +316,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens"
+      ],
+      "evidence": [
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-23",
