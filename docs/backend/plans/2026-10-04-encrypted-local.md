@@ -55,10 +55,12 @@
 
 **Requirements:** S-57, S-58; depends on Task 1. **Interfaces:** `createAccountKeys`, `unlockRecovery`, `verifyRecoverySecret`, `AccountSession.lock`, `sealCase`, `openCase`. **Risk:** critical, plaintext confidentiality/integrity.
 
-- [ ] Write failing Node/browser tests for random root/recovery generation, second-device unlock, wrong key, re-entry verification, lock, strict encoding, ciphertext randomization, independent Node decryption, every AAD binding, chunk loss/duplicate/reorder/mixing, tamper, downgrade, and limits.
-- [ ] Run tests expecting missing crypto modules.
-- [ ] Implement strict codecs and WebCrypto calls using platform primitives only; buffer all decrypted chunks until every tag validates.
-- [ ] Run independent interoperability, typecheck, real-browser negative suite, native/reference regression; commit M6-2.
+- [x] Write failing Node/browser tests for random root/recovery generation, second-device unlock, wrong key, re-entry verification, lock, strict encoding, ciphertext randomization, independent Node decryption, AAD binding, chunk loss/duplicate/reorder/mixing, tamper, downgrade, and limits.
+- [x] Run tests expecting missing crypto modules.
+- [x] Implement strict codecs and WebCrypto calls using platform primitives only; buffer all decrypted chunks until every tag validates.
+- [x] Run independent interoperability, typecheck, real-browser negative suite, native/reference regression; commit M6-2.
+
+Task 2 implements crypto primitives. Its sealing API does not itself reserve the durable per-key encryption budget; Task 3 must require a persisted reservation on every repository seal path before the storage flow is ready. Serialized archive canonicality is also a Task 4 ingress gate.
 
 ## Task 3 — IndexedDB atomic local repository and outbox
 

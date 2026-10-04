@@ -31,9 +31,9 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-25 | PARTIAL | Native CLI is built and 33 fixed operations plus 200 seeded cases pass locally; WASM and real-browser parity remain open. |
 | RC-26 | REFERENCE | Independent checker catches arithmetic, digest, source, proposal, and aid-item tampering. |
 | RC-27 | PARTIAL | Browser helper reports `SOURCE_UNAVAILABLE` without local original, `HASH_MISMATCH` for wrong bytes, and `AVAILABLE` after a SHA-256 match; durable device workflow remains open. |
-| RC-28 | OPEN | Cryptographic envelope implementation and negative tests remain open. |
-| RC-29 | OPEN | Second-device recovery implementation remains open. |
-| RC-30 | OPEN | Re-encryption equality/freshness test remains open. |
+| RC-28 | PARTIAL | WebCrypto and Chrome reject changed bindings, bad tags, wrong keys, chunk loss, and later-chunk tamper without returning partial plaintext; stored-record and sync transport gates remain open. |
+| RC-29 | PARTIAL | A fresh Chrome page unwraps a synthetic case with the 32-byte recovery secret; encrypted archive and complete second-device workflow remain open. |
+| RC-30 | PARTIAL | Re-encrypting an equal case/revision generates fresh package IDs and nonces and both versions decrypt; durable encryption-use reservations and persisted generations remain open. |
 | RC-31 | OPEN | Official-client/server plaintext sentinel test remains open. |
 | RC-32 | OPEN | Real identity and cross-tenant API tests remain open. |
 | RC-33 | OPEN | PostgreSQL RLS/application-role tests remain open. |

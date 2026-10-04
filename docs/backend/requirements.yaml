@@ -901,11 +901,14 @@
         "M8"
       ],
       "tests": [
-        "tests/crypto/test_vectors.mjs — fixed independent Node/OpenSSL HKDF/AES-GCM bytes"
+        "tests/crypto/test_vectors.mjs — fixed independent Node/OpenSSL HKDF/AES-GCM bytes",
+        "tests/client/test_crypto.mjs — WebCrypto interop, strict envelopes, tamper, chunk atomicity",
+        "tests/browser/test_crypto.mjs — real Chrome fixed-vector open and independent browser-to-Node decrypt"
       ],
       "evidence": [
-        "M6 design selected locally in docs/backend/security/local-storage-design.md; executable crypto and independent review remain open",
-        "M6-1 crypto-v1 format frozen; three Node vector checks and generator/fixture equality exit 0; browser implementation open"
+        "M6 design selected locally in docs/backend/security/local-storage-design.md; independent review remains open",
+        "M6-1 crypto-v1 format frozen; three Node vector checks and generator/fixture equality exit 0",
+        "M6-2 WebCrypto primitives pass headless and Chrome interop/tamper checks; durable encryption-use budget, persistence, official-client sync and independent review remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -920,9 +923,14 @@
         "M7",
         "M8"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/client/test_crypto.mjs — recovery re-entry, wrong secret and second-device unlock",
+        "tests/browser/test_crypto.mjs — fresh Chrome page recovery"
+      ],
+      "evidence": [
+        "M6-2 high-entropy recovery secret and authenticated root wrapper pass local tests; backup and end-to-end recovery flow remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-59",
