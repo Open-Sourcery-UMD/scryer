@@ -20,14 +20,14 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-14 | REFERENCE | Named reversal fixture retains the 90000-cent historical view, then a source-backed grant correction yields 70000 cents; before/after receipts and exact attribution are fixed in the corpus. Import versioning remains M5 work. |
 | RC-15 | REFERENCE | A reviewed charge cancellation after the corrected source yields 100000 cents. Exact +10000-cent net change equals −20000 for the grant and +30000 for the cancelled charge; both original and corrected source references survive in checked receipts. |
 | RC-16 | REFERENCE | Account coverage gap returns `INSUFFICIENT_COVERAGE`. |
-| RC-17 | PARTIAL | Bank observations do not imply period coverage; real CSV adapter behavior remains open. |
+| RC-17 | PARTIAL | Native bank observations do not imply period coverage. The new synthetic generic CSV extractor emits no coverage assertion from transaction extrema; reviewed coverage and real-format evidence remain open. |
 | RC-18 | REFERENCE | Matching never authenticates an uploaded bank source; explicit limitation code. |
 | RC-19 | REFERENCE | Event permutation and changed review time are distinct history tests. |
 | RC-20 | REFERENCE | Unreviewed proposals do not affect projection or matching. |
 | RC-21 | REFERENCE | Competing correction fixture remains contradictory and historically ambiguous. |
 | RC-22 | REFERENCE | Unrelated refund evidence does not alter school-surplus fact attribution. |
 | RC-23 | REFERENCE | Exact-money, overflow, precision, canonical form, and currency rejection tests. |
-| RC-24 | OPEN | Browser/PDF/CSV import failure and atomicity gates remain open. |
+| RC-24 | PARTIAL | Headless CSV rejects malformed UTF-8/quotes and byte/row/column/field/cell limits; browser/PDF failure and atomic review gates remain open. |
 | RC-25 | PARTIAL | Native CLI is built and 33 fixed operations plus 200 seeded cases pass locally; WASM and real-browser parity remain open. |
 | RC-26 | REFERENCE | Independent checker catches arithmetic, digest, source, proposal, and aid-item tampering. |
 | RC-27 | OPEN | Device source-unavailable and hash reattachment workflow remains open. |

@@ -526,7 +526,7 @@
     {
       "id": "M5",
       "title": "Reviewed local ingestion",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "dependsOn": [
         "M2-4"
       ],
@@ -561,7 +561,7 @@
         "atomic repeated review",
         "limits and cancellation"
       ],
-      "command": "Freeze local headless/browser test command after package setup",
+      "command": "cd client && npm ci --offline --ignore-scripts --no-audit --no-fund && npm run typecheck && npm test; browser/review commands remain Task M5-2..4",
       "expected": "Supported adapters pass; UMD compatibility remains BLOCKED_EXTERNAL absent authentic evidence",
       "risk": "HIGH",
       "done": "Browser-backed reviewed import is verified for only declared formats."

@@ -501,9 +501,9 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/client/test_bank_csv.mjs"],
+      "evidence": ["M5-1 pinned CSV contract, offline TypeScript typecheck, and synthetic adapter tests pass; full conformance remains open"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-34",
@@ -514,9 +514,9 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/client/test_bank_csv.mjs"],
+      "evidence": ["M5-1 hostile UTF-8/CSV and byte/row/column/field/cell limits pass; browser worker/cancellation open"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-35",
@@ -527,9 +527,9 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/client/test_bank_csv.mjs"],
+      "evidence": ["M5-1 exact mapped CSV proposals, stable source positions, repeated-row multiplicity, and account-bound artifact IDs pass; review open"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-36",
@@ -540,9 +540,9 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": ["tests/client/test_bank_csv.mjs"],
+      "evidence": ["M5-1 generic CSV extractor emits no coverage assertion; reviewed source/user period commands open"],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-37",
