@@ -32,6 +32,9 @@ class LifecycleResult:
     finding_codes: tuple[str, ...]
     next_action_codes: tuple[str, ...]
     limitation_codes: tuple[str, ...]
+    gross_disbursed_minor: int | None = None
+    withheld_fee_minor: int | None = None
+    unexplained_difference_minor: int | None = None
 
 
 def _snapshot_amount(event: Event, corrections: dict[str, list[Event]]) -> tuple[int, str]:
@@ -117,8 +120,27 @@ def project_aid_lifecycle(
         return None
 
     posted = checked_add(0, sum(item.current_amount_minor for item in by_role.get("school_credit", [])))
+    gross = (
+        checked_add(0, sum(entry.current_amount_minor for entry in by_role["aid_gross_disbursement"]))
+        if by_role.get("aid_gross_disbursement") else None
+    )
+    fee = (
+        checked_add(0, sum(entry.current_amount_minor for entry in by_role["aid_fee_withheld"]))
+        if by_role.get("aid_fee_withheld") else None
+    )
+    unexplained = None
     findings: set[str] = set()
     actions: set[str] = set()
+    if gross is not None and by_role.get("school_credit"):
+        unexplained = checked_add(checked_add(gross, -(fee or 0)), -posted)
+        if fee is None:
+            findings.add("FEE_EVIDENCE_MISSING")
+        if unexplained != 0:
+            findings.add("GROSS_NET_GAP_UNEXPLAINED")
+            actions.add("REVIEW_DISBURSEMENT_DETAILS")
+    elif fee is not None and gross is None:
+        findings.add("GROSS_DISBURSEMENT_NOT_OBSERVED")
+        actions.add("REVIEW_DISBURSEMENT_DETAILS")
     for role, code in (("aid_offer", "MULTIPLE_OFFER_SNAPSHOTS"),
                        ("aid_accepted", "MULTIPLE_ACCEPTANCE_SNAPSHOTS"),
                        ("aid_pending", "MULTIPLE_PENDING_SNAPSHOTS")):
@@ -175,4 +197,7 @@ def project_aid_lifecycle(
         finding_codes=tuple(sorted(findings)),
         next_action_codes=tuple(sorted(actions)),
         limitation_codes=tuple(sorted(base_limits)),
+        gross_disbursed_minor=gross,
+        withheld_fee_minor=fee,
+        unexplained_difference_minor=unexplained,
     )

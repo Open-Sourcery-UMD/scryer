@@ -8,7 +8,8 @@
     "manual": "../fixtures/manual-case.json",
     "split": "../fixtures/split-case.json",
     "annual": "../fixtures/annual-case.json",
-    "recipient": "../fixtures/recipient-case.json"
+    "recipient": "../fixtures/recipient-case.json",
+    "gross_net": "../fixtures/gross-net-case.json"
   },
   "operations": [
     {
@@ -150,6 +151,9 @@
         "status": "SUPPORTED_BY_UPLOADED_RECORDS",
         "postedMinor": "650000",
         "currentOfferMinor": null,
+        "grossDisbursedMinor": null,
+        "withheldFeeMinor": null,
+        "unexplainedDifferenceMinor": null,
         "findingCodes": ["ACCEPTANCE_NOT_OBSERVED", "OFFER_NOT_OBSERVED"]
       }
     },
@@ -164,6 +168,9 @@
         "status": "SUPPORTED_BY_UPLOADED_RECORDS",
         "postedMinor": "620000",
         "currentOfferMinor": "700000",
+        "grossDisbursedMinor": null,
+        "withheldFeeMinor": null,
+        "unexplainedDifferenceMinor": null,
         "findingCodes": ["ACCEPTANCE_NOT_OBSERVED"]
       }
     },
@@ -283,6 +290,9 @@
         "status": "UNSUPPORTED_INPUT",
         "postedMinor": "0",
         "currentOfferMinor": null,
+        "grossDisbursedMinor": null,
+        "withheldFeeMinor": null,
+        "unexplainedDifferenceMinor": null,
         "findingCodes": ["ANNUAL_UNALLOCATED"]
       }
     },
@@ -312,6 +322,57 @@
         "candidateFactIds": [],
         "remainingMinor": "0",
         "confirmedAllocations": [{"bankFactId": "bank-credit", "allocatedMinor": "90000"}]
+      }
+    },
+    {
+      "id": "gross-net-offer-only",
+      "case": "gross_net",
+      "operation": "lifecycle",
+      "heads": ["event-offer"],
+      "termId": "2026-fall",
+      "aidItemId": "loan-a",
+      "expected": {
+        "status": "OBSERVED",
+        "postedMinor": "0",
+        "currentOfferMinor": "100000",
+        "grossDisbursedMinor": null,
+        "withheldFeeMinor": null,
+        "unexplainedDifferenceMinor": null,
+        "findingCodes": []
+      }
+    },
+    {
+      "id": "gross-net-before-fee",
+      "case": "gross_net",
+      "operation": "lifecycle",
+      "heads": ["event-posted"],
+      "termId": "2026-fall",
+      "aidItemId": "loan-a",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "postedMinor": "99000",
+        "currentOfferMinor": "100000",
+        "grossDisbursedMinor": "100000",
+        "withheldFeeMinor": null,
+        "unexplainedDifferenceMinor": "1000",
+        "findingCodes": ["ACCEPTANCE_NOT_OBSERVED", "FEE_EVIDENCE_MISSING", "GROSS_NET_GAP_UNEXPLAINED"]
+      }
+    },
+    {
+      "id": "gross-net-after-fee",
+      "case": "gross_net",
+      "operation": "lifecycle",
+      "heads": ["event-fee"],
+      "termId": "2026-fall",
+      "aidItemId": "loan-a",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "postedMinor": "99000",
+        "currentOfferMinor": "100000",
+        "grossDisbursedMinor": "100000",
+        "withheldFeeMinor": "1000",
+        "unexplainedDifferenceMinor": "0",
+        "findingCodes": ["ACCEPTANCE_NOT_OBSERVED"]
       }
     }
   ]

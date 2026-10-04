@@ -67,6 +67,9 @@ def semantic_result(case, operation):
             "status": result.status,
             "postedMinor": str(result.posted_minor) if result.posted_minor is not None else None,
             "currentOfferMinor": str(result.current_offer_minor) if result.current_offer_minor is not None else None,
+            "grossDisbursedMinor": str(result.gross_disbursed_minor) if result.gross_disbursed_minor is not None else None,
+            "withheldFeeMinor": str(result.withheld_fee_minor) if result.withheld_fee_minor is not None else None,
+            "unexplainedDifferenceMinor": str(result.unexplained_difference_minor) if result.unexplained_difference_minor is not None else None,
             "findingCodes": list(result.finding_codes),
         }
     raise AssertionError(f"Unrecognized corpus operation: {kind}")

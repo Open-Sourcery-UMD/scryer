@@ -424,7 +424,7 @@
     {
       "id": "M2-7b",
       "title": "Gross-net aid evidence",
-      "status": "NOT_STARTED",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": ["M2-7a"],
       "requirements": ["S-18", "S-19", "S-22", "S-24"],
       "scope": "Separate gross loan offer, source-backed withheld fee, and net posted school credit.",

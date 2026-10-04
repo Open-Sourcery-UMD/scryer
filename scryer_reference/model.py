@@ -24,6 +24,8 @@ _ROLES = frozenset(
         "aid_offer",
         "aid_accepted",
         "aid_pending",
+        "aid_gross_disbursement",
+        "aid_fee_withheld",
         "balance_snapshot",
         "work_study_offer",
     }
@@ -462,11 +464,21 @@ def _fact(
         item = aid_items.get(aid_item_id)
         if item is None:
             raise ModelError("MISSING_AID_ITEM")
-        if role not in {"aid_offer", "aid_accepted", "aid_pending", "work_study_offer", "school_credit"}:
+        if role not in {"aid_offer", "aid_accepted", "aid_pending", "aid_gross_disbursement", "aid_fee_withheld", "work_study_offer", "school_credit"}:
             raise ModelError("ROLE_AID_ITEM_MISMATCH")
         if item.term_id != term_id:
             raise ModelError("AID_ITEM_TERM_MISMATCH")
     source = _source(value["source"], set(artifacts))
+    if role in {"aid_gross_disbursement", "aid_fee_withheld"}:
+        artifact = artifacts.get(source.artifact_id)
+        if (
+            account_id is not None
+            or aid_item_id is None
+            or artifact is None
+            or artifact.kind != "aid_disbursement_statement"
+            or artifact.account_ref_id is not None
+        ):
+            raise ModelError("INVALID_AID_DISBURSEMENT_SOURCE")
     if source.artifact_id is not None:
         artifact_account_id = artifacts[source.artifact_id].account_ref_id
         if artifact_account_id is not None and artifact_account_id != account_id:
@@ -756,6 +768,12 @@ def load_case_json(document: str) -> Case:
     if len(reviews) != len(set(reviews)):
         raise ModelError("DUPLICATE_REVIEW_ID")
     for event in ordered:
+        if event.fact is not None and event.fact.role in {"aid_gross_disbursement", "aid_fee_withheld"}:
+            source = event.fact.source
+            if source.artifact_id is None:
+                raise ModelError("INVALID_AID_DISBURSEMENT_SOURCE")
+            if artifacts_by_id[source.artifact_id].observed_at > event.recorded_at:
+                raise ModelError("INVALID_AID_DISBURSEMENT_CHRONOLOGY")
         if event.correction is not None:
             approval_id = fact_approvals.get(event.correction.fact_id)
             if approval_id is None or approval_id not in event.parents:
@@ -768,6 +786,12 @@ def load_case_json(document: str) -> Case:
                     and artifact_account_id != facts_by_id[event.correction.fact_id].account_ref_id
                 ):
                     raise ModelError("SOURCE_ACCOUNT_MISMATCH")
+            if facts_by_id[event.correction.fact_id].role in {"aid_gross_disbursement", "aid_fee_withheld"}:
+                artifact = artifacts_by_id.get(source.artifact_id)
+                if artifact is None or artifact.kind != "aid_disbursement_statement" or artifact.account_ref_id is not None:
+                    raise ModelError("INVALID_AID_DISBURSEMENT_SOURCE")
+                if artifact.observed_at > event.recorded_at:
+                    raise ModelError("INVALID_AID_DISBURSEMENT_CHRONOLOGY")
         if event.retraction is not None:
             approval_id = coverage_approvals.get(event.retraction.coverage_id)
             if approval_id is None or approval_id not in event.parents:

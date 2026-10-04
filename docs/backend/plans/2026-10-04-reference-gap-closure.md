@@ -21,10 +21,12 @@
 
 **Interface decision to verify before coding:** A gross loan offer is a snapshot, a source-backed withheld fee is neither a school charge nor a bank debit, and a net posted school credit is a movement. The aid-item lifecycle reports each amount separately and an explicit unresolved difference when approved evidence does not explain it. It never fabricates an extra payment or divides an annual award.
 
-- [ ] Add a hand-calculated gross/fee/net fixture and a missing-fee negative case.
-- [ ] Add only the needed source-backed role/fields and checked exact-cent computation.
-- [ ] Verify school surplus includes only net posted school credits, not gross offer or fee twice.
-- [ ] Run full suite and corpus, then commit a coherent passing change.
+**Design review refinement:** An offer is not proof of a gross disbursement. Add distinct, aid-item-linked `aid_gross_disbursement` and `aid_fee_withheld` evidence roles, both backed by a reviewed `aid_disbursement_statement` artifact. They have no school or bank account binding and never enter the school-surplus sum. Reconcile `gross - observed fee - posted` only when gross and posted evidence exist; when fee evidence is absent, keep the resulting difference explicit and unresolved rather than inferring a fee. Multiple disbursement/fee facts sum as distinct source positions, with corrections preserving history. This produces an exact monetary view while keeping completeness separate from arithmetic.
+
+- [x] Add a hand-calculated gross/fee/net fixture and a missing-fee negative case.
+- [x] Add only the needed source-backed role/fields and checked exact-cent computation.
+- [x] Verify school surplus includes only net posted school credits, not gross offer or fee twice.
+- [x] Run full suite and corpus, then commit a coherent passing change.
 
 ## Task 3 — M2-7c: Reversal and historical rule-version evidence (RC-14, RC-15, RC-46)
 

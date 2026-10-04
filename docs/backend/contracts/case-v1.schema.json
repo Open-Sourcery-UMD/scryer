@@ -113,7 +113,7 @@
         "accountRefId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
         "aidItemId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
         "currency": {"const": "USD"},
-        "role": {"enum": ["school_credit", "school_charge", "refund_issued", "bank_credit_observed", "aid_offer", "aid_accepted", "aid_pending", "balance_snapshot", "work_study_offer"]},
+        "role": {"enum": ["school_credit", "school_charge", "refund_issued", "bank_credit_observed", "aid_offer", "aid_accepted", "aid_pending", "aid_gross_disbursement", "aid_fee_withheld", "balance_snapshot", "work_study_offer"]},
         "recipientKind": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/recipientKind"}]},
         "amountMinor": {"$ref": "#/$defs/nonnegativeMinor"},
         "proposalId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
@@ -121,11 +121,25 @@
         "source": {"$ref": "#/$defs/source"},
         "reviewId": {"$ref": "#/$defs/id"}
       },
-      "allOf": [{
-        "if": {"properties": {"role": {"const": "refund_issued"}}},
-        "then": {"properties": {"recipientKind": {"$ref": "#/$defs/recipientKind"}}},
-        "else": {"properties": {"recipientKind": {"type": "null"}}}
-      }]
+      "allOf": [
+        {
+          "if": {"properties": {"role": {"const": "refund_issued"}}},
+          "then": {"properties": {"recipientKind": {"$ref": "#/$defs/recipientKind"}}},
+          "else": {"properties": {"recipientKind": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"role": {"enum": ["aid_gross_disbursement", "aid_fee_withheld"]}}},
+          "then": {"properties": {
+            "accountRefId": {"type": "null"},
+            "aidItemId": {"$ref": "#/$defs/id"},
+            "source": {
+              "type": "object", "additionalProperties": false,
+              "required": ["kind", "artifactId", "location"],
+              "properties": {"kind": {"const": "artifact"}, "artifactId": {"$ref": "#/$defs/id"}, "location": {"$ref": "#/$defs/location"}}
+            }
+          }}
+        }
+      ]
     },
     "correction": {
       "type": "object", "additionalProperties": false,

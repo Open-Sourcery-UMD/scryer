@@ -10,7 +10,7 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-04 | REFERENCE | Canceled pending and later pending/posting tests; no pending addition. |
 | RC-05 | REFERENCE | Annual fixture returns `UNSUPPORTED_INPUT` and no term split. |
 | RC-06 | REFERENCE | Work-study offer remains separate from posted school credit. |
-| RC-07 | OPEN | Gross loan versus net disbursement needs explicit linked fee/recipient semantics and a hand-calculated fixture. |
+| RC-07 | REFERENCE | A distinct source-backed gross disbursement and withheld fee reconcile with the net school posting. The fixed offer/before-fee/after-fee corpus shows the unresolved $10 gap until fee evidence arrives; negative source tests keep fee separate from school charges. Native/browser parity remains open. |
 | RC-08 | REFERENCE | Parent-directed refund produces no student-bank candidate despite full coverage; a cross-recipient confirmation requires a reviewed `recipient_instruction` artifact. Targeted negatives and two fixed corpus operations. Account labels and source authenticity remain unverified. |
 | RC-09 | REFERENCE | Split fixture allocates 40000 + 50000 cents with zero remaining. |
 | RC-10 | REFERENCE | Equal candidates remain ambiguous in `test_matching.py`. |

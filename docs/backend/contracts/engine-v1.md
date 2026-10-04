@@ -8,6 +8,8 @@ An extraction proposal retains its raw source value, source artifact and positio
 
 The local reference now has explicit `AidItem(aidItemId, institutionId, termId|null, recipientKind)` records and nullable `Fact.aidItemId`. Linked aid offer, accepted, pending, work-study offer, and school credit facts may form an evidence-only lifecycle. An annual item has a null term and cannot be silently allocated to a term. Offer/accepted/pending records are snapshots, not school-account movements; only linked posted school credits sum into `postedMinor`. Multiple active offer snapshots are ambiguous until reviewed resolution. Parent/third-party recipient metadata produces a verification finding and does not prove a student refund. Surplus receipts include the aid-item ID of each participating fact and the independent checker validates it.
 
+The reference adds `aid_gross_disbursement` and `aid_fee_withheld` roles for an aid item. Both require an `aid_disbursement_statement` artifact, no account reference, and source observation by the review time; corrections have the same source requirement. `LifecycleResult` exposes `gross_disbursed_minor`, nullable `withheld_fee_minor`, and nullable `unexplained_difference_minor` in addition to the existing offer and posted amounts. The difference is computed only with gross and posted evidence. Gross and fee never change school surplus. An offer alone is not gross-disbursement evidence. The fixed corpus includes before/after-fee arithmetic and the unresolved gap.
+
 For M2 the executable operations are:
 
 - `validate_case(case) -> validated case | typed error`.
