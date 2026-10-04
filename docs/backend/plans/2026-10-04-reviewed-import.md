@@ -69,10 +69,10 @@
 
 **Requirements:** S-34, S-36, S-42, S-44, S-45; depends on Tasks 1–3. **Interfaces:** typed worker messages with copied input and abort/cancel states; output remains proposals until review transaction. **Risk:** high, browser memory and lifecycle.
 
-- [ ] Write actual-browser tests for file reads, worker disposal/cancellation, repeated imports, malformed input, size limits, and no partial approved history.
-- [ ] Run browser tests expecting the missing worker.
-- [ ] Implement worker boundary and integration harness, including explicit source-unavailable status after another-device simulation.
-- [ ] Run browser/native/reference suites, update RC-12/13/17/24/44 and release evidence only where proven, then commit M5-4.
+- [x] Write actual-browser tests for file reads, worker disposal/cancellation, repeated imports, malformed input, size limits, and no partial approved history from extraction.
+- [x] Run browser tests expecting the missing worker.
+- [x] Implement worker boundary and integration harness, including explicit source-unavailable status after another-device simulation.
+- [x] Run browser/native/reference suites, update RC-12/13/17/24/44 and release evidence only where proven, then commit M5-4. Browser-side native/WASM validation and durable storage remain open.
 
 ## Gate to M6
 

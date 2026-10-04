@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "allowJs": true,
+    "checkJs": false,
+    "rootDir": ".",
+    "outDir": "build",
+    "rewriteRelativeImportExtensions": true
+  },
+  "include": ["import/**/*.ts", "vendor/d3-dsv/src/**/*.js"]
+}

@@ -559,9 +559,10 @@
         "Quoted/newline/BOM/duplicate-header CSV",
         "source-position multiplicity",
         "atomic repeated review",
-        "limits and cancellation"
+        "limits and cancellation",
+        "local Chrome worker extraction and source reattachment status"
       ],
-      "command": "cd client && npm ci --offline --ignore-scripts --no-audit --no-fund && npm run typecheck && npm test; browser worker and precise PDF diagnostics remain open",
+      "command": "cd client && npm ci --offline --ignore-scripts --no-audit --no-fund && npm run typecheck && npm test && SCRYER_BROWSER_BIN='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run test:browser",
       "expected": "Supported adapters pass; UMD compatibility remains BLOCKED_EXTERNAL absent authentic evidence",
       "risk": "HIGH",
       "done": "Browser-backed reviewed import is verified for only declared formats."

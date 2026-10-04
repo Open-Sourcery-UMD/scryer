@@ -15,22 +15,22 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-09 | REFERENCE | Split fixture allocates 40000 + 50000 cents with zero remaining. |
 | RC-10 | REFERENCE | Equal candidates remain ambiguous in `test_matching.py`. |
 | RC-11 | REFERENCE | Equal legitimate school charges from different source positions both count. |
-| RC-12 | PARTIAL | Headless exact repeat is inert and changed decisions conflict; browser local persistence and atomic durability remain open. |
-| RC-13 | PARTIAL | Equal movements at distinct CSV positions survive review, including a second artifact; overlap ambiguity and real statement formats remain open. |
+| RC-12 | PARTIAL | Headless exact repeat is inert and changed decisions conflict; a real browser worker repeats extraction with identical IDs. Browser review validation, local persistence, and atomic durability remain open. |
+| RC-13 | PARTIAL | Equal movements at distinct CSV positions survive headless review, including a second artifact, and browser extraction preserves both positions; overlap ambiguity and real statement formats remain open. |
 | RC-14 | REFERENCE | Named reversal fixture retains the 90000-cent historical view, then a source-backed grant correction yields 70000 cents; before/after receipts and exact attribution are fixed in the corpus. Import versioning remains M5 work. |
 | RC-15 | REFERENCE | A reviewed charge cancellation after the corrected source yields 100000 cents. Exact +10000-cent net change equals −20000 for the grant and +30000 for the cancelled charge; both original and corrected source references survive in checked receipts. |
 | RC-16 | REFERENCE | Account coverage gap returns `INSUFFICIENT_COVERAGE`. |
-| RC-17 | PARTIAL | Native bank observations do not imply period coverage. The new synthetic generic CSV extractor emits no coverage assertion from transaction extrema; reviewed coverage and real-format evidence remain open. |
+| RC-17 | PARTIAL | Native bank observations do not imply period coverage. Headless and browser CSV extraction emit no coverage assertion from transaction extrema; reviewed coverage and real-format evidence remain open. |
 | RC-18 | REFERENCE | Matching never authenticates an uploaded bank source; explicit limitation code. |
 | RC-19 | REFERENCE | Event permutation and changed review time are distinct history tests. |
 | RC-20 | REFERENCE | Unreviewed proposals do not affect projection or matching. |
 | RC-21 | REFERENCE | Competing correction fixture remains contradictory and historically ambiguous. |
 | RC-22 | REFERENCE | Unrelated refund evidence does not alter school-surplus fact attribution. |
 | RC-23 | REFERENCE | Exact-money, overflow, precision, canonical form, and currency rejection tests. |
-| RC-24 | PARTIAL | Headless CSV rejects malformed UTF-8/quotes and byte/row/column/field/cell limits; failed review and manual commands leave inputs unchanged. PDFs route to manual entry without source compatibility claims. Precise PDF diagnostics, browser cancellation, and atomic storage remain open. |
+| RC-24 | PARTIAL | Headless CSV rejects malformed UTF-8/quotes and byte/row/column/field/cell limits; real-browser worker returns typed malformed/oversized errors and terminates on cancel/timeout. Failed review and manual commands leave inputs unchanged. PDFs route to manual entry. Precise PDF diagnostics and atomic storage remain open. |
 | RC-25 | PARTIAL | Native CLI is built and 33 fixed operations plus 200 seeded cases pass locally; WASM and real-browser parity remain open. |
 | RC-26 | REFERENCE | Independent checker catches arithmetic, digest, source, proposal, and aid-item tampering. |
-| RC-27 | OPEN | Device source-unavailable and hash reattachment workflow remains open. |
+| RC-27 | PARTIAL | Browser helper reports `SOURCE_UNAVAILABLE` without local original, `HASH_MISMATCH` for wrong bytes, and `AVAILABLE` after a SHA-256 match; durable device workflow remains open. |
 | RC-28 | OPEN | Cryptographic envelope implementation and negative tests remain open. |
 | RC-29 | OPEN | Second-device recovery implementation remains open. |
 | RC-30 | OPEN | Re-encryption equality/freshness test remains open. |
@@ -47,7 +47,7 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-41 | OPEN | Persistent schema migration and failed-upgrade recovery tests remain open. |
 | RC-42 | OPEN | Fresh-stack backup/restore and deletion replay test remains open. |
 | RC-43 | REFERENCE | Candidate cap returns `COMPUTATION_LIMIT`. |
-| RC-44 | OPEN | Browser worker/storage cancellation and recovery tests remain open. |
+| RC-44 | PARTIAL | Real Chrome tests cover file-read cancellation, in-flight worker termination, timeout, blocked worker creation, and no approved-event output. Storage cancellation/recovery remains open. |
 | RC-45 | REFERENCE | Divergent heads and cutoff time inversions do not produce a global time winner. |
 | RC-46 | PARTIAL | Reference and native CLI reproduce an archived `school-surplus-1` receipt at its recorded heads. Native reanalysis emits a separate `native-0.1.0` receipt linked by prior digest; reference compatibility labels are test-only. WASM/browser migration remains open. |
 | RC-47 | OPEN | Identity-provider account-disablement integration remains open. |

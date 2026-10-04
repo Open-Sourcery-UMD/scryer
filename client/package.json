@@ -5,10 +5,13 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "build:browser": "tsc -p tsconfig.browser.json",
+    "test:browser": "npm run build:browser && node --test ../tests/browser/*.mjs",
     "pretest": "make -C ../engine cli",
     "test": "node --experimental-strip-types --test ../tests/client/*.mjs"
   },
   "devDependencies": {
+    "playwright-core": "1.63.0",
     "typescript": "5.9.3"
   }
 }

@@ -238,12 +238,14 @@
       "tests": [
         "tests/reference/test_model.py — strict schema, exact proposal/source linkage, parser/mapping versions, reviewed edits, duplicate approval prevention",
         "tests/reference/test_receipt.py — proposal provenance independently checked in derivation receipts",
-        "tests/client/test_review.mjs — proposal, source, decision ledger and approved-event identity"
+        "tests/client/test_review.mjs — proposal, source, decision ledger and approved-event identity",
+        "tests/browser/test_import_worker.mjs — SHA-256 original availability and reattachment status"
       ],
       "evidence": [
         "M2-2 red-green run; 25-test reference suite exit 0 before commit",
         "M2-6b red-green run; 93-test reference suite exit 0 before local commit",
-        "M5-2 reviewed bank import preserves proposals and verifies prior artifact/proposal/event chain on exact repeat"
+        "M5-2 reviewed bank import preserves proposals and verifies prior artifact/proposal/event chain on exact repeat",
+        "M5-4 real-browser source availability reports missing, mismatched, and matching local originals; durable device workflow open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -503,8 +505,14 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": ["tests/client/test_bank_csv.mjs"],
-      "evidence": ["M5-1 pinned CSV contract, offline TypeScript typecheck, and synthetic adapter tests pass; full conformance remains open"],
+      "tests": [
+        "tests/client/test_bank_csv.mjs",
+        "tests/browser/test_import_worker.mjs — module-worker adapter protocol and format routing"
+      ],
+      "evidence": [
+        "M5-1 pinned CSV contract, offline TypeScript typecheck, and synthetic adapter tests pass; full conformance remains open",
+        "M5-4 versioned one-request worker protocol passes local Chrome; third-party adapter conformance remains open"
+      ],
       "status": "IN_PROGRESS"
     },
     {
@@ -516,8 +524,14 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": ["tests/client/test_bank_csv.mjs"],
-      "evidence": ["M5-1 hostile UTF-8/CSV and byte/row/column/field/cell limits pass; browser worker/cancellation open"],
+      "tests": [
+        "tests/client/test_bank_csv.mjs",
+        "tests/browser/test_import_worker.mjs — FileReader, worker cancellation/timeout and typed failure"
+      ],
+      "evidence": [
+        "M5-1 hostile UTF-8/CSV and byte/row/column/field/cell limits pass; browser worker/cancellation open",
+        "M5-4 local Chrome tests pass for malformed/oversized file, cancellation, timeout, and blocked worker creation"
+      ],
       "status": "IN_PROGRESS"
     },
     {
@@ -531,11 +545,13 @@
       ],
       "tests": [
         "tests/client/test_bank_csv.mjs",
-        "tests/client/test_review.mjs — native-validated atomic bank CSV approval"
+        "tests/client/test_review.mjs — native-validated atomic bank CSV approval",
+        "tests/browser/test_import_worker.mjs — deterministic real-browser CSV proposal extraction"
       ],
       "evidence": [
         "M5-1 exact mapped CSV proposals, stable source positions, repeated-row multiplicity, and account-bound artifact IDs pass; review open",
-        "M5-2 reviewed CSV decisions produce only approved bank-credit events; browser and real-format validation remain open"
+        "M5-2 reviewed CSV decisions produce only approved bank-credit events; browser and real-format validation remain open",
+        "M5-4 browser extraction preserves source positions and repeated-row multiplicity; browser-side native review validation open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -548,8 +564,14 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": ["tests/client/test_bank_csv.mjs"],
-      "evidence": ["M5-1 generic CSV extractor emits no coverage assertion; reviewed source/user period commands open"],
+      "tests": [
+        "tests/client/test_bank_csv.mjs",
+        "tests/browser/test_import_worker.mjs — worker output is proposals only, no coverage event"
+      ],
+      "evidence": [
+        "M5-1 generic CSV extractor emits no coverage assertion; reviewed source/user period commands open",
+        "M5-4 browser CSV extraction emits no coverage assertion; reviewed period commands open"
+      ],
       "status": "IN_PROGRESS"
     },
     {
@@ -649,10 +671,12 @@
         "M5"
       ],
       "tests": [
-        "tests/client/test_review.mjs — unchanged repeat, changed decision conflict, stale heads and equal row multiplicity"
+        "tests/client/test_review.mjs — unchanged repeat, changed decision conflict, stale heads and equal row multiplicity",
+        "tests/browser/test_import_worker.mjs — repeated browser extraction gives identical artifact/proposal IDs"
       ],
       "evidence": [
-        "M5-2 in-memory exact repeat is inert, conflict is typed, and equal movements are retained; durable storage and statement overlap remain open"
+        "M5-2 in-memory exact repeat is inert, conflict is typed, and equal movements are retained; durable storage and statement overlap remain open",
+        "M5-4 repeated browser extraction deterministic; durable review idempotency remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -682,11 +706,13 @@
       ],
       "tests": [
         "tests/reference/test_receipt.py — canonical digest, independent arithmetic/source checks, seeded generator",
-        "tests/reference/test_corpus.py — 22 literal synthetic parity operations across seven case fixtures"
+        "tests/reference/test_corpus.py — 22 literal synthetic parity operations across seven case fixtures",
+        "tests/browser/test_import_worker.mjs — synthetic real-browser RC-12/13/24/27/44 slices"
       ],
       "evidence": [
         "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit",
-        "docs/backend/release-corpus.md maps all RC-01 through RC-48; many browser/server/crypto gates remain OPEN"
+        "docs/backend/release-corpus.md maps all RC-01 through RC-48; many browser/server/crypto gates remain OPEN",
+        "M5-4 six local Chrome tests pass; release corpus remains partial without WASM/storage/auth"
       ],
       "status": "IN_PROGRESS"
     },
@@ -701,11 +727,13 @@
       ],
       "tests": [
         "tests/client/test_review.mjs — typed invalid batch, missing ledger, invalid decision, stale head and native validation failure",
-        "tests/client/test_manual.mjs — conservative PDF-to-manual and invalid-input outcomes"
+        "tests/client/test_manual.mjs — conservative PDF-to-manual and invalid-input outcomes",
+        "tests/browser/test_import_worker.mjs — typed malformed, oversized, cancelled, timed-out and worker-failure states"
       ],
       "evidence": [
         "M5-2 typed review failures leave case and ledger inputs unchanged; unsupported-file continuation remains open",
-        "M5-3 all PDFs route to manual without compatibility claims; precise PDF diagnostics remain open"
+        "M5-3 all PDFs route to manual without compatibility claims; precise PDF diagnostics remain open",
+        "M5-4 real-browser error paths pass; detailed PDF diagnostics remain open"
       ],
       "status": "IN_PROGRESS"
     },

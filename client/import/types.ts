@@ -155,3 +155,13 @@ export type SourceDetection =
   | { outcome: 'SUPPORTED_CSV'; adapter: 'generic-bank-csv-1'; reasonCode: 'MAPPING_REQUIRED' }
   | { outcome: 'MANUAL_REQUIRED'; adapter: null; reasonCode: 'PDF_LAYOUT_UNVERIFIED' }
   | { outcome: 'UNSUPPORTED_INPUT'; adapter: null; reasonCode: string };
+
+export type ImportWorkerRequest =
+  | { schemaVersion: '1'; requestId: number; operation: 'detect'; bytes: ArrayBuffer }
+  | { schemaVersion: '1'; requestId: number; operation: 'extractBankCsv'; bytes: ArrayBuffer;
+      metadata: BankCsvMetadata; mapping: BankCsvMapping };
+
+export type ImportWorkerResponse =
+  | { schemaVersion: '1'; requestId: number; operation: 'detect'; status: 'ok'; result: SourceDetection }
+  | { schemaVersion: '1'; requestId: number; operation: 'extractBankCsv'; status: 'ok'; result: ExtractedBatch }
+  | { schemaVersion: '1'; requestId: number; status: 'error'; errorCode: string };
