@@ -360,7 +360,7 @@
     {
       "id": "M2-6b",
       "title": "Link approved facts to reviewed proposals",
-      "status": "IN_PROGRESS",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": ["M2-6a"],
       "requirements": ["S-14", "S-17", "S-24"],
       "scope": "Preserve parser/mapping version and original proposed value, and validate approved fact links to the exact source proposal.",
@@ -376,7 +376,7 @@
     {
       "id": "M2-6c",
       "title": "Aid lifecycle evidence and findings",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "dependsOn": ["M2-6b"],
       "requirements": ["S-18", "S-19", "S-21", "S-22", "S-24"],
       "scope": "Model explicitly linked aid-item evidence stages and deterministic non-entitlement findings.",

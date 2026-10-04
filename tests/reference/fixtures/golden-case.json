@@ -36,7 +36,10 @@
       "proposalId": "proposal-unreviewed",
       "artifactId": "bill-a",
       "sourceLocation": "row:99",
-      "rawValue": "10000.00"
+      "rawValue": "10000.00",
+      "parserVersion": "synthetic.1",
+      "mappingVersion": "school-map.1",
+      "proposedAmountMinor": "1000000"
     }
   ],
   "events": [
@@ -58,7 +61,8 @@
         },
         "reviewId": "review-grant",
         "accountRefId": "school-a",
-        "currency": "USD"
+        "currency": "USD",
+        "proposalId": null
       }
     },
     {
@@ -81,7 +85,8 @@
         },
         "reviewId": "review-other-credit",
         "accountRefId": "school-a",
-        "currency": "USD"
+        "currency": "USD",
+        "proposalId": null
       }
     },
     {
@@ -104,7 +109,8 @@
         },
         "reviewId": "review-base-charge",
         "accountRefId": "school-a",
-        "currency": "USD"
+        "currency": "USD",
+        "proposalId": null
       }
     },
     {
@@ -147,7 +153,8 @@
         },
         "reviewId": "review-extra-charge",
         "accountRefId": "school-a",
-        "currency": "USD"
+        "currency": "USD",
+        "proposalId": null
       }
     },
     {
@@ -170,7 +177,8 @@
         },
         "reviewId": "review-issued-refund",
         "accountRefId": "school-a",
-        "currency": "USD"
+        "currency": "USD",
+        "proposalId": null
       }
     },
     {
@@ -193,7 +201,8 @@
         },
         "reviewId": "review-bank-credit",
         "accountRefId": "bank-a",
-        "currency": "USD"
+        "currency": "USD",
+        "proposalId": null
       }
     }
   ],

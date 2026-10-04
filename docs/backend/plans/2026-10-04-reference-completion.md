@@ -33,9 +33,9 @@
 
 **Interface:** A parser proposal records its parser/mapping versions, raw source value, source location, and optional normalized proposed cents. An approved fact may reference that proposal; its source artifact/location must agree. A null proposal link means explicit manual transcription from an artifact or a manually entered fact. Reviewed edits preserve both proposed and approved values.
 
-- [ ] Write failing tests for valid proposal acceptance/edit, source mismatch, missing proposal, unreviewed proposal, and parser/mapping version bounds.
-- [ ] Extend strict schema and parser without allowing proposal-only monetary effects.
-- [ ] Run goldens, full suite, seeded checks, and commit a passing change.
+- [x] Write failing tests for reviewed edits, source mismatch, missing proposal, one-proposal duplicate approval, unreviewed proposals, and parser/mapping version bounds.
+- [x] Extend strict schema, parser, receipt, and independent checker without allowing proposal-only monetary effects.
+- [x] Run goldens, full suite, seeded checks, and commit a passing change.
 
 ### Task 3 — M2-6c: Aid lifecycle evidence and findings
 

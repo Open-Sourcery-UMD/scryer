@@ -110,6 +110,23 @@ class ReceiptTests(unittest.TestCase):
         self.assertFalse(result.valid)
         self.assertEqual(result.code, "MISSING_SOURCE")
 
+    def test_linked_proposal_is_traceable_in_receipt_and_checker(self):
+        raw = json.loads(_FIXTURE.read_text())
+        raw["proposals"][0].update(
+            artifactId="aid-a", sourceLocation="row:1", rawValue="3000.00", proposedAmountMinor="300000"
+        )
+        raw["events"][0]["fact"]["proposalId"] = "proposal-unreviewed"
+        case = load_case_json(json.dumps(raw))
+        receipt = make_school_surplus_receipt(case, ("event-extra-charge",), "2026-fall")
+        grant = next(step for step in receipt["facts"] if step["factId"] == "grant")
+        self.assertEqual(grant["proposalId"], "proposal-unreviewed")
+        self.assertEqual(grant["proposedAmountMinor"], "300000")
+        self.assertEqual(grant["parserVersion"], "synthetic.1")
+        self.assertTrue(check_receipt(case, receipt).valid)
+        grant["proposedAmountMinor"] = "310000"
+        redigest(receipt)
+        self.assertEqual(check_receipt(case, receipt).code, "PROPOSAL_MISMATCH")
+
     def test_deeply_nested_direct_receipt_is_typed_invalid(self):
         receipt = make_school_surplus_receipt(golden_case(), ("event-extra-charge",), "2026-fall")
         nested = None

@@ -22,7 +22,7 @@ _TOP_KEYS = frozenset(
 )
 _STEP_KEYS = frozenset(
     {
-        "factId", "role", "originalAmountMinor", "currentAmountMinor",
+        "factId", "proposalId", "proposedAmountMinor", "parserVersion", "mappingVersion", "role", "originalAmountMinor", "currentAmountMinor",
         "contributionMinor", "approvalEventId", "correctionEventId", "sourceRef",
         "originalSourceRef",
         "approvalReviewId", "approvalRecordedAt", "correctionReviewId", "correctionRecordedAt", "effectiveDate",
@@ -199,6 +199,7 @@ def check_receipt(case: Case, receipt: dict[str, object]) -> CheckResult:
         return _failed("MISSING_FACT" if set(approvals) - set(received_ids) else "UNKNOWN_FACT")
 
     corrections: dict[str, list[Event]] = {}
+    proposals = {proposal.proposal_id: proposal for proposal in case.proposals}
     for event in snapshot:
         if event.correction is not None:
             corrections.setdefault(event.correction.fact_id, []).append(event)
@@ -229,6 +230,19 @@ def check_receipt(case: Case, receipt: dict[str, object]) -> CheckResult:
             correction_recorded_at = latest.recorded_at
         if current_amount is None:
             return _failed("INVALID_REFERENCE")
+        proposal = proposals.get(fact.proposal_id) if fact.proposal_id is not None else None
+        if fact.proposal_id is not None and proposal is None:
+            return _failed("PROPOSAL_MISMATCH")
+        if (
+            step["proposalId"] != fact.proposal_id
+            or step["proposedAmountMinor"] != (
+                str(proposal.proposed_amount_minor)
+                if proposal is not None and proposal.proposed_amount_minor is not None else None
+            )
+            or step["parserVersion"] != (proposal.parser_version if proposal is not None else None)
+            or step["mappingVersion"] != (proposal.mapping_version if proposal is not None else None)
+        ):
+            return _failed("PROPOSAL_MISMATCH")
         if (
             not _source_matches(fact.source, step["originalSourceRef"], case)
             or not _source_matches(current_source, step["sourceRef"], case)

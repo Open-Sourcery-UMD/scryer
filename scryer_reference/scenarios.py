@@ -35,6 +35,7 @@ def generate_case(seed: int) -> Case:
                 "currency": "USD",
                 "role": role,
                 "amountMinor": str(amount),
+                "proposalId": None,
                 "effectiveDate": "2026-08-20",
                 "source": {"kind": "artifact", "artifactId": artifact_id, "location": f"row:{row}"},
                 "reviewId": f"review-{fact_id}",

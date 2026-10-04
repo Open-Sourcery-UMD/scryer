@@ -14,6 +14,7 @@ _LOCATION = re.compile(r"[!-~]{1,256}\Z")
 _DATE = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}\Z")
 _UTC = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
+_VERSION = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}\Z")
 _ROLES = frozenset(
     {
         "school_credit",
@@ -82,6 +83,9 @@ class Proposal:
     artifact_id: str
     source_location: str
     raw_value: str
+    parser_version: str
+    mapping_version: str
+    proposed_amount_minor: int | None
 
 
 @dataclass(frozen=True)
@@ -92,6 +96,7 @@ class Fact:
     currency: str
     role: str
     amount_minor: int
+    proposal_id: str | None
     effective_date: str | None
     source: SourceRef
     review_id: str
@@ -188,6 +193,12 @@ def _identifier(value: Any) -> str:
 def _currency(value: Any) -> str:
     if value != "USD" or type(value) is not str:
         raise ModelError("UNSUPPORTED_CURRENCY")
+    return value
+
+
+def _version(value: Any) -> str:
+    if type(value) is not str or _VERSION.fullmatch(value) is None:
+        raise ModelError("INVALID_VERSION")
     return value
 
 
@@ -327,7 +338,10 @@ def _artifact(value: Any, account_refs: dict[str, AccountRef]) -> Artifact:
 
 
 def _proposal(value: Any, artifact_ids: set[str]) -> Proposal:
-    value = _fields(value, {"proposalId", "artifactId", "sourceLocation", "rawValue"})
+    value = _fields(
+        value,
+        {"proposalId", "artifactId", "sourceLocation", "rawValue", "parserVersion", "mappingVersion", "proposedAmountMinor"},
+    )
     artifact_id = _identifier(value["artifactId"])
     if artifact_id not in artifact_ids:
         raise ModelError("MISSING_ARTIFACT")
@@ -345,6 +359,11 @@ def _proposal(value: Any, artifact_ids: set[str]) -> Proposal:
         artifact_id=artifact_id,
         source_location=_location(value["sourceLocation"]),
         raw_value=raw_value,
+        parser_version=_version(value["parserVersion"]),
+        mapping_version=_version(value["mappingVersion"]),
+        proposed_amount_minor=(
+            None if value["proposedAmountMinor"] is None else _nonnegative_money(value["proposedAmountMinor"])
+        ),
     )
 
 
@@ -353,10 +372,11 @@ def _fact(
     terms: dict[str, AcademicTerm],
     accounts: dict[str, AccountRef],
     artifacts: dict[str, Artifact],
+    proposals: dict[str, Proposal],
 ) -> Fact:
     value = _fields(
         value,
-        {"factId", "termId", "accountRefId", "currency", "role", "amountMinor", "effectiveDate", "source", "reviewId"},
+        {"factId", "termId", "accountRefId", "currency", "role", "amountMinor", "proposalId", "effectiveDate", "source", "reviewId"},
     )
     role = value["role"]
     if type(role) is not str or role not in _ROLES:
@@ -392,6 +412,18 @@ def _fact(
         artifact_account_id = artifacts[source.artifact_id].account_ref_id
         if artifact_account_id is not None and artifact_account_id != account_id:
             raise ModelError("SOURCE_ACCOUNT_MISMATCH")
+    proposal_id = value["proposalId"]
+    if proposal_id is not None:
+        proposal_id = _identifier(proposal_id)
+        proposal = proposals.get(proposal_id)
+        if proposal is None:
+            raise ModelError("MISSING_PROPOSAL")
+        if (
+            source.kind != "artifact"
+            or source.artifact_id != proposal.artifact_id
+            or source.location != proposal.source_location
+        ):
+            raise ModelError("SOURCE_PROPOSAL_MISMATCH")
     return Fact(
         fact_id=_identifier(value["factId"]),
         term_id=term_id,
@@ -399,6 +431,7 @@ def _fact(
         currency=_currency(value["currency"]),
         role=role,
         amount_minor=_nonnegative_money(value["amountMinor"]),
+        proposal_id=proposal_id,
         effective_date=_source_date(value["effectiveDate"]),
         source=source,
         review_id=_identifier(value["reviewId"]),
@@ -498,6 +531,7 @@ def _event(
     terms: dict[str, AcademicTerm],
     accounts: dict[str, AccountRef],
     artifacts: dict[str, Artifact],
+    proposals: dict[str, Proposal],
 ) -> Event:
     if type(value) is not dict:
         raise ModelError("INVALID_SCHEMA")
@@ -505,7 +539,7 @@ def _event(
     common = {"eventId", "parents", "recordedAt", "kind"}
     if kind == "approve_fact":
         value = _fields(value, common | {"fact"})
-        fact = _fact(value["fact"], terms, accounts, artifacts)
+        fact = _fact(value["fact"], terms, accounts, artifacts, proposals)
         correction = None
         coverage = None
         retraction = None
@@ -620,14 +654,24 @@ def load_case_json(document: str) -> Case:
     if len(artifacts_by_id) != len(artifacts):
         raise ModelError("DUPLICATE_ARTIFACT_ID")
     proposals = tuple(_proposal(value, set(artifacts_by_id)) for value in _array(raw["proposals"]))
-    if len({proposal.proposal_id for proposal in proposals}) != len(proposals):
+    proposals_by_id = {proposal.proposal_id: proposal for proposal in proposals}
+    if len(proposals_by_id) != len(proposals):
         raise ModelError("DUPLICATE_PROPOSAL_ID")
-    events = tuple(_event(value, terms_by_id, accounts_by_id, artifacts_by_id) for value in _array(raw["events"]))
+    events = tuple(
+        _event(value, terms_by_id, accounts_by_id, artifacts_by_id, proposals_by_id)
+        for value in _array(raw["events"])
+    )
     ordered = _ordered_events(events)
     fact_approvals = {event.fact.fact_id: event.event_id for event in ordered if event.fact is not None}
     facts_by_id = {event.fact.fact_id: event.fact for event in ordered if event.fact is not None}
     if sum(event.fact is not None for event in ordered) != len(fact_approvals):
         raise ModelError("DUPLICATE_FACT_ID")
+    approved_proposals = [
+        event.fact.proposal_id for event in ordered
+        if event.fact is not None and event.fact.proposal_id is not None
+    ]
+    if len(approved_proposals) != len(set(approved_proposals)):
+        raise ModelError("DUPLICATE_PROPOSAL_APPROVAL")
     coverage_approvals = {event.coverage.coverage_id: event.event_id for event in ordered if event.coverage is not None}
     if sum(event.coverage is not None for event in ordered) != len(coverage_approvals):
         raise ModelError("DUPLICATE_COVERAGE_ID")

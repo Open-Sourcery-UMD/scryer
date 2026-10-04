@@ -236,10 +236,12 @@
         "M2"
       ],
       "tests": [
-        "tests/reference/test_model.py — strict schema, provenance, DAG, and hostile-input checks"
+        "tests/reference/test_model.py — strict schema, exact proposal/source linkage, parser/mapping versions, reviewed edits, duplicate approval prevention",
+        "tests/reference/test_receipt.py — proposal provenance independently checked in derivation receipts"
       ],
       "evidence": [
-        "M2-2 red-green run; 25-test reference suite exit 0 before commit"
+        "M2-2 red-green run; 25-test reference suite exit 0 before commit",
+        "M2-6b red-green run; 93-test reference suite exit 0 before local commit"
       ],
       "status": "IN_PROGRESS"
     },

@@ -47,6 +47,7 @@ def minimal_case():
                     "currency": "USD",
                     "role": "school_credit",
                     "amountMinor": "650000",
+                    "proposalId": None,
                     "effectiveDate": "2026-08-20",
                     "source": {"kind": "artifact", "artifactId": "bill-a", "location": "row:1"},
                     "reviewId": "review-credit",
@@ -58,6 +59,18 @@ def minimal_case():
 
 def json_case(value):
     return json.dumps(value, separators=(",", ":"))
+
+
+def proposal(raw_value="6500.00", proposed_minor="650000", location="row:1"):
+    return {
+        "proposalId": "proposal-credit",
+        "artifactId": "bill-a",
+        "sourceLocation": location,
+        "rawValue": raw_value,
+        "parserVersion": "synthetic.1",
+        "mappingVersion": "school-map.1",
+        "proposedAmountMinor": proposed_minor,
+    }
 
 
 class CaseParserTests(unittest.TestCase):
@@ -154,7 +167,7 @@ class CaseParserTests(unittest.TestCase):
     def test_decoded_proposal_field_over_64_kib_is_rejected(self):
         raw = minimal_case()
         raw["proposals"].append(
-            {"proposalId": "proposal-a", "artifactId": "bill-a", "sourceLocation": "row:1", "rawValue": "é" * 40000}
+            {**proposal(raw_value="é" * 40000), "proposalId": "proposal-a"}
         )
         with self.assertRaises(ModelError) as raised:
             load_case_json(json_case(raw))
@@ -163,7 +176,7 @@ class CaseParserTests(unittest.TestCase):
     def test_unpaired_unicode_surrogate_is_rejected(self):
         raw = minimal_case()
         raw["proposals"].append(
-            {"proposalId": "proposal-a", "artifactId": "bill-a", "sourceLocation": "row:1", "rawValue": "\ud800"}
+            {**proposal(raw_value="\ud800"), "proposalId": "proposal-a"}
         )
         with self.assertRaises(ModelError) as raised:
             load_case_json(json_case(raw))
@@ -184,6 +197,7 @@ class CaseParserTests(unittest.TestCase):
                     "currency": "USD",
                     "role": "school_charge",
                     "amountMinor": "500000",
+                    "proposalId": None,
                     "effectiveDate": "2026-08-21",
                     "source": {"kind": "artifact", "artifactId": "bill-a", "location": "row:2"},
                     "reviewId": "review-charge",
@@ -220,6 +234,50 @@ class CaseParserTests(unittest.TestCase):
         with self.assertRaises(ModelError) as raised:
             load_case_json(json_case(raw))
         self.assertEqual(raised.exception.code, "UNSUPPORTED_CURRENCY")
+
+    def test_linked_proposal_preserves_original_value_and_reviewed_edit(self):
+        raw = minimal_case()
+        raw["proposals"].append(proposal(raw_value="7000.00", proposed_minor="700000"))
+        raw["events"][0]["fact"]["proposalId"] = "proposal-credit"
+        case = load_case_json(json_case(raw))
+        self.assertEqual(case.proposals[0].raw_value, "7000.00")
+        self.assertEqual(case.proposals[0].proposed_amount_minor, 700000)
+        self.assertEqual(case.proposals[0].parser_version, "synthetic.1")
+        self.assertEqual(case.events[0].fact.proposal_id, "proposal-credit")
+        self.assertEqual(case.events[0].fact.amount_minor, 650000)
+
+    def test_missing_or_mismatched_proposal_link_is_rejected(self):
+        raw = minimal_case()
+        raw["events"][0]["fact"]["proposalId"] = "proposal-credit"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "MISSING_PROPOSAL")
+        raw["proposals"].append(proposal(location="row:2"))
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "SOURCE_PROPOSAL_MISMATCH")
+
+    def test_one_proposal_cannot_approve_two_monetary_facts(self):
+        raw = minimal_case()
+        raw["proposals"].append(proposal())
+        raw["events"][0]["fact"]["proposalId"] = "proposal-credit"
+        duplicate = copy.deepcopy(raw["events"][0])
+        duplicate["eventId"] = "event-credit-duplicate"
+        duplicate["parents"] = ["event-credit"]
+        duplicate["fact"]["factId"] = "credit-duplicate"
+        duplicate["fact"]["reviewId"] = "review-credit-duplicate"
+        raw["events"].append(duplicate)
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "DUPLICATE_PROPOSAL_APPROVAL")
+
+    def test_invalid_proposal_version_is_rejected(self):
+        raw = minimal_case()
+        raw["proposals"].append(proposal())
+        raw["proposals"][0]["parserVersion"] = "x" * 65
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "INVALID_VERSION")
 
     def test_bank_observation_on_school_account_is_rejected(self):
         raw = minimal_case()

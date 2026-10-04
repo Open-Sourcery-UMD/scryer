@@ -57,6 +57,7 @@ def make_school_surplus_receipt(case: Case, heads: tuple[str, ...], term_id: str
         raise ModelError("MISSING_TERM")
     snapshot = snapshot_events(case, heads)
     approvals = {event.fact.fact_id: event for event in snapshot if event.fact is not None}
+    proposals = {proposal.proposal_id: proposal for proposal in case.proposals}
     corrections: dict[str, list] = {}
     for event in snapshot:
         if event.correction is not None:
@@ -85,10 +86,20 @@ def make_school_surplus_receipt(case: Case, heads: tuple[str, ...], term_id: str
             correction_recorded_at = current.recorded_at
         if amount is None:
             raise ModelError("INVALID_CORRECTION")
+        proposal = proposals.get(fact.proposal_id) if fact.proposal_id is not None else None
+        if fact.proposal_id is not None and proposal is None:
+            raise ModelError("MISSING_PROPOSAL")
         contribution = amount if fact.role == "school_credit" else -amount
         steps.append(
             {
                 "factId": fact_id,
+                "proposalId": fact.proposal_id,
+                "proposedAmountMinor": (
+                    str(proposal.proposed_amount_minor)
+                    if proposal is not None and proposal.proposed_amount_minor is not None else None
+                ),
+                "parserVersion": proposal.parser_version if proposal is not None else None,
+                "mappingVersion": proposal.mapping_version if proposal is not None else None,
                 "role": fact.role,
                 "originalAmountMinor": str(fact.amount_minor),
                 "currentAmountMinor": str(amount),

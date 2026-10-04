@@ -19,6 +19,7 @@
   },
   "$defs": {
     "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"},
+    "version": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
     "location": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[!-~]+$"},
     "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
     "sourceDate": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}]},
@@ -80,17 +81,20 @@
     },
     "proposal": {
       "type": "object", "additionalProperties": false,
-      "required": ["proposalId", "artifactId", "sourceLocation", "rawValue"],
+      "required": ["proposalId", "artifactId", "sourceLocation", "rawValue", "parserVersion", "mappingVersion", "proposedAmountMinor"],
       "properties": {
         "proposalId": {"$ref": "#/$defs/id"},
         "artifactId": {"$ref": "#/$defs/id"},
         "sourceLocation": {"$ref": "#/$defs/location"},
-        "rawValue": {"type": "string", "maxLength": 65536}
+        "rawValue": {"type": "string", "maxLength": 65536},
+        "parserVersion": {"$ref": "#/$defs/version"},
+        "mappingVersion": {"$ref": "#/$defs/version"},
+        "proposedAmountMinor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/nonnegativeMinor"}]}
       }
     },
     "fact": {
       "type": "object", "additionalProperties": false,
-      "required": ["factId", "termId", "accountRefId", "currency", "role", "amountMinor", "effectiveDate", "source", "reviewId"],
+      "required": ["factId", "termId", "accountRefId", "currency", "role", "amountMinor", "proposalId", "effectiveDate", "source", "reviewId"],
       "properties": {
         "factId": {"$ref": "#/$defs/id"},
         "termId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
@@ -98,6 +102,7 @@
         "currency": {"const": "USD"},
         "role": {"enum": ["school_credit", "school_charge", "refund_issued", "bank_credit_observed", "aid_offer", "aid_pending", "balance_snapshot", "work_study_offer"]},
         "amountMinor": {"$ref": "#/$defs/nonnegativeMinor"},
+        "proposalId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
         "effectiveDate": {"$ref": "#/$defs/sourceDate"},
         "source": {"$ref": "#/$defs/source"},
         "reviewId": {"$ref": "#/$defs/id"}

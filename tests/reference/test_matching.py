@@ -169,6 +169,9 @@ class MatchingTests(unittest.TestCase):
                 "artifactId": "bank-period",
                 "sourceLocation": "row:99",
                 "rawValue": "900.00",
+                "parserVersion": "synthetic.1",
+                "mappingVersion": "bank-map.1",
+                "proposedAmountMinor": "90000",
             }
         )
         result = query(raw)
