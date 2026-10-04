@@ -900,9 +900,12 @@
         "M7",
         "M8"
       ],
-      "tests": [],
+      "tests": [
+        "tests/crypto/test_vectors.mjs — fixed independent Node/OpenSSL HKDF/AES-GCM bytes"
+      ],
       "evidence": [
-        "M6 design selected locally in docs/backend/security/local-storage-design.md; executable crypto and independent review remain open"
+        "M6 design selected locally in docs/backend/security/local-storage-design.md; executable crypto and independent review remain open",
+        "M6-1 crypto-v1 format frozen; three Node vector checks and generator/fixture equality exit 0; browser implementation open"
       ],
       "status": "IN_PROGRESS"
     },

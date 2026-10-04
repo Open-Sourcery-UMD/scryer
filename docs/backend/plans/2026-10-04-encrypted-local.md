@@ -47,9 +47,9 @@
 
 **Requirements:** S-48, S-57, S-58, S-60, S-61; depends on M1 and reviewed M5 command contract. **Risk:** critical, format mistakes are hard to migrate.
 
-- [ ] Write exact field/encoding/AAD definitions and bounds in `contracts/crypto-v1.md`, including missing/unsupported versions and no partial plaintext semantics.
-- [ ] Add independent synthetic Node HKDF/AES-GCM vector generator/checker inputs, or record a published known-answer source with exact bytes; run the vector test expecting no browser implementation yet.
-- [ ] Self-review key hierarchy, cross-device derivation, nonce budget, archive and sync size compatibility; record unresolved M4/M7 gates and commit M6-1.
+- [x] Write exact field/encoding/AAD definitions and bounds in `contracts/crypto-v1.md`, including missing/unsupported versions and no partial plaintext semantics.
+- [x] Add independent synthetic Node HKDF/AES-GCM vector generator/checker inputs; run the vector test before browser crypto exists.
+- [x] Self-review key hierarchy, cross-device derivation, nonce budget, archive and sync size compatibility; record unresolved M4/M7 gates and commit M6-1.
 
 ## Task 2 — WebCrypto keys, recovery, and chunk envelopes
 
