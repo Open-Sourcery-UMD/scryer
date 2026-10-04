@@ -901,8 +901,10 @@
         "M8"
       ],
       "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "evidence": [
+        "M6 design selected locally in docs/backend/security/local-storage-design.md; executable crypto and independent review remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-58",

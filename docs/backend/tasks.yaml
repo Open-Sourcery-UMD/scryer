@@ -570,7 +570,7 @@
     {
       "id": "M6",
       "title": "Encrypted local storage and recovery",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "dependsOn": [
         "M1",
         "M5"
@@ -602,7 +602,7 @@
         "wrong-key restore",
         "second-device recovery"
       ],
-      "command": "Freeze after crypto design and browser dependencies are installed",
+      "command": "Follow docs/backend/plans/2026-10-04-encrypted-local.md; run offline typecheck, independent crypto interop, and real-browser IndexedDB tests",
       "expected": "Browser and crypto gates pass",
       "risk": "CRITICAL",
       "done": "Reviewed design and real-browser failure/recovery tests pass."
