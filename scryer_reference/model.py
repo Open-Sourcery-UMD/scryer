@@ -106,6 +106,25 @@ class Correction:
 
 
 @dataclass(frozen=True)
+class CoverageAssertion:
+    coverage_id: str
+    account_ref_id: str
+    record_type: str
+    start_date: str
+    end_date_exclusive: str
+    basis: str
+    source: SourceRef
+    review_id: str
+
+
+@dataclass(frozen=True)
+class CoverageRetraction:
+    coverage_id: str
+    reason: str
+    review_id: str
+
+
+@dataclass(frozen=True)
 class Event:
     event_id: str
     parents: tuple[str, ...]
@@ -113,6 +132,8 @@ class Event:
     kind: str
     fact: Fact | None = None
     correction: Correction | None = None
+    coverage: CoverageAssertion | None = None
+    retraction: CoverageRetraction | None = None
 
 
 @dataclass(frozen=True)
@@ -382,6 +403,58 @@ def _correction(value: Any, artifact_ids: set[str]) -> Correction:
     )
 
 
+def _coverage(value: Any, accounts: dict[str, AccountRef], artifacts: dict[str, Artifact]) -> CoverageAssertion:
+    value = _fields(
+        value,
+        {"coverageId", "accountRefId", "recordType", "startDate", "endDateExclusive", "basis", "source", "reviewId"},
+    )
+    account_id = _identifier(value["accountRefId"])
+    account = accounts.get(account_id)
+    if account is None:
+        raise ModelError("MISSING_ACCOUNT")
+    if account.kind != "bank":
+        raise ModelError("ACCOUNT_KIND_MISMATCH")
+    if value["recordType"] != "bank_transactions":
+        raise ModelError("UNSUPPORTED_COVERAGE_TYPE")
+    start = _source_date(value["startDate"])
+    end = _source_date(value["endDateExclusive"])
+    if start is None or end is None or start >= end:
+        raise ModelError("INVALID_COVERAGE_INTERVAL")
+    basis = value["basis"]
+    if type(basis) is not str or basis not in {"source_asserted", "user_asserted"}:
+        raise ModelError("INVALID_COVERAGE_BASIS")
+    source = _source(value["source"], set(artifacts))
+    if basis == "source_asserted":
+        if source.artifact_id is None or artifacts[source.artifact_id].kind != "bank_statement":
+            raise ModelError("INVALID_COVERAGE_SOURCE")
+        if artifacts[source.artifact_id].account_ref_id != account_id:
+            raise ModelError("SOURCE_ACCOUNT_MISMATCH")
+    elif source.kind != "manual":
+        raise ModelError("INVALID_COVERAGE_SOURCE")
+    return CoverageAssertion(
+        coverage_id=_identifier(value["coverageId"]),
+        account_ref_id=account_id,
+        record_type="bank_transactions",
+        start_date=start,
+        end_date_exclusive=end,
+        basis=basis,
+        source=source,
+        review_id=_identifier(value["reviewId"]),
+    )
+
+
+def _retraction(value: Any) -> CoverageRetraction:
+    value = _fields(value, {"coverageId", "reason", "reviewId"})
+    reason = value["reason"]
+    if type(reason) is not str or reason not in {"incorrect_period", "wrong_account", "source_invalid", "other"}:
+        raise ModelError("INVALID_RETRACTION_REASON")
+    return CoverageRetraction(
+        coverage_id=_identifier(value["coverageId"]),
+        reason=reason,
+        review_id=_identifier(value["reviewId"]),
+    )
+
+
 def _event(
     value: Any,
     terms: dict[str, AcademicTerm],
@@ -396,10 +469,26 @@ def _event(
         value = _fields(value, common | {"fact"})
         fact = _fact(value["fact"], terms, accounts, artifacts)
         correction = None
+        coverage = None
+        retraction = None
     elif kind == "correct_fact":
         value = _fields(value, common | {"correction"})
         fact = None
         correction = _correction(value["correction"], set(artifacts))
+        coverage = None
+        retraction = None
+    elif kind == "assert_coverage":
+        value = _fields(value, common | {"coverage"})
+        fact = None
+        correction = None
+        coverage = _coverage(value["coverage"], accounts, artifacts)
+        retraction = None
+    elif kind == "retract_coverage":
+        value = _fields(value, common | {"retraction"})
+        fact = None
+        correction = None
+        coverage = None
+        retraction = _retraction(value["retraction"])
     else:
         raise ModelError("UNSUPPORTED_EVENT")
     return Event(
@@ -409,6 +498,8 @@ def _event(
         kind=kind,
         fact=fact,
         correction=correction,
+        coverage=coverage,
+        retraction=retraction,
     )
 
 
@@ -486,7 +577,16 @@ def load_case_json(document: str) -> Case:
     facts_by_id = {event.fact.fact_id: event.fact for event in ordered if event.fact is not None}
     if sum(event.fact is not None for event in ordered) != len(fact_approvals):
         raise ModelError("DUPLICATE_FACT_ID")
-    reviews = [event.fact.review_id if event.fact else event.correction.review_id for event in ordered]
+    coverage_approvals = {event.coverage.coverage_id: event.event_id for event in ordered if event.coverage is not None}
+    if sum(event.coverage is not None for event in ordered) != len(coverage_approvals):
+        raise ModelError("DUPLICATE_COVERAGE_ID")
+    reviews = [
+        event.fact.review_id if event.fact is not None else
+        event.correction.review_id if event.correction is not None else
+        event.coverage.review_id if event.coverage is not None else
+        event.retraction.review_id
+        for event in ordered
+    ]
     if len(reviews) != len(set(reviews)):
         raise ModelError("DUPLICATE_REVIEW_ID")
     for event in ordered:
@@ -502,6 +602,10 @@ def load_case_json(document: str) -> Case:
                     and artifact_account_id != facts_by_id[event.correction.fact_id].account_ref_id
                 ):
                     raise ModelError("SOURCE_ACCOUNT_MISMATCH")
+        if event.retraction is not None:
+            approval_id = coverage_approvals.get(event.retraction.coverage_id)
+            if approval_id is None or approval_id not in event.parents:
+                raise ModelError("INVALID_RETRACTION_CAUSALITY")
     return Case(
         schema_version="1",
         case_id=_identifier(raw["caseId"]),

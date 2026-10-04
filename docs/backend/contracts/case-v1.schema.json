@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://scryer.invalid/contracts/case-v1.schema.json",
   "title": "Scryer local approved case v1",
-  "description": "Parser additionally rejects duplicate JSON keys, out-of-range i64 values, invalid Gregorian dates, missing references, duplicate IDs, event cycles, and decoded proposal fields over 65536 UTF-8 bytes.",
+  "description": "Parser additionally rejects duplicate JSON keys, out-of-range i64 values, invalid Gregorian dates, missing references, duplicate IDs, event cycles, invalid account/source/coverage bindings, and decoded proposal fields over 65536 UTF-8 bytes.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "caseId", "institutions", "accountRefs", "terms", "artifacts", "proposals", "events"],
@@ -117,6 +117,29 @@
         "else": {"properties": {"replacementAmountMinor": {"$ref": "#/$defs/nonnegativeMinor"}}}
       }]
     },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["coverageId", "accountRefId", "recordType", "startDate", "endDateExclusive", "basis", "source", "reviewId"],
+      "properties": {
+        "coverageId": {"$ref": "#/$defs/id"},
+        "accountRefId": {"$ref": "#/$defs/id"},
+        "recordType": {"const": "bank_transactions"},
+        "startDate": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "endDateExclusive": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "basis": {"enum": ["source_asserted", "user_asserted"]},
+        "source": {"$ref": "#/$defs/source"},
+        "reviewId": {"$ref": "#/$defs/id"}
+      }
+    },
+    "coverageRetraction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["coverageId", "reason", "reviewId"],
+      "properties": {
+        "coverageId": {"$ref": "#/$defs/id"},
+        "reason": {"enum": ["incorrect_period", "wrong_account", "source_invalid", "other"]},
+        "reviewId": {"$ref": "#/$defs/id"}
+      }
+    },
     "event": {
       "oneOf": [
         {
@@ -139,6 +162,28 @@
             "recordedAt": {"$ref": "#/$defs/utc"},
             "kind": {"const": "correct_fact"},
             "correction": {"$ref": "#/$defs/correction"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "coverage"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "assert_coverage"},
+            "coverage": {"$ref": "#/$defs/coverage"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "retraction"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "retract_coverage"},
+            "retraction": {"$ref": "#/$defs/coverageRetraction"}
           }
         }
       ]

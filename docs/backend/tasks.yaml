@@ -267,7 +267,7 @@
     {
       "id": "M2-5b",
       "title": "Explicit bank coverage",
-      "status": "IN_PROGRESS",
+      "status": "DONE",
       "dependsOn": [
         "M2-5a"
       ],
@@ -304,7 +304,7 @@
     {
       "id": "M2-5c",
       "title": "Conservative matching and allocations",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "dependsOn": [
         "M2-5b"
       ],

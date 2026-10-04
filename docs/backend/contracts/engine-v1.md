@@ -12,7 +12,9 @@ For M2 the executable operations are:
 - `make_school_surplus_receipt(case, heads, term_id) -> receipt`.
 - `check_school_surplus_receipt(case, receipt) -> checker result`, implemented independently from the production engine.
 
-Later required versioned operations are capability inspection, historical/timeline projection, matching and allocations, coverage, discrepancy queue, source/calculation traversal, batch evaluation, and receipt generation for supported metrics. These remain unimplemented until their detailed schemas and negative tests are frozen. No placeholder success response is allowed.
+Later required production operations are capability inspection, historical/timeline projection, matching and allocations, coverage, discrepancy queue, source/calculation traversal, batch evaluation, and receipt generation for supported metrics. The Python reference coverage operation below exists; the other listed operations and all native/WASM implementations remain open until their detailed schemas and negative tests are frozen. No placeholder success response is allowed.
+
+The local Python reference now implements `evaluate_bank_coverage(case, heads, account_ref_id, start_date, end_date_exclusive)`. An `assert_coverage` event records a reviewed `bank_transactions` date interval for one bank account and names its source/basis. A `retract_coverage` event directly names the assertion event as a parent and removes that claim from later snapshots. The evaluator reports exact covered and missing intervals and source-based versus user-based status. Native and WASM parity for these operations remains open.
 
 For a school-surplus query, output includes `schemaVersion`, `engineVersion`, `ruleVersion`, `caseId`, sorted `heads`, `termId`, `status`, `amountMinor` or null, sorted participating `factIds`, and stable limitation codes. A conflicting correction returns `CONTRADICTORY_EVIDENCE` with null amount. If no selected approved facts exist, status is `INSUFFICIENT_COVERAGE` with null amount. A source-based total does not imply the source set is complete.
 

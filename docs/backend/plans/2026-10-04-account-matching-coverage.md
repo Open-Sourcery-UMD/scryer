@@ -44,13 +44,13 @@
 
 **Files:** Modify `scryer_reference/model.py`, `docs/backend/contracts/case-v1.schema.json`; create `scryer_reference/coverage.py`, `tests/reference/test_coverage.py`.
 
-**Interfaces:** New `assert_coverage` event carries `coverageId`, `accountRefId`, `recordType`, `startDate`, `endDateExclusive`, `basis` (`source_asserted` or `user_asserted`), source reference, and review ID. `evaluate_bank_coverage(case: Case, heads: tuple[str,...], account_ref_id: str, start_date: str, end_date_exclusive: str) -> CoverageResult` returns `SUPPORTED_BY_UPLOADED_RECORDS`, `USER_ASSERTED`, or `INSUFFICIENT_COVERAGE` with the exact covered/missing intervals.
+**Interfaces:** New `assert_coverage` event carries `coverageId`, `accountRefId`, `recordType`, `startDate`, `endDateExclusive`, `basis` (`source_asserted` or `user_asserted`), source reference, and review ID. A `retract_coverage` event references the original assertion by direct causal parent. `evaluate_bank_coverage(case: Case, heads: tuple[str,...], account_ref_id: str, start_date: str, end_date_exclusive: str) -> CoverageResult` returns `SUPPORTED_BY_UPLOADED_RECORDS`, `USER_ASSERTED`, or `INSUFFICIENT_COVERAGE` with the exact covered/missing intervals.
 
-- [ ] Write failing tests for complete explicit period, user assertion, gap, wrong account, early end, and CSV extrema without any assertion.
-- [ ] Run targeted tests. Expected: missing event/operation failure.
-- [ ] Implement half-open interval validation and deterministic union; never infer completeness from observed bank transaction dates.
-- [ ] Run targeted and full reference suite. Expected: exit 0.
-- [ ] Inspect diff and commit `feat(reference): evaluate explicit bank coverage` with task ID M2-5b and verification.
+- [x] Write failing tests for complete explicit period, user assertion, gap, wrong account, early end, and bank observations without any assertion; add retraction and malformed-input tests.
+- [x] Run targeted tests. The missing module failed, then malformed basis exposed an untyped error.
+- [x] Implement half-open interval validation, deterministic union, account-specific source binding, and causal retraction; never infer completeness from observed bank transaction dates.
+- [x] Run targeted and full reference suite: 67 tests passed.
+- [x] Inspect diff and commit `feat(reference): evaluate explicit bank coverage` with task ID M2-5b and verification.
 
 ### Task 3: Conservative matching and reviewed allocations
 
