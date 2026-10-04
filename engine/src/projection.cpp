@@ -10,7 +10,6 @@
 #include <set>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -34,38 +33,6 @@ std::vector<std::string> sorted_heads(Heads heads) {
     std::vector<std::string> result(heads.begin(), heads.end());
     std::sort(result.begin(), result.end());
     return result;
-}
-
-const Event* current_correction(const std::vector<const Event*>& corrections) {
-    if (corrections.empty()) {
-        return nullptr;
-    }
-    std::unordered_set<std::string> ids;
-    ids.reserve(corrections.size());
-    for (const auto* event : corrections) {
-        ids.insert(event->event_id);
-    }
-    std::unordered_set<std::string> superseded;
-    for (const auto* event : corrections) {
-        for (const auto& parent : event->parents) {
-            if (ids.contains(parent)) {
-                superseded.insert(parent);
-            }
-        }
-    }
-    const Event* current = nullptr;
-    for (const auto* event : corrections) {
-        if (!superseded.contains(event->event_id)) {
-            if (current != nullptr) {
-                throw ScryerError("UNRESOLVED_CORRECTION_CONFLICT");
-            }
-            current = event;
-        }
-    }
-    if (current == nullptr) {
-        throw ScryerError("UNRESOLVED_CORRECTION_CONFLICT");
-    }
-    return current;
 }
 
 Evaluation evaluate(const Case& case_data, Heads heads, std::string_view term_id) {

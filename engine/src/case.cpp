@@ -765,6 +765,10 @@ Case parse_case(const Json& document) {
     return case_data;
 }
 
+std::string canonical_date(std::string_view date) {
+    return date_text(Json(std::string(date)));
+}
+
 std::vector<const Event*> snapshot(const Case& case_data, Heads heads) {
     std::unordered_map<std::string, const Event*> events;
     for (const auto& event : case_data.events) {
@@ -846,6 +850,38 @@ HistoryResult heads_as_known(const Case& case_data, std::string_view cutoff_utc)
     std::sort(result.reason_codes.begin(), result.reason_codes.end());
     result.status = !result.reason_codes.empty() ? "AMBIGUOUS" : result.heads.empty() ? "EMPTY" : "UNIQUE";
     return result;
+}
+
+const Event* current_correction(const std::vector<const Event*>& corrections) {
+    if (corrections.empty()) {
+        return nullptr;
+    }
+    std::unordered_set<std::string> ids;
+    ids.reserve(corrections.size());
+    for (const auto* event : corrections) {
+        ids.insert(event->event_id);
+    }
+    std::unordered_set<std::string> superseded;
+    for (const auto* event : corrections) {
+        for (const auto& parent : event->parents) {
+            if (ids.contains(parent)) {
+                superseded.insert(parent);
+            }
+        }
+    }
+    const Event* current = nullptr;
+    for (const auto* event : corrections) {
+        if (!superseded.contains(event->event_id)) {
+            if (current != nullptr) {
+                throw ScryerError("UNRESOLVED_CORRECTION_CONFLICT");
+            }
+            current = event;
+        }
+    }
+    if (current == nullptr) {
+        throw ScryerError("UNRESOLVED_CORRECTION_CONFLICT");
+    }
+    return current;
 }
 
 }  // namespace scryer

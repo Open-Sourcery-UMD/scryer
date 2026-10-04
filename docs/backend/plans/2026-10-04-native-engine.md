@@ -96,10 +96,10 @@
 
 **Interfaces:** `evaluate_bank_coverage`, `suggest_refund_deposits`, and `project_aid_lifecycle` mirror the Python reference result fields; every output includes stable status, exact amounts, and reason/finding codes.
 
-- [ ] Add source period/retraction, split/overallocated deposits, recipient mismatch/unknown/exception, annual aid, work-study, gross/fee/net, and missing-fee tests from the named fixtures.
-- [ ] Run focused tests expecting failures.
-- [ ] Implement bounded interval union, per-account matching with reviewed allocations, and evidence-only aid lifecycle; preserve uncertainty and typed limits.
-- [ ] Compare all fixed coverage/matching/lifecycle operations and 200 seeded supported cases; commit Task M3-6.
+- [x] Add source period/retraction, split/overallocated deposits, recipient mismatch/unknown/exception, annual aid, work-study, gross/fee/net, and missing-fee tests from the named fixtures.
+- [x] Run focused tests expecting failures.
+- [x] Implement bounded interval union, per-account matching with reviewed allocations, and evidence-only aid lifecycle; preserve uncertainty and typed limits.
+- [x] Compare all fixed coverage/matching/lifecycle operations and 200 seeded supported cases; commit Task M3-6.
 
 ## Task 7 — Complete native operation surface and CLI
 

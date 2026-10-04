@@ -131,9 +131,11 @@ struct HistoryResult {
 using Heads = std::span<const std::string>;
 
 [[nodiscard]] Case parse_case(const Json& document);
+[[nodiscard]] std::string canonical_date(std::string_view date);
 // Returned event pointers borrow case_data.events; keep the parsed Case alive and
 // do not mutate or reorder its events while using a snapshot.
 [[nodiscard]] std::vector<const Event*> snapshot(const Case& case_data, Heads heads);
 [[nodiscard]] HistoryResult heads_as_known(const Case& case_data, std::string_view cutoff_utc);
+[[nodiscard]] const Event* current_correction(const std::vector<const Event*>& corrections);
 
 }  // namespace scryer

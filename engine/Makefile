@@ -1,7 +1,7 @@
 CXX ?= clang++
 CXXFLAGS ?= -std=c++20 -O2 -Wall -Wextra -Werror -pedantic
 
-.PHONY: test-money test-json test-case test-projection test-receipt case-probe projection-probe receipt-probe
+.PHONY: test-money test-json test-case test-projection test-receipt test-coverage test-matching test-lifecycle case-probe projection-probe receipt-probe evidence-probe
 
 test-money:
 	@mkdir -p build
@@ -44,3 +44,25 @@ test-receipt:
 receipt-probe:
 	@mkdir -p build
 	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor ../tests/engine/receipt_probe.cpp src/receipt.cpp src/projection.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/receipt_probe
+
+test-coverage:
+	@mkdir -p build
+	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor -fsyntax-only ../tests/engine/test_coverage.cpp
+	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor ../tests/engine/test_coverage.cpp src/coverage.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/test_coverage
+	./build/test_coverage
+
+test-matching:
+	@mkdir -p build
+	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor -fsyntax-only ../tests/engine/test_matching.cpp
+	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor ../tests/engine/test_matching.cpp src/matching.cpp src/coverage.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/test_matching
+	./build/test_matching
+
+test-lifecycle:
+	@mkdir -p build
+	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor -fsyntax-only ../tests/engine/test_lifecycle.cpp
+	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor ../tests/engine/test_lifecycle.cpp src/lifecycle.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/test_lifecycle
+	./build/test_lifecycle
+
+evidence-probe:
+	@mkdir -p build
+	$(CXX) $(CXXFLAGS) -Iinclude -Ivendor ../tests/engine/evidence_probe.cpp src/coverage.cpp src/matching.cpp src/lifecycle.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/evidence_probe

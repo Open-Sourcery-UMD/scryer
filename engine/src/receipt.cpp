@@ -12,7 +12,6 @@
 #include <set>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -51,38 +50,6 @@ Json source_json(const SourceRef& source, const Case& case_data) {
         {"kind", "artifact"}, {"artifactId", *source.artifact_id}, {"location", *source.location},
         {"sha256", artifact->sha256}, {"observedAt", artifact->observed_at}
     };
-}
-
-const Event* current_correction(const std::vector<const Event*>& corrections) {
-    if (corrections.empty()) {
-        return nullptr;
-    }
-    std::unordered_set<std::string> ids;
-    ids.reserve(corrections.size());
-    for (const auto* event : corrections) {
-        ids.insert(event->event_id);
-    }
-    std::unordered_set<std::string> superseded;
-    for (const auto* event : corrections) {
-        for (const auto& parent : event->parents) {
-            if (ids.contains(parent)) {
-                superseded.insert(parent);
-            }
-        }
-    }
-    const Event* current = nullptr;
-    for (const auto* event : corrections) {
-        if (!superseded.contains(event->event_id)) {
-            if (current != nullptr) {
-                throw ScryerError("UNRESOLVED_CORRECTION_CONFLICT");
-            }
-            current = event;
-        }
-    }
-    if (current == nullptr) {
-        throw ScryerError("UNRESOLVED_CORRECTION_CONFLICT");
-    }
-    return current;
 }
 
 Json receipt_step(
