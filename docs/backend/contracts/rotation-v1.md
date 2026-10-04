@@ -1,0 +1,19 @@
+# Scryer local key rotation v1
+
+Status: locally implemented and exercised in Chrome with synthetic cases. Browser-side C++/WASM case validation, cross-browser behavior, remote multi-device conflict handling, and independent human security review remain open.
+
+## Generation rotation
+
+The derived AES-GCM key for each `(account,case,generation,device)` is limited to `2^20` encryptions. `commitReviewed` rejects a further use with `KEY_USE_LIMIT`. It never silently changes generation. `prepareGenerationRotation` validates all current encrypted cases, reserves uses under each case's next generation, creates fresh revision/package IDs and nonces, reencrypts the same case/ledger plaintext, and stores only prepared ciphertext plus prior revision/digest anchors in a durable `migrations[rotation:<operationId>]` journal. No approved case or outbox is changed during preparation. An interrupted preparation may burn reserved uses; the old generation remains readable.
+
+`commitGenerationRotation` can resume from that journal after a browser close and recovery unlock. It authenticates and semantically validates every new package, checks that every current case still matches its prior revision/digest and that the account wrapper has not changed, then replaces all cases, anchors, and pending outbox operations in one IndexedDB transaction. The same transaction marks the journal committed. An abort leaves the prepared journal and old cases/outbox intact; retry is safe. `abortRotation` discards only a prepared journal, leaving the old case and consumed reservations. Subsequent reviewed commits use the stored current generation; an explicit stale generation fails `STALE_KEY_GENERATION`.
+
+## Recovery-secret rotation
+
+Changing only the recovery wrapper around the same root would not revoke an old saved wrapper and secret: the old root could still derive all new case keys. Therefore `prepareRecoveryRotation` generates an independent random account root and 32-byte recovery secret, verifies the new secret against its wrapper, reencrypts all current cases under the new root, and journals only the new wrapper and ciphertext. It returns the new secret to the caller; the secret is never stored. The old root and wrapper remain active during preparation. A user must save and re-enter the new secret before `commitRecoveryRotation`.
+
+Commit unwraps the new root with the re-entered secret, verifies its proof and every new case, then switches account wrapper/root proof, all cases/anchors, and their new pending ciphertext outbox operations in one transaction. Only after `transaction.oncomplete` does the old session lock. A failed quota write or interruption leaves the old wrapper and both old cases intact, with the prepared journal available for retry using the saved new secret. A committed rotation makes the old root unable to open the current local case; a fresh device with the new secret can. The journal retains no plaintext root, recovery secret, case, ledger, or source bytes. A wrong secret fails before any local replacement.
+
+Old portable archives remain encrypted under the old root and still require their old recovery secret. They are not silently rewritten or revoked. The UI must ask the user to export a new backup after recovery rotation and make the old-backup consequence explicit. Other devices with old roots require the M8 conflict/recovery flow; this local transaction does not establish server-wide revocation. Losing every unlocked new-root device and the new secret remains unrecoverable.
+
+Chrome tests cover exhausted key budget, prepared journal resume after reopening, repeat commit result, stale generation refusal, old backup compatibility, new-secret verification, wrong-secret rejection, second-device unlock, a two-case interrupted root switch, plaintext-free journal inspection, abort of a prepared generation, and rejection of the old root against the new local account. This is local synthetic evidence only.

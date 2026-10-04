@@ -88,10 +88,12 @@ The archive authenticates its complete member list with a root-derived HMAC, ind
 
 **Requirements:** S-57, S-58, S-60, S-61; depends on Tasks 2–4. **Interfaces:** `rotateGeneration`, `rotateRecoverySecret`, second-device import/unlock. **Risk:** critical, loss of access under interruption.
 
-- [ ] Write failing browser tests for counter-limit-triggered rotation, interrupted re-encryption, old backup compatibility, new-secret verification, two-device independent key derivation, stale generation conflict, and lock/key-loss behavior.
-- [ ] Run tests expecting missing rotation.
-- [ ] Implement journaled generation/recovery wrapper transition and resume/rollback state; never retire old material before verification and a complete local transaction.
-- [ ] Run clean offline install, typecheck, browser, independent Node crypto, native/reference suites, privacy scan, and task ledger; commit M6-5 only if the gates pass.
+- [x] Write failing browser tests for counter-limit-triggered rotation, interrupted re-encryption, old backup compatibility, new-secret verification, two-device independent key derivation, stale generation conflict, and lock/key-loss behavior.
+- [x] Run tests expecting missing rotation.
+- [x] Implement journaled generation and new-root recovery transitions with resume/abort state; keep old material active until verification and a complete local transaction.
+- [x] Run clean offline install, typecheck, browser, independent Node crypto, native/reference suites, privacy scan, and task ledger; commit M6-5 only if the gates pass.
+
+Recovery-secret rotation deliberately generates a new root and reencrypts current cases. Rewrapping the same root would leave an old saved wrapper/secret able to open new cases. Old portable backups still require the old secret. The frontend must ask for a new backup after rotation. The tested browser validator is synthetic while M4 WASM validation remains blocked; this keeps the product-level M6 gate open.
 
 ## Gate to M7
 

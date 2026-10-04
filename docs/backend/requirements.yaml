@@ -909,14 +909,16 @@
         "tests/crypto/test_vectors.mjs — fixed independent Node/OpenSSL HKDF/AES-GCM bytes",
         "tests/client/test_crypto.mjs — WebCrypto interop, strict envelopes, tamper, chunk atomicity",
         "tests/browser/test_crypto.mjs — real Chrome fixed-vector open and independent browser-to-Node decrypt",
-        "tests/browser/test_archive.mjs — independent Node/OpenSSL verification of Chrome archive HMAC"
+        "tests/browser/test_archive.mjs — independent Node/OpenSSL verification of Chrome archive HMAC",
+        "tests/browser/test_rotation.mjs — budget exhaustion, journaled generation transition, and new-root rotation"
       ],
       "evidence": [
         "M6 design selected locally in docs/backend/security/local-storage-design.md; independent review remains open",
         "M6-1 crypto-v1 format frozen; three Node vector checks and generator/fixture equality exit 0",
         "M6-2 WebCrypto primitives pass headless and Chrome interop/tamper checks",
         "M6-3 encrypted IndexedDB persistence and durable encryption-use budgets pass Chrome failure tests",
-        "M6-4 archive-wide HMAC membership check passes Chrome and independent Node/OpenSSL; official-client sync and independent review remain open"
+        "M6-4 archive-wide HMAC membership check passes Chrome and independent Node/OpenSSL",
+        "M6-5 two-case rotation and interruption tests pass Chrome; official-client sync and independent review remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -934,10 +936,11 @@
       "tests": [
         "tests/client/test_crypto.mjs — recovery re-entry, wrong secret and second-device unlock",
         "tests/browser/test_crypto.mjs — fresh Chrome page recovery",
-        "tests/browser/test_archive.mjs — recovery-secret-gated fresh-device archive restore"
+        "tests/browser/test_archive.mjs — recovery-secret-gated fresh-device archive restore",
+        "tests/browser/test_rotation.mjs — new-root secret re-entry, wrong-secret refusal, second-device unlock"
       ],
       "evidence": [
-        "M6-2 high-entropy recovery secret and authenticated root wrapper pass local tests; M6-4 Chrome archive restore works in a fresh profile; frontend key-save UX and rotation remain open"
+        "M6-2 high-entropy recovery secret and authenticated root wrapper pass local tests; M6-4 Chrome archive restore works in a fresh profile; M6-5 new-root rotation passes local interruption/re-entry checks; frontend key-save UX remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -968,10 +971,11 @@
         "M8"
       ],
       "tests": [
-        "tests/browser/test_storage.mjs — two-tab local revision CAS, atomic outbox, byte-identical retry after reload"
+        "tests/browser/test_storage.mjs — two-tab local revision CAS, atomic outbox, byte-identical retry after reload",
+        "tests/browser/test_rotation.mjs — journaled stale-head/account-wrapper checks and two-case atomic switch"
       ],
       "evidence": [
-        "M6-3 local encrypted conflict/outbox behavior passes Chrome; remote multi-device conflicts remain open"
+        "M6-3 local encrypted conflict/outbox behavior and M6-5 two-case rotation switch pass Chrome; remote multi-device conflicts remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -987,10 +991,11 @@
         "M8"
       ],
       "tests": [
-        "tests/browser/test_archive.mjs — canonical HMAC archive, optional originals, conflict preview, two-case atomic restore, and v1-to-v2 migration"
+        "tests/browser/test_archive.mjs — canonical HMAC archive, optional originals, conflict preview, two-case atomic restore, and v1-to-v2 migration",
+        "tests/browser/test_rotation.mjs — old backup remains decryptable under old secret after new-root rotation"
       ],
       "evidence": [
-        "M6-4 Chrome archive tag independently verifies in Node/OpenSSL; wrong-key/tamper/interruption/fresh-device checks pass; frontend UX and independent review remain open"
+        "M6-4 Chrome archive tag independently verifies in Node/OpenSSL; wrong-key/tamper/interruption/fresh-device checks pass; M6-5 old-backup compatibility passes; frontend UX and independent review remain open"
       ],
       "status": "IN_PROGRESS"
     },
