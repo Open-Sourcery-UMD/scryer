@@ -37,6 +37,8 @@ class ReceiptTests(unittest.TestCase):
         self.assertEqual(grant["approvalReviewId"], "review-grant")
         self.assertEqual(grant["correctionReviewId"], "review-grant-correction")
         self.assertEqual(grant["effectiveDate"], "2026-08-20")
+        self.assertEqual(grant["originalSourceRef"]["location"], "row:1")
+        self.assertEqual(grant["sourceRef"]["location"], "row:1-revised")
         self.assertEqual(grant["sourceRef"]["observedAt"], "2026-09-01T10:00:00Z")
         self.assertIn("SOURCE_AUTHENTICITY_NOT_VERIFIED", receipt["limitations"])
         self.assertEqual(len(receipt["digest"]), 64)
@@ -77,6 +79,25 @@ class ReceiptTests(unittest.TestCase):
         result = check_receipt(case, receipt)
         self.assertFalse(result.valid)
         self.assertEqual(result.code, "MISSING_SOURCE")
+
+    def test_changed_original_source_reference_fails_with_valid_digest(self):
+        case = golden_case()
+        receipt = make_school_surplus_receipt(case, ("event-extra-charge",), "2026-fall")
+        next(step for step in receipt["facts"] if step["factId"] == "grant")["originalSourceRef"]["location"] = "row:99"
+        redigest(receipt)
+        result = check_receipt(case, receipt)
+        self.assertFalse(result.valid)
+        self.assertEqual(result.code, "MISSING_SOURCE")
+
+    def test_deeply_nested_direct_receipt_is_typed_invalid(self):
+        receipt = make_school_surplus_receipt(golden_case(), ("event-extra-charge",), "2026-fall")
+        nested = None
+        for _ in range(2000):
+            nested = [nested]
+        receipt["facts"] = nested
+        result = check_receipt(golden_case(), receipt)
+        self.assertFalse(result.valid)
+        self.assertEqual(result.code, "INVALID_RECEIPT")
 
     def test_unsupported_receipt_version_fails(self):
         case = golden_case()

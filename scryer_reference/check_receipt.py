@@ -24,6 +24,7 @@ _STEP_KEYS = frozenset(
     {
         "factId", "role", "originalAmountMinor", "currentAmountMinor",
         "contributionMinor", "approvalEventId", "correctionEventId", "sourceRef",
+        "originalSourceRef",
         "approvalReviewId", "approvalRecordedAt", "correctionReviewId", "correctionRecordedAt", "effectiveDate",
     }
 )
@@ -70,15 +71,28 @@ def _failed(code: str) -> CheckResult:
 
 
 def _ascii_tree(value: Any) -> bool:
-    if value is None or type(value) is bool:
-        return True
-    if type(value) is str:
-        return value.isascii()
-    if type(value) is list:
-        return all(_ascii_tree(item) for item in value)
-    if type(value) is dict:
-        return all(type(key) is str and key.isascii() and _ascii_tree(item) for key, item in value.items())
-    return False
+    stack = [(value, 0)]
+    visited = 0
+    while stack:
+        item, depth = stack.pop()
+        visited += 1
+        if visited > 500_000 or depth > 16:
+            return False
+        if item is None or type(item) is bool:
+            continue
+        if type(item) is str:
+            if not item.isascii():
+                return False
+        elif type(item) is list:
+            stack.extend((child, depth + 1) for child in item)
+        elif type(item) is dict:
+            for key, child in item.items():
+                if type(key) is not str or not key.isascii():
+                    return False
+                stack.append((child, depth + 1))
+        else:
+            return False
+    return True
 
 
 def _minor(text: Any) -> int | None:
@@ -207,7 +221,10 @@ def check_receipt(case: Case, receipt: dict[str, object]) -> CheckResult:
             correction_recorded_at = latest.recorded_at
         if current_amount is None:
             return _failed("INVALID_REFERENCE")
-        if not _source_matches(current_source, step["sourceRef"], case):
+        if (
+            not _source_matches(fact.source, step["originalSourceRef"], case)
+            or not _source_matches(current_source, step["sourceRef"], case)
+        ):
             return _failed("MISSING_SOURCE")
         if (
             step["approvalEventId"] != approval.event_id

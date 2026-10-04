@@ -97,6 +97,7 @@ def make_school_surplus_receipt(case: Case, heads: tuple[str, ...], term_id: str
                 "correctionReviewId": correction_review_id,
                 "correctionRecordedAt": correction_recorded_at,
                 "effectiveDate": fact.effective_date,
+                "originalSourceRef": _source_ref(fact.source, case),
                 "sourceRef": _source_ref(source, case),
             }
         )
