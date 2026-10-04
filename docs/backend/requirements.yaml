@@ -890,9 +890,14 @@
         "M7",
         "M8"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/sync/test_protocol.py — strict ciphertext chunk/manifest validation and exact package assembly",
+        "tests/browser/test_sync_wire.mjs — Chrome outbox accepted by independent Python parser"
+      ],
+      "evidence": [
+        "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass; authenticated sync and tenant isolation remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-57",

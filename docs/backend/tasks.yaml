@@ -610,7 +610,7 @@
     {
       "id": "M7",
       "title": "Local OIDC and ciphertext sync",
-      "status": "BLOCKED_TOOLING",
+      "status": "IN_PROGRESS",
       "dependsOn": [
         "M1",
         "M6"
