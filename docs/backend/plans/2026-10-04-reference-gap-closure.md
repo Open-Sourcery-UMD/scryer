@@ -10,10 +10,10 @@
 
 **Interface decision to verify before coding:** An issued refund records an explicit intended recipient kind (`student`, `parent`, `third_party`, `unknown`) from reviewed evidence. A local bank account reference records a separately reviewed holder kind. `suggest_refund_deposits` must not offer or confirm a student-account match for a parent/third-party refund without an explicit reviewed exception event that names the source basis. Unknown recipient/holder identity yields an incomplete result, not a silent match. Account labels are user-reviewed metadata, not bank authentication.
 
-- [ ] Write failing cross-recipient, unknown-recipient, and permitted-evidence tests using synthetic fixtures.
-- [ ] Amend versioned case schema and reference parser, then constrain candidate/decision evaluation.
-- [ ] Keep refund-to-bank amount/date matching conservative and auditably reversible.
-- [ ] Run full reference suite and 200 seeded checks; commit only verified behavior.
+- [x] Write failing cross-recipient, unknown-recipient, and permitted-evidence tests using synthetic fixtures.
+- [x] Amend versioned case schema and reference parser, then constrain candidate/decision evaluation.
+- [x] Keep refund-to-bank amount/date matching conservative and auditably reversible.
+- [x] Run full reference suite and 200 seeded checks; commit only verified behavior.
 
 ## Task 2 — M2-7b: Gross, net, and fee evidence (RC-07)
 

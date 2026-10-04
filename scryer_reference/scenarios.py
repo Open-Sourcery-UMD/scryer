@@ -34,6 +34,7 @@ def generate_case(seed: int) -> Case:
                 "accountRefId": "school-a",
                 "currency": "USD",
                 "role": role,
+                "recipientKind": None,
                 "amountMinor": str(amount),
                 "proposalId": None,
                 "aidItemId": None,
@@ -49,7 +50,7 @@ def generate_case(seed: int) -> Case:
         "currency": "USD",
         "institutions": [{"institutionId": "institution-a"}],
         "aidItems": [],
-        "accountRefs": [{"accountRefId": "school-a", "kind": "school", "institutionId": "institution-a"}],
+        "accountRefs": [{"accountRefId": "school-a", "kind": "school", "institutionId": "institution-a", "holderKind": None}],
         "terms": [{
             "termId": "2026-fall",
             "institutionId": "institution-a",

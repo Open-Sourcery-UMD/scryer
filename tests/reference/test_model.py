@@ -13,8 +13,8 @@ def minimal_case():
         "institutions": [{"institutionId": "institution-a"}],
         "aidItems": [],
         "accountRefs": [
-            {"accountRefId": "school-a", "kind": "school", "institutionId": "institution-a"},
-            {"accountRefId": "bank-a", "kind": "bank", "institutionId": None},
+            {"accountRefId": "school-a", "kind": "school", "institutionId": "institution-a", "holderKind": None},
+            {"accountRefId": "bank-a", "kind": "bank", "institutionId": None, "holderKind": "student"},
         ],
         "terms": [
             {
@@ -47,6 +47,7 @@ def minimal_case():
                     "accountRefId": "school-a",
                     "currency": "USD",
                     "role": "school_credit",
+                    "recipientKind": None,
                     "amountMinor": "650000",
                     "proposalId": None,
                     "aidItemId": None,
@@ -86,6 +87,20 @@ class CaseParserTests(unittest.TestCase):
         self.assertEqual(case.events[0].fact.account_ref_id, "school-a")
         self.assertEqual(case.terms[0].institution_id, "institution-a")
         self.assertEqual(tuple(event.event_id for event in snapshot_events(case, ("event-credit",))), ("event-credit",))
+
+    def test_bank_holder_kind_and_refund_recipient_kind_are_strict(self):
+        raw = minimal_case()
+        for holder in (None, "not_a_person", 42):
+            with self.subTest(holder=holder):
+                changed = copy.deepcopy(raw)
+                changed["accountRefs"][1]["holderKind"] = holder
+                with self.assertRaises(ModelError) as raised:
+                    load_case_json(json_case(changed))
+                self.assertEqual(raised.exception.code, "INVALID_HOLDER_KIND")
+        raw["events"][0]["fact"]["recipientKind"] = "parent"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "INVALID_RECIPIENT_KIND")
 
     def test_duplicate_json_key_is_rejected(self):
         document = '{"schemaVersion":"1","schemaVersion":"1","caseId":"case-a","termIds":[],"artifacts":[],"proposals":[],"events":[]}'
@@ -198,6 +213,7 @@ class CaseParserTests(unittest.TestCase):
                     "accountRefId": "school-a",
                     "currency": "USD",
                     "role": "school_charge",
+                    "recipientKind": None,
                     "amountMinor": "500000",
                     "proposalId": None,
                     "aidItemId": None,

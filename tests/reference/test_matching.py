@@ -66,6 +66,7 @@ def add_bank(raw, suffix="b", amount="90000", date="2026-09-08", account="bank-a
 def add_decision(
     raw, event_id, bank_fact_id="bank-credit", bank_event_id="event-bank-credit", amount="90000",
     decision="confirm", refund_fact_id="issued-refund", refund_event_id="event-refund-issued", previous=None,
+    recipient_evidence=None,
 ):
     parents = [refund_event_id, bank_event_id, "event-coverage"]
     if previous is not None:
@@ -80,6 +81,7 @@ def add_decision(
             "bankFactId": bank_fact_id,
             "allocatedMinor": amount,
             "action": decision,
+            "recipientEvidence": recipient_evidence,
             "reviewId": f"review-{event_id}",
         },
     }
@@ -110,7 +112,7 @@ class MatchingTests(unittest.TestCase):
 
     def test_other_account_credit_cannot_be_candidate(self):
         raw = raw_case()
-        raw["accountRefs"].append({"accountRefId": "bank-b", "kind": "bank", "institutionId": None})
+        raw["accountRefs"].append({"accountRefId": "bank-b", "kind": "bank", "institutionId": None, "holderKind": "student"})
         artifact = copy.deepcopy(next(item for item in raw["artifacts"] if item["artifactId"] == "bank-a"))
         artifact["artifactId"] = "bank-b-statement"
         artifact["accountRefId"] = "bank-b"
@@ -133,6 +135,104 @@ class MatchingTests(unittest.TestCase):
             tuple((item.bank_fact_id, item.allocated_minor) for item in result.confirmed_allocations),
             (("bank-credit", 40000), ("bank-credit-b", 50000)),
         )
+
+    def test_parent_refund_is_not_suggested_for_student_bank_even_with_full_coverage(self):
+        raw = raw_case()
+        raw["events"][5]["fact"]["recipientKind"] = "parent"
+        result = query(raw)
+        self.assertEqual(result.status, "INSUFFICIENT_COVERAGE")
+        self.assertEqual(result.candidate_fact_ids, ())
+        self.assertIn("RECIPIENT_MISMATCH", result.reason_codes)
+
+    def test_unknown_recipient_or_holder_blocks_suggestions(self):
+        for field in ("refund", "bank"):
+            with self.subTest(field=field):
+                raw = raw_case()
+                if field == "refund":
+                    raw["events"][5]["fact"]["recipientKind"] = "unknown"
+                else:
+                    raw["accountRefs"][1]["holderKind"] = "unknown"
+                result = query(raw)
+                self.assertEqual(result.status, "INSUFFICIENT_COVERAGE")
+                self.assertEqual(result.candidate_fact_ids, ())
+                self.assertIn("RECIPIENT_IDENTITY_UNKNOWN", result.reason_codes)
+
+    def test_parent_refund_can_be_suggested_for_parent_bank(self):
+        raw = raw_case()
+        raw["events"][5]["fact"]["recipientKind"] = "parent"
+        raw["accountRefs"][1]["holderKind"] = "parent"
+        result = query(raw)
+        self.assertEqual(result.status, "SUGGESTED")
+        self.assertEqual(result.candidate_fact_ids, ("bank-credit",))
+        self.assertIn("RECIPIENT_METADATA_USER_REVIEWED", result.reason_codes)
+
+    def test_cross_recipient_confirmation_requires_source_backed_instruction(self):
+        raw = raw_case()
+        raw["events"][5]["fact"]["recipientKind"] = "parent"
+        add_decision(raw, "decision-confirm")
+        with self.assertRaises(ModelError) as raised:
+            parsed(raw)
+        self.assertEqual(raised.exception.code, "MATCH_RECIPIENT_EVIDENCE_REQUIRED")
+
+        raw["artifacts"].append({
+            "artifactId": "recipient-instruction", "sha256": "6" * 64,
+            "kind": "recipient_instruction", "observedAt": "2026-10-08T09:00:00Z", "accountRefId": None,
+        })
+        raw["events"][-1]["decision"]["recipientEvidence"] = {
+            "kind": "artifact", "artifactId": "recipient-instruction", "location": "recipient:1"
+        }
+        result = query(raw, head="decision-confirm")
+        self.assertEqual(result.status, "MATCHED_BY_REVIEW")
+        self.assertEqual(result.candidate_fact_ids, ())
+        self.assertIn("RECIPIENT_EXCEPTION_SOURCE_REVIEWED", result.reason_codes)
+
+    def test_cross_recipient_rejection_needs_no_instruction(self):
+        raw = raw_case()
+        raw["events"][5]["fact"]["recipientKind"] = "parent"
+        add_decision(raw, "decision-reject", amount="0", decision="reject")
+        result = query(raw, head="decision-reject")
+        self.assertEqual(result.status, "INSUFFICIENT_COVERAGE")
+        self.assertIn("RECIPIENT_MISMATCH", result.reason_codes)
+
+    def test_cross_recipient_evidence_must_be_instruction_for_selected_bank_and_exist_before_review(self):
+        for variant, expected in (
+            ("manual", "INVALID_RECIPIENT_EVIDENCE"),
+            ("wrong_kind", "INVALID_RECIPIENT_EVIDENCE"),
+            ("wrong_account", "INVALID_RECIPIENT_EVIDENCE"),
+            ("future", "INVALID_RECIPIENT_EVIDENCE"),
+        ):
+            with self.subTest(variant=variant):
+                raw = raw_case()
+                raw["events"][5]["fact"]["recipientKind"] = "parent"
+                raw["artifacts"].append({
+                    "artifactId": "instruction", "sha256": "6" * 64,
+                    "kind": "recipient_instruction", "observedAt": "2026-10-08T09:00:00Z",
+                    "accountRefId": None,
+                })
+                evidence = {"kind": "artifact", "artifactId": "instruction", "location": "recipient:1"}
+                if variant == "manual":
+                    evidence = {"kind": "manual", "entryId": "entry-instruction"}
+                elif variant == "wrong_kind":
+                    raw["artifacts"][-1]["kind"] = "bank_statement"
+                elif variant == "wrong_account":
+                    raw["artifacts"][-1]["accountRefId"] = "school-a"
+                else:
+                    raw["artifacts"][-1]["observedAt"] = "2026-10-10T09:00:00Z"
+                add_decision(raw, "decision-confirm", recipient_evidence=evidence)
+                with self.assertRaises(ModelError) as raised:
+                    parsed(raw)
+                self.assertEqual(raised.exception.code, expected)
+
+    def test_account_specific_query_does_not_claim_match_allocated_only_to_another_bank(self):
+        raw = raw_case()
+        raw["accountRefs"].append({
+            "accountRefId": "bank-b", "kind": "bank", "institutionId": None, "holderKind": "student"
+        })
+        add_decision(raw, "decision-confirm")
+        result = query(raw, head="decision-confirm", bank="bank-b")
+        self.assertEqual(result.status, "MATCHED_ON_OTHER_ACCOUNT_BY_REVIEW")
+        self.assertEqual(result.confirmed_allocations, ())
+        self.assertIn("REFUND_ALLOCATED_TO_OTHER_ACCOUNT", result.reason_codes)
 
     def test_two_refunds_cannot_overallocate_one_bank_credit(self):
         raw = raw_case()

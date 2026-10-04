@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1",
-  "caseId": "case-lifecycle-corpus",
+  "caseId": "case-recipient",
   "artifacts": [
     {
       "artifactId": "aid-a",
@@ -29,6 +29,20 @@
       "kind": "bank_statement",
       "observedAt": "2026-09-07T10:00:00Z",
       "accountRefId": "bank-a"
+    },
+    {
+      "artifactId": "bank-period",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "kind": "bank_statement",
+      "observedAt": "2026-10-08T09:00:00Z",
+      "accountRefId": "bank-a"
+    },
+    {
+      "artifactId": "recipient-instruction",
+      "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "kind": "recipient_instruction",
+      "observedAt": "2026-10-08T09:00:00Z",
+      "accountRefId": null
     }
   ],
   "proposals": [
@@ -63,7 +77,7 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": "aid-grant",
+        "aidItemId": null,
         "recipientKind": null
       }
     },
@@ -89,7 +103,7 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": "aid-grant",
+        "aidItemId": null,
         "recipientKind": null
       }
     },
@@ -177,7 +191,7 @@
         "termId": "2026-fall",
         "role": "refund_issued",
         "amountMinor": "90000",
-        "effectiveDate": "2026-08-20",
+        "effectiveDate": "2026-09-06",
         "source": {
           "kind": "artifact",
           "artifactId": "refund-a",
@@ -188,7 +202,7 @@
         "currency": "USD",
         "proposalId": null,
         "aidItemId": null,
-        "recipientKind": "student"
+        "recipientKind": "parent"
       }
     },
     {
@@ -203,7 +217,7 @@
         "termId": null,
         "role": "bank_credit_observed",
         "amountMinor": "90000",
-        "effectiveDate": "2026-08-20",
+        "effectiveDate": "2026-09-07",
         "source": {
           "kind": "artifact",
           "artifactId": "bank-a",
@@ -218,29 +232,47 @@
       }
     },
     {
-      "eventId": "event-offer-late",
+      "eventId": "event-coverage",
       "parents": [
         "event-bank-credit"
       ],
-      "recordedAt": "2026-10-10T10:00:00Z",
-      "kind": "approve_fact",
-      "fact": {
-        "factId": "offer-late",
-        "termId": "2026-fall",
-        "accountRefId": "school-a",
-        "aidItemId": "aid-grant",
-        "currency": "USD",
-        "role": "aid_offer",
-        "amountMinor": "700000",
-        "proposalId": null,
-        "effectiveDate": "2026-08-20",
+      "recordedAt": "2026-10-08T10:00:00Z",
+      "kind": "assert_coverage",
+      "coverage": {
+        "coverageId": "coverage-a",
+        "accountRefId": "bank-a",
+        "recordType": "bank_transactions",
+        "startDate": "2026-09-06",
+        "endDateExclusive": "2026-10-07",
+        "basis": "source_asserted",
         "source": {
           "kind": "artifact",
-          "artifactId": "aid-a",
-          "location": "row:offer"
+          "artifactId": "bank-period",
+          "location": "statement-period"
         },
-        "reviewId": "review-offer-late",
-        "recipientKind": null
+        "reviewId": "review-coverage-a"
+      }
+    },
+    {
+      "eventId": "event-confirm",
+      "parents": [
+        "event-refund-issued",
+        "event-bank-credit",
+        "event-coverage"
+      ],
+      "recordedAt": "2026-10-09T10:00:00Z",
+      "kind": "decide_match",
+      "decision": {
+        "refundFactId": "issued-refund",
+        "bankFactId": "bank-credit",
+        "allocatedMinor": "90000",
+        "action": "confirm",
+        "reviewId": "review-confirm",
+        "recipientEvidence": {
+          "kind": "artifact",
+          "artifactId": "recipient-instruction",
+          "location": "recipient:1"
+        }
       }
     }
   ],
@@ -273,12 +305,5 @@
     }
   ],
   "currency": "USD",
-  "aidItems": [
-    {
-      "aidItemId": "aid-grant",
-      "institutionId": "institution-a",
-      "termId": "2026-fall",
-      "recipientKind": "student"
-    }
-  ]
+  "aidItems": []
 }

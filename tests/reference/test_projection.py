@@ -103,7 +103,7 @@ class ProjectionTests(unittest.TestCase):
         raw = raw_golden()
         raw["institutions"].append({"institutionId": "institution-b"})
         raw["accountRefs"].append(
-            {"accountRefId": "school-b", "kind": "school", "institutionId": "institution-b"}
+            {"accountRefId": "school-b", "kind": "school", "institutionId": "institution-b", "holderKind": None}
         )
         raw["terms"].append(
             {
@@ -126,6 +126,7 @@ class ProjectionTests(unittest.TestCase):
                     "accountRefId": "school-b",
                     "currency": "USD",
                     "role": "school_credit",
+                    "recipientKind": None,
                     "amountMinor": "5000",
                     "proposalId": None,
                     "aidItemId": None,

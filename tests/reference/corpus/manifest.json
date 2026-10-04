@@ -7,7 +7,8 @@
     "ambiguous": "../fixtures/ambiguous-case.json",
     "manual": "../fixtures/manual-case.json",
     "split": "../fixtures/split-case.json",
-    "annual": "../fixtures/annual-case.json"
+    "annual": "../fixtures/annual-case.json",
+    "recipient": "../fixtures/recipient-case.json"
   },
   "operations": [
     {
@@ -283,6 +284,34 @@
         "postedMinor": "0",
         "currentOfferMinor": null,
         "findingCodes": ["ANNUAL_UNALLOCATED"]
+      }
+    },
+    {
+      "id": "parent-refund-student-bank-suppressed",
+      "case": "recipient",
+      "operation": "matching",
+      "heads": ["event-coverage"],
+      "refundFactId": "issued-refund",
+      "bankAccountRefId": "bank-a",
+      "expected": {
+        "status": "INSUFFICIENT_COVERAGE",
+        "candidateFactIds": [],
+        "remainingMinor": "90000",
+        "confirmedAllocations": []
+      }
+    },
+    {
+      "id": "parent-refund-reviewed-instruction",
+      "case": "recipient",
+      "operation": "matching",
+      "heads": ["event-confirm"],
+      "refundFactId": "issued-refund",
+      "bankAccountRefId": "bank-a",
+      "expected": {
+        "status": "MATCHED_BY_REVIEW",
+        "candidateFactIds": [],
+        "remainingMinor": "0",
+        "confirmedAllocations": [{"bankFactId": "bank-credit", "allocatedMinor": "90000"}]
       }
     }
   ]

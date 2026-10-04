@@ -62,7 +62,8 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     },
     {
@@ -87,7 +88,8 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     },
     {
@@ -112,7 +114,8 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     },
     {
@@ -157,7 +160,8 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     },
     {
@@ -182,7 +186,8 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": "student"
       }
     },
     {
@@ -207,7 +212,8 @@
         "accountRefId": "bank-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     }
   ],
@@ -220,12 +226,14 @@
     {
       "accountRefId": "school-a",
       "kind": "school",
-      "institutionId": "institution-a"
+      "institutionId": "institution-a",
+      "holderKind": null
     },
     {
       "accountRefId": "bank-a",
       "kind": "bank",
-      "institutionId": null
+      "institutionId": null,
+      "holderKind": "student"
     }
   ],
   "terms": [

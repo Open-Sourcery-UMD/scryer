@@ -77,7 +77,8 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     },
     {
@@ -102,7 +103,8 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     },
     {
@@ -127,7 +129,8 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     },
     {
@@ -172,7 +175,8 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     },
     {
@@ -197,7 +201,8 @@
         "accountRefId": "school-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": "student"
       }
     },
     {
@@ -222,7 +227,8 @@
         "accountRefId": "bank-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     },
     {
@@ -270,7 +276,8 @@
         "accountRefId": "bank-a",
         "currency": "USD",
         "proposalId": null,
-        "aidItemId": null
+        "aidItemId": null,
+        "recipientKind": null
       }
     },
     {
@@ -287,7 +294,8 @@
         "bankFactId": "bank-credit",
         "allocatedMinor": "40000",
         "action": "confirm",
-        "reviewId": "review-confirm-a"
+        "reviewId": "review-confirm-a",
+        "recipientEvidence": null
       }
     },
     {
@@ -305,7 +313,8 @@
         "bankFactId": "bank-credit-b",
         "allocatedMinor": "50000",
         "action": "confirm",
-        "reviewId": "review-confirm-b"
+        "reviewId": "review-confirm-b",
+        "recipientEvidence": null
       }
     }
   ],
@@ -318,12 +327,14 @@
     {
       "accountRefId": "school-a",
       "kind": "school",
-      "institutionId": "institution-a"
+      "institutionId": "institution-a",
+      "holderKind": null
     },
     {
       "accountRefId": "bank-a",
       "kind": "bank",
-      "institutionId": null
+      "institutionId": null,
+      "holderKind": "student"
     }
   ],
   "terms": [

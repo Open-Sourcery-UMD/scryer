@@ -11,7 +11,7 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-05 | REFERENCE | Annual fixture returns `UNSUPPORTED_INPUT` and no term split. |
 | RC-06 | REFERENCE | Work-study offer remains separate from posted school credit. |
 | RC-07 | OPEN | Gross loan versus net disbursement needs explicit linked fee/recipient semantics and a hand-calculated fixture. |
-| RC-08 | PARTIAL | Parent recipient produces a verification finding; refund-to-bank matching still needs recipient evidence rules. |
+| RC-08 | REFERENCE | Parent-directed refund produces no student-bank candidate despite full coverage; a cross-recipient confirmation requires a reviewed `recipient_instruction` artifact. Targeted negatives and two fixed corpus operations. Account labels and source authenticity remain unverified. |
 | RC-09 | REFERENCE | Split fixture allocates 40000 + 50000 cents with zero remaining. |
 | RC-10 | REFERENCE | Equal candidates remain ambiguous in `test_matching.py`. |
 | RC-11 | REFERENCE | Equal legitimate school charges from different source positions both count. |

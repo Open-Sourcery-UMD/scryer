@@ -120,7 +120,13 @@ def suggest_refund_deposits(
             pair = (event.decision.refund_fact_id, event.decision.bank_fact_id)
             decisions.setdefault(pair, []).append(event)
 
-    reasons = {"SOURCE_AUTHENTICITY_NOT_VERIFIED"}
+    reasons = {"SOURCE_AUTHENTICITY_NOT_VERIFIED", "RECIPIENT_METADATA_USER_REVIEWED"}
+    recipient_known = refund.recipient_kind != "unknown" and account.holder_kind != "unknown"
+    recipient_matches = recipient_known and refund.recipient_kind == account.holder_kind
+    if not recipient_known:
+        reasons.add("RECIPIENT_IDENTITY_UNKNOWN")
+    elif not recipient_matches:
+        reasons.add("RECIPIENT_MISMATCH")
     try:
         refund_amount = _current_amount(refund, corrections)
     except ModelError as error:
@@ -152,9 +158,12 @@ def suggest_refund_deposits(
         allocated_by_refund[refund_id] = allocated_by_refund.get(refund_id, 0) + decision.allocated_minor
         if refund_id == refund_fact_id:
             bank = bank_facts[bank_id]
-            own_allocations.append(
-                Allocation(bank_id, bank.account_ref_id, decision.allocated_minor, event.event_id)
-            )
+            if bank.account_ref_id == bank_account_ref_id:
+                own_allocations.append(
+                    Allocation(bank_id, bank.account_ref_id, decision.allocated_minor, event.event_id)
+                )
+                if decision.recipient_evidence is not None:
+                    reasons.add("RECIPIENT_EXCEPTION_SOURCE_REVIEWED")
 
     for bank_id, allocated in allocated_by_bank.items():
         try:
@@ -215,8 +224,17 @@ def suggest_refund_deposits(
             reasons.add("CONFIRMED_OUTSIDE_SEARCH_WINDOW")
 
     if remaining == 0:
+        if not allocations:
+            reasons.add("REFUND_ALLOCATED_TO_OTHER_ACCOUNT")
+            return _result(refund_fact_id, bank_account_ref_id, "MATCHED_ON_OTHER_ACCOUNT_BY_REVIEW", refund_amount,
+                           remaining=0, coverage=coverage, reasons=reasons)
         return _result(refund_fact_id, bank_account_ref_id, "MATCHED_BY_REVIEW", refund_amount,
                        allocations=allocations, remaining=0, coverage=coverage, reasons=reasons)
+
+    if not recipient_matches:
+        status = "PARTIALLY_MATCHED_BY_REVIEW" if allocations else "INSUFFICIENT_COVERAGE"
+        return _result(refund_fact_id, bank_account_ref_id, status, refund_amount,
+                       allocations=allocations, remaining=remaining, coverage=coverage, reasons=reasons)
 
     candidates: list[Fact] = []
     if window_start is not None and window_end is not None:

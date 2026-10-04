@@ -103,7 +103,7 @@ class CoverageTests(unittest.TestCase):
 
     def test_other_bank_account_does_not_inherit_coverage(self):
         raw = raw_case()
-        raw["accountRefs"].append({"accountRefId": "bank-b", "kind": "bank", "institutionId": None})
+        raw["accountRefs"].append({"accountRefId": "bank-b", "kind": "bank", "institutionId": None, "holderKind": "student"})
         raw["events"].append(assert_coverage())
         result = evaluate_bank_coverage(parsed(raw), ("event-coverage",), "bank-b", "2026-09-01", "2026-09-15")
         self.assertEqual(result.status, "INSUFFICIENT_COVERAGE")
@@ -117,7 +117,7 @@ class CoverageTests(unittest.TestCase):
 
     def test_source_assertion_on_wrong_account_artifact_is_rejected(self):
         raw = raw_case()
-        raw["accountRefs"].append({"accountRefId": "bank-b", "kind": "bank", "institutionId": None})
+        raw["accountRefs"].append({"accountRefId": "bank-b", "kind": "bank", "institutionId": None, "holderKind": "student"})
         other_statement = copy.deepcopy(raw["artifacts"][-1])
         other_statement["artifactId"] = "bank-b-statement"
         other_statement["accountRefId"] = "bank-b"

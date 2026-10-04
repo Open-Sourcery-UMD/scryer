@@ -25,6 +25,7 @@
     "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
     "sourceDate": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}]},
     "nonnegativeMinor": {"type": "string", "pattern": "^(0|[1-9][0-9]*)$", "maxLength": 19},
+    "recipientKind": {"enum": ["student", "parent", "third_party", "unknown"]},
     "institution": {
       "type": "object", "additionalProperties": false,
       "required": ["institutionId"],
@@ -34,13 +35,13 @@
       "oneOf": [
         {
           "type": "object", "additionalProperties": false,
-          "required": ["accountRefId", "kind", "institutionId"],
-          "properties": {"accountRefId": {"$ref": "#/$defs/id"}, "kind": {"const": "school"}, "institutionId": {"$ref": "#/$defs/id"}}
+          "required": ["accountRefId", "kind", "institutionId", "holderKind"],
+          "properties": {"accountRefId": {"$ref": "#/$defs/id"}, "kind": {"const": "school"}, "institutionId": {"$ref": "#/$defs/id"}, "holderKind": {"type": "null"}}
         },
         {
           "type": "object", "additionalProperties": false,
-          "required": ["accountRefId", "kind", "institutionId"],
-          "properties": {"accountRefId": {"$ref": "#/$defs/id"}, "kind": {"const": "bank"}, "institutionId": {"type": "null"}}
+          "required": ["accountRefId", "kind", "institutionId", "holderKind"],
+          "properties": {"accountRefId": {"$ref": "#/$defs/id"}, "kind": {"const": "bank"}, "institutionId": {"type": "null"}, "holderKind": {"$ref": "#/$defs/recipientKind"}}
         }
       ]
     },
@@ -62,7 +63,7 @@
         "aidItemId": {"$ref": "#/$defs/id"},
         "institutionId": {"$ref": "#/$defs/id"},
         "termId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
-        "recipientKind": {"enum": ["student", "parent", "third_party", "unknown"]}
+        "recipientKind": {"$ref": "#/$defs/recipientKind"}
       }
     },
     "source": {
@@ -105,7 +106,7 @@
     },
     "fact": {
       "type": "object", "additionalProperties": false,
-      "required": ["factId", "termId", "accountRefId", "aidItemId", "currency", "role", "amountMinor", "proposalId", "effectiveDate", "source", "reviewId"],
+      "required": ["factId", "termId", "accountRefId", "aidItemId", "currency", "role", "recipientKind", "amountMinor", "proposalId", "effectiveDate", "source", "reviewId"],
       "properties": {
         "factId": {"$ref": "#/$defs/id"},
         "termId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
@@ -113,12 +114,18 @@
         "aidItemId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
         "currency": {"const": "USD"},
         "role": {"enum": ["school_credit", "school_charge", "refund_issued", "bank_credit_observed", "aid_offer", "aid_accepted", "aid_pending", "balance_snapshot", "work_study_offer"]},
+        "recipientKind": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/recipientKind"}]},
         "amountMinor": {"$ref": "#/$defs/nonnegativeMinor"},
         "proposalId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
         "effectiveDate": {"$ref": "#/$defs/sourceDate"},
         "source": {"$ref": "#/$defs/source"},
         "reviewId": {"$ref": "#/$defs/id"}
-      }
+      },
+      "allOf": [{
+        "if": {"properties": {"role": {"const": "refund_issued"}}},
+        "then": {"properties": {"recipientKind": {"$ref": "#/$defs/recipientKind"}}},
+        "else": {"properties": {"recipientKind": {"type": "null"}}}
+      }]
     },
     "correction": {
       "type": "object", "additionalProperties": false,
@@ -161,12 +168,13 @@
     },
     "matchDecision": {
       "type": "object", "additionalProperties": false,
-      "required": ["refundFactId", "bankFactId", "allocatedMinor", "action", "reviewId"],
+      "required": ["refundFactId", "bankFactId", "allocatedMinor", "action", "recipientEvidence", "reviewId"],
       "properties": {
         "refundFactId": {"$ref": "#/$defs/id"},
         "bankFactId": {"$ref": "#/$defs/id"},
         "allocatedMinor": {"$ref": "#/$defs/nonnegativeMinor"},
         "action": {"enum": ["confirm", "reject"]},
+        "recipientEvidence": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/source"}]},
         "reviewId": {"$ref": "#/$defs/id"}
       },
       "allOf": [{

@@ -28,6 +28,7 @@ _ROLES = frozenset(
         "work_study_offer",
     }
 )
+_RECIPIENT_KINDS = frozenset({"student", "parent", "third_party", "unknown"})
 _MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
 _MAX_EVENTS = 200_000
 
@@ -67,6 +68,7 @@ class AccountRef:
     account_ref_id: str
     kind: str
     institution_id: str | None
+    holder_kind: str | None
 
 
 @dataclass(frozen=True)
@@ -104,6 +106,7 @@ class Fact:
     account_ref_id: str | None
     currency: str
     role: str
+    recipient_kind: str | None
     amount_minor: int
     proposal_id: str | None
     aid_item_id: str | None
@@ -146,6 +149,7 @@ class MatchDecision:
     bank_fact_id: str
     allocated_minor: int
     action: str
+    recipient_evidence: SourceRef | None
     review_id: str
 
 
@@ -286,22 +290,28 @@ def _institution(value: Any) -> Institution:
 
 
 def _account_ref(value: Any, institution_ids: set[str]) -> AccountRef:
-    value = _fields(value, {"accountRefId", "kind", "institutionId"})
+    value = _fields(value, {"accountRefId", "kind", "institutionId", "holderKind"})
     kind = value["kind"]
     institution_id = value["institutionId"]
+    holder_kind = value["holderKind"]
     if kind == "school":
+        if holder_kind is not None:
+            raise ModelError("INVALID_HOLDER_KIND")
         institution_id = _identifier(institution_id)
         if institution_id not in institution_ids:
             raise ModelError("MISSING_INSTITUTION")
     elif kind == "bank":
         if institution_id is not None:
             raise ModelError("ACCOUNT_KIND_MISMATCH")
+        if type(holder_kind) is not str or holder_kind not in _RECIPIENT_KINDS:
+            raise ModelError("INVALID_HOLDER_KIND")
     else:
         raise ModelError("ACCOUNT_KIND_MISMATCH")
     return AccountRef(
         account_ref_id=_identifier(value["accountRefId"]),
         kind=kind,
         institution_id=institution_id,
+        holder_kind=holder_kind,
     )
 
 
@@ -343,7 +353,7 @@ def _aid_item(value: Any, institution_ids: set[str], terms: dict[str, AcademicTe
         if term.institution_id != institution_id:
             raise ModelError("AID_ITEM_INSTITUTION_MISMATCH")
     recipient = value["recipientKind"]
-    if type(recipient) is not str or recipient not in {"student", "parent", "third_party", "unknown"}:
+    if type(recipient) is not str or recipient not in _RECIPIENT_KINDS:
         raise ModelError("INVALID_RECIPIENT_KIND")
     return AidItem(_identifier(value["aidItemId"]), institution_id, term_id, recipient)
 
@@ -407,11 +417,17 @@ def _fact(
 ) -> Fact:
     value = _fields(
         value,
-        {"factId", "termId", "accountRefId", "aidItemId", "currency", "role", "amountMinor", "proposalId", "effectiveDate", "source", "reviewId"},
+        {"factId", "termId", "accountRefId", "aidItemId", "currency", "role", "recipientKind", "amountMinor", "proposalId", "effectiveDate", "source", "reviewId"},
     )
     role = value["role"]
     if type(role) is not str or role not in _ROLES:
         raise ModelError("UNSUPPORTED_ROLE")
+    recipient_kind = value["recipientKind"]
+    if role == "refund_issued":
+        if type(recipient_kind) is not str or recipient_kind not in _RECIPIENT_KINDS:
+            raise ModelError("INVALID_RECIPIENT_KIND")
+    elif recipient_kind is not None:
+        raise ModelError("INVALID_RECIPIENT_KIND")
     if role == "bank_credit_observed":
         if value["termId"] is not None:
             raise ModelError("INVALID_TERM_BINDING")
@@ -473,6 +489,7 @@ def _fact(
         account_ref_id=account_id,
         currency=_currency(value["currency"]),
         role=role,
+        recipient_kind=recipient_kind,
         amount_minor=_nonnegative_money(value["amountMinor"]),
         proposal_id=proposal_id,
         aid_item_id=aid_item_id,
@@ -553,19 +570,23 @@ def _retraction(value: Any) -> CoverageRetraction:
     )
 
 
-def _match_decision(value: Any) -> MatchDecision:
-    value = _fields(value, {"refundFactId", "bankFactId", "allocatedMinor", "action", "reviewId"})
+def _match_decision(value: Any, artifact_ids: set[str]) -> MatchDecision:
+    value = _fields(value, {"refundFactId", "bankFactId", "allocatedMinor", "action", "recipientEvidence", "reviewId"})
     action = value["action"]
     if type(action) is not str or action not in {"confirm", "reject"}:
         raise ModelError("INVALID_MATCH_ACTION")
     amount = _nonnegative_money(value["allocatedMinor"])
     if (action == "confirm" and amount == 0) or (action == "reject" and amount != 0):
         raise ModelError("INVALID_MATCH_ALLOCATION")
+    evidence = None if value["recipientEvidence"] is None else _source(value["recipientEvidence"], artifact_ids)
+    if evidence is not None and action == "reject":
+        raise ModelError("INVALID_RECIPIENT_EVIDENCE")
     return MatchDecision(
         refund_fact_id=_identifier(value["refundFactId"]),
         bank_fact_id=_identifier(value["bankFactId"]),
         allocated_minor=amount,
         action=action,
+        recipient_evidence=evidence,
         review_id=_identifier(value["reviewId"]),
     )
 
@@ -616,7 +637,7 @@ def _event(
         correction = None
         coverage = None
         retraction = None
-        decision = _match_decision(value["decision"])
+        decision = _match_decision(value["decision"], set(artifacts))
     else:
         raise ModelError("UNSUPPORTED_EVENT")
     return Event(
@@ -759,6 +780,24 @@ def load_case_json(document: str) -> Case:
                 raise ModelError("MISSING_FACT")
             if refund.role != "refund_issued" or bank.role != "bank_credit_observed":
                 raise ModelError("MATCH_ROLE_MISMATCH")
+            bank_account = accounts_by_id[bank.account_ref_id]
+            recipient_match = (
+                refund.recipient_kind != "unknown"
+                and bank_account.holder_kind != "unknown"
+                and refund.recipient_kind == bank_account.holder_kind
+            )
+            evidence = decision.recipient_evidence
+            if decision.action == "confirm" and not recipient_match and evidence is None:
+                raise ModelError("MATCH_RECIPIENT_EVIDENCE_REQUIRED")
+            if evidence is not None:
+                artifact = artifacts_by_id.get(evidence.artifact_id)
+                if (
+                    artifact is None
+                    or artifact.kind != "recipient_instruction"
+                    or artifact.account_ref_id not in (None, bank.account_ref_id)
+                    or artifact.observed_at > event.recorded_at
+                ):
+                    raise ModelError("INVALID_RECIPIENT_EVIDENCE")
             if (
                 fact_approvals[decision.refund_fact_id] not in event.parents
                 or fact_approvals[decision.bank_fact_id] not in event.parents

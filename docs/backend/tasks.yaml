@@ -408,7 +408,7 @@
     {
       "id": "M2-7a",
       "title": "Recipient-aware refund matching",
-      "status": "IN_PROGRESS",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": ["M2-6d"],
       "requirements": ["S-18", "S-20", "S-21", "S-24"],
       "scope": "Prevent parent/third-party or unknown-recipient refund evidence from silently matching a student bank account.",

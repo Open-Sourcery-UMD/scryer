@@ -39,6 +39,7 @@ def add_aid_fact(raw, event_id, role, amount, parent="event-bank-credit", term_i
             "aidItemId": "aid-grant",
             "currency": "USD",
             "role": role,
+            "recipientKind": None,
             "amountMinor": str(amount),
             "proposalId": None,
             "effectiveDate": "2026-08-20",
