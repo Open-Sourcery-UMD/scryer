@@ -66,10 +66,12 @@ Task 2 implements crypto primitives. Its sealing API does not itself reserve the
 
 **Requirements:** S-48, S-57, S-59, S-60; depends on Task 2. **Interfaces:** `openLocalRepository`, `commitReviewed`, `loadCase`, `prepareSync`, `ackSync`, `reserveEncryptions`, `lock`. **Risk:** critical, approved-history loss or duplicate sync.
 
-- [ ] Write failing real-browser tests for empty/open/locked states, encrypted at-rest inspection, revision CAS with two tabs, transaction abort/reload, storage denied/quota simulation, counter exhaustion, durable outbox retry-byte identity, and no plaintext sentinel in stored records.
-- [ ] Run tests expecting missing repository.
-- [ ] Implement upgrade v1 and transaction-complete acknowledgment, separate budget reservation, atomic package/outbox write, typed local errors, and locally remembered revision/digest anchors.
-- [ ] Run browser tests plus headless/native/reference suites; inspect every write path for plaintext and commit M6-3.
+- [x] Write failing real-browser tests for empty/open/locked states, encrypted at-rest inspection, revision CAS with two tabs, transaction abort/reload, storage denied/quota simulation, counter exhaustion, durable outbox retry-byte identity, and no plaintext sentinel in stored records.
+- [x] Run tests expecting missing repository.
+- [x] Implement upgrade v1 and transaction-complete acknowledgment, separate budget reservation, atomic package/outbox write, typed local errors, and locally remembered revision/digest anchors.
+- [x] Run browser tests plus headless/native/reference suites; inspect every write path for plaintext and commit M6-3.
+
+Task 3 tests inject a synthetic semantic validator because the M4 browser WASM validator is unavailable. `ackSync` is a local outbox operation; authenticated server acknowledgment remains M7. Task 3 does not make browser-reviewed imports production validated.
 
 ## Task 4 — Encrypted archive, preview, restore, and migration
 

@@ -46,7 +46,8 @@ export async function openBrowserHarness(t) {
   const address = server.address();
   assert.ok(address && typeof address === 'object');
   browser = await chromium.launch({ headless: true, executablePath: browserBinary });
-  const page = await browser.newPage();
+  const context = await browser.newContext();
+  const page = await context.newPage();
   await page.goto(`http://127.0.0.1:${address.port}/`);
-  return { page, browser };
+  return { page, browser, context };
 }

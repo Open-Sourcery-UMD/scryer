@@ -1,0 +1,23 @@
+# Scryer local encrypted repository v1
+
+Status: implemented local browser contract. It requires a caller-supplied semantic case validator. Browser-side C++/WASM validation remains blocked by M4 tooling, so the Chrome storage transaction tests use synthetic validator callbacks and do not establish a production review path.
+
+## IndexedDB layout
+
+Database version `1` contains `accounts`, `cases`, `anchors`, `budgets`, and `outbox`. All keys are bounded opaque IDs. `accounts[accountId]` holds the authenticated recovery wrapper and a purpose-separated HKDF root proof, never the root or recovery secret. `cases[accountId,caseId]` holds the latest authenticated `CasePackageV1`, its revision, key generation, local sequence, and SHA-256 digest of the exact serialized package. `anchors[accountId,caseId]` repeats the revision and digest for local corruption checks. `budgets[accountId,caseId,keyGeneration,deviceId]` is the durable AES-GCM use count. `outbox[accountId,operationId]` holds exact serialized ciphertext chunk requests, an authenticated manifest request, stable idempotency keys, and the intended server revision precondition; its `byCase` index orders pending operations by local sequence after read.
+
+The root proof is a 256-bit HKDF output from the high-entropy root, bound to account ID and separated from case/recovery derivation. It is a local wrong-key check, not an authentication credential or proof of server freshness. Each unlock creates a fresh random device ID and therefore a fresh per-device case key. Old budget records may remain until a versioned cleanup policy exists.
+
+## Commit sequence and failure behavior
+
+`openLocalRepository` requires an unlocked session and semantic validator. Initial creation also requires a re-entered recovery secret that opens the exact wrapper for the live root. Opening an existing account compares root proofs before allowing writes. `commitReviewed` clones the complete case and import ledger, checks their structure and semantic validator, checks the currently stored case, serializes `{schemaVersion:"1",case,ledger}` under the 32 MiB plaintext cap, and durably reserves one key use per prospective chunk. A failed encryption or stale commit consumes its reservation. The ciphertext package gets a new random package ID and nonce per chunk.
+
+The final `readwrite` transaction reads the current local revision and anchor, rejects a stale expectation or reused operation ID, then writes case, anchor, and outbox. The API resolves only from `transaction.oncomplete`. Any aborted transaction, quota denial, or thrown object-store write leaves the prior case/anchor/outbox unchanged. The earlier budget reservation remains consumed. Concurrent tabs share IndexedDB's serialized `readwrite` transaction order, so one of two commits using the same expected revision wins and the other receives `STALE_LOCAL_REVISION`.
+
+`loadCase` compares the package digest and anchor, authenticates every chunk, parses the complete plaintext, and runs the semantic validator before returning the case and ledger. No partial decrypted chunk is returned. `prepareSync` reads the exact saved request body strings and idempotency keys; retries do not re-encrypt. A chunk request stays below 8 MiB of ASCII JSON after base64url encoding. `ackSync` deletes a named pending operation only after a caller has obtained a successful server acknowledgment; M7 must supply and verify that acknowledgment. Neither this contract nor IndexedDB proves remote delivery.
+
+Local errors include `STORAGE_UNAVAILABLE`, `STORAGE_DENIED`, `STORAGE_QUOTA`, `STORAGE_BLOCKED`, `STORAGE_ABORTED`, `STORAGE_CLOSED`, `WRONG_KEY`, `STALE_LOCAL_REVISION`, `OPERATION_CONFLICT`, `CORRUPT_RECORD`, `INVALID_REVIEWED_CASE`, `VALIDATOR_REQUIRED`, and `KEY_USE_LIMIT`. Errors contain codes, not case values. Browser storage remains subject to platform eviction; a verified encrypted portable archive is the M6-4 recovery path.
+
+## Known open boundaries
+
+The stored anchor detects accidental or isolated local record corruption, but a party able to rewrite both local records can roll them back. A new device without an independent anchor cannot prove freshness against a malicious server. `ackSync` currently trusts its caller to present a verified server response; the actual authenticated transport and server-side atomic chunk manifest are M7 work. Schema migration, archive/restore, generation rotation, and real institution data remain separate gates. No independent human security review has occurred.

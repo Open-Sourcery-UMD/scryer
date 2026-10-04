@@ -775,9 +775,13 @@
         "M5",
         "M6"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/browser/test_storage.mjs — encrypted local case and import ledger round trip, reload, lock, and atomic abort"
+      ],
+      "evidence": [
+        "M6-3 encrypted IndexedDB repository passes local Chrome tests; export/restore and browser native validation remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-49",
@@ -908,7 +912,8 @@
       "evidence": [
         "M6 design selected locally in docs/backend/security/local-storage-design.md; independent review remains open",
         "M6-1 crypto-v1 format frozen; three Node vector checks and generator/fixture equality exit 0",
-        "M6-2 WebCrypto primitives pass headless and Chrome interop/tamper checks; durable encryption-use budget, persistence, official-client sync and independent review remain open"
+        "M6-2 WebCrypto primitives pass headless and Chrome interop/tamper checks",
+        "M6-3 encrypted IndexedDB persistence and durable encryption-use budgets pass Chrome failure tests; official-client sync and independent review remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -958,9 +963,13 @@
         "M7",
         "M8"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/browser/test_storage.mjs — two-tab local revision CAS, atomic outbox, byte-identical retry after reload"
+      ],
+      "evidence": [
+        "M6-3 local encrypted conflict/outbox behavior passes Chrome; remote multi-device conflicts remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-61",
