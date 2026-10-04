@@ -119,7 +119,7 @@
     {
       "id": "M2-2",
       "title": "Approved journal and snapshots",
-      "status": "NOT_STARTED",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": [
         "M2-1"
       ],

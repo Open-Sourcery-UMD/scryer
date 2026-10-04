@@ -16,6 +16,8 @@ The approved journal is an immutable directed acyclic graph. Each event has a un
 
 `approve_fact` introduces one reviewed fact. `correct_fact` names the fact and replaces its magnitude or cancels it; it never adds a second financial movement. Two corrections to the same fact are ordered only when one causally descends the other. Concurrent incomparable corrections produce `CONTRADICTORY_EVIDENCE` until an explicit resolution event names the chosen branch. A cycle, missing parent, duplicate event ID, or event referring to a nonexistent fact is invalid. Observation/effective dates and approval times are distinct; an unreviewed proposal has no effect at any head.
 
+Every correction event directly names the original fact-approval event as a parent. A later correction also names the earlier correction as a parent when it supersedes that decision. This keeps causal validation bounded and makes concurrent branches visible.
+
 The first reference implementation supports the single-term school surplus and direct per-fact attribution. Later matching, coverage, and lifecycle queries must use the same journal and exact money primitives; their requirements remain open until tests and implementation exist. A future engine version may reanalyze old facts, but historical reproduction uses the recorded engine/rule version.
 
 ## Attribution and uncertainty

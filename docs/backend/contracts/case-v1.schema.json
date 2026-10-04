@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scryer.invalid/contracts/case-v1.schema.json",
+  "title": "Scryer local approved case v1",
+  "description": "Parser additionally rejects duplicate JSON keys, out-of-range i64 values, invalid Gregorian dates, missing references, duplicate IDs, event cycles, and decoded proposal fields over 65536 UTF-8 bytes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "caseId", "termIds", "artifacts", "proposals", "events"],
+  "properties": {
+    "schemaVersion": {"const": "1"},
+    "caseId": {"$ref": "#/$defs/id"},
+    "termIds": {"type": "array", "items": {"$ref": "#/$defs/id"}, "uniqueItems": true},
+    "artifacts": {"type": "array", "items": {"$ref": "#/$defs/artifact"}},
+    "proposals": {"type": "array", "items": {"$ref": "#/$defs/proposal"}},
+    "events": {"type": "array", "maxItems": 200000, "items": {"$ref": "#/$defs/event"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"},
+    "location": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[!-~]+$"},
+    "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "sourceDate": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}]},
+    "nonnegativeMinor": {"type": "string", "pattern": "^(0|[1-9][0-9]*)$", "maxLength": 19},
+    "source": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "artifactId", "location"],
+          "properties": {"kind": {"const": "artifact"}, "artifactId": {"$ref": "#/$defs/id"}, "location": {"$ref": "#/$defs/location"}}
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "entryId"],
+          "properties": {"kind": {"const": "manual"}, "entryId": {"$ref": "#/$defs/id"}}
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifactId", "sha256", "kind", "observedAt"],
+      "properties": {
+        "artifactId": {"$ref": "#/$defs/id"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "kind": {"$ref": "#/$defs/id"},
+        "observedAt": {"$ref": "#/$defs/utc"}
+      }
+    },
+    "proposal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["proposalId", "artifactId", "sourceLocation", "rawValue"],
+      "properties": {
+        "proposalId": {"$ref": "#/$defs/id"},
+        "artifactId": {"$ref": "#/$defs/id"},
+        "sourceLocation": {"$ref": "#/$defs/location"},
+        "rawValue": {"type": "string", "maxLength": 65536}
+      }
+    },
+    "fact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["factId", "termId", "role", "amountMinor", "effectiveDate", "source", "reviewId"],
+      "properties": {
+        "factId": {"$ref": "#/$defs/id"},
+        "termId": {"$ref": "#/$defs/id"},
+        "role": {"enum": ["school_credit", "school_charge", "refund_issued", "bank_credit_observed", "aid_offer", "aid_pending", "balance_snapshot", "work_study_offer"]},
+        "amountMinor": {"$ref": "#/$defs/nonnegativeMinor"},
+        "effectiveDate": {"$ref": "#/$defs/sourceDate"},
+        "source": {"$ref": "#/$defs/source"},
+        "reviewId": {"$ref": "#/$defs/id"}
+      }
+    },
+    "correction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["factId", "replacementAmountMinor", "cancelled", "source", "reviewId"],
+      "properties": {
+        "factId": {"$ref": "#/$defs/id"},
+        "replacementAmountMinor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/nonnegativeMinor"}]},
+        "cancelled": {"type": "boolean"},
+        "source": {"$ref": "#/$defs/source"},
+        "reviewId": {"$ref": "#/$defs/id"}
+      },
+      "allOf": [{
+        "if": {"properties": {"cancelled": {"const": true}}},
+        "then": {"properties": {"replacementAmountMinor": {"type": "null"}}},
+        "else": {"properties": {"replacementAmountMinor": {"$ref": "#/$defs/nonnegativeMinor"}}}
+      }]
+    },
+    "event": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "fact"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "approve_fact"},
+            "fact": {"$ref": "#/$defs/fact"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "correction"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "correct_fact"},
+            "correction": {"$ref": "#/$defs/correction"}
+          }
+        }
+      ]
+    }
+  }
+}

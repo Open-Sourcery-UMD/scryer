@@ -184,9 +184,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_model.py — strict schema, provenance, DAG, and hostile-input checks"
+      ],
+      "evidence": [
+        "M2-2 red-green run; 25-test reference suite exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-15",
@@ -214,9 +218,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_model.py — strict schema, provenance, DAG, and hostile-input checks"
+      ],
+      "evidence": [
+        "M2-2 red-green run; 25-test reference suite exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-17",
@@ -227,9 +235,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_model.py — strict schema, provenance, DAG, and hostile-input checks"
+      ],
+      "evidence": [
+        "M2-2 red-green run; 25-test reference suite exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-18",
