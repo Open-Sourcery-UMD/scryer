@@ -1,28 +1,16 @@
 import { parseBoundedCsv } from './csv.ts';
 import { ImportError } from './errors.ts';
+import { sha256Hex } from './hash.ts';
 import { parseUsAmount } from './money.ts';
+import { ID, VERSION, exactKeys, validInstant } from './validation.ts';
 import type { BankCsvMapping, BankCsvMetadata, Candidate, ExtractedBatch, Proposal } from './types.ts';
 
-const ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
-const VERSION = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
-const UTC = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$/;
 const ISO_DATE = /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/;
-
-function exactKeys(value: unknown, expected: readonly string[]): boolean {
-  return typeof value === 'object' && value !== null && !Array.isArray(value) &&
-    Object.keys(value).sort().join(',') === [...expected].sort().join(',');
-}
 
 function validDate(value: string): boolean {
   if (!ISO_DATE.test(value) || value.startsWith('0000-')) return false;
   const parsed = new Date(`${value}T00:00:00Z`);
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
-}
-
-function validInstant(value: string): boolean {
-  if (!UTC.test(value) || value.startsWith('0000-')) return false;
-  const parsed = new Date(value);
-  return Number.isFinite(parsed.getTime()) && parsed.toISOString().replace('.000', '') === value;
 }
 
 function validateInputs(metadata: BankCsvMetadata, mapping: BankCsvMapping): void {
@@ -54,12 +42,6 @@ function validateInputs(metadata: BankCsvMetadata, mapping: BankCsvMapping): voi
   }
 }
 
-async function sha256Hex(bytes: Uint8Array): Promise<string> {
-  if (!globalThis.crypto?.subtle) throw new ImportError('CRYPTO_UNAVAILABLE');
-  const digest = await globalThis.crypto.subtle.digest('SHA-256', new Uint8Array(bytes));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
 function column(headers: readonly string[], name: string): number {
   const index = headers.indexOf(name);
   if (index < 0) throw new ImportError('MISSING_HEADER');
@@ -73,6 +55,9 @@ export async function extractBankCsv(
 ): Promise<ExtractedBatch> {
   if (!(bytes instanceof Uint8Array)) throw new ImportError('INVALID_INPUT');
   validateInputs(metadata, mapping);
+  bytes = new Uint8Array(bytes);
+  metadata = structuredClone(metadata);
+  mapping = structuredClone(mapping);
   const rows = parseBoundedCsv(bytes);
   const headers = rows[0];
   if (headers === undefined) throw new ImportError('INVALID_CSV');
@@ -157,6 +142,8 @@ export async function extractBankCsv(
   }
 
   return {
+    sourceBytes: bytes,
+    mapping,
     artifact: {
       artifactId, sha256: rawDigest, kind: 'bank_transactions',
       observedAt: metadata.observedAt, accountRefId: metadata.accountRefId,

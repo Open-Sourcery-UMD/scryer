@@ -2,6 +2,11 @@ const MAX_MINOR = 9223372036854775807n;
 
 export type ParsedAmount = { sign: -1 | 0 | 1; minor: string };
 
+export function isPositiveMinor(value: unknown): value is string {
+  return typeof value === 'string' && /^[1-9][0-9]*$/.test(value) &&
+    value.length <= 19 && BigInt(value) <= MAX_MINOR;
+}
+
 export function parseUsAmount(raw: string): ParsedAmount | null {
   let value = raw.trim();
   let negative = false;

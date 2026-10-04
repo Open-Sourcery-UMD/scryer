@@ -15,8 +15,8 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-09 | REFERENCE | Split fixture allocates 40000 + 50000 cents with zero remaining. |
 | RC-10 | REFERENCE | Equal candidates remain ambiguous in `test_matching.py`. |
 | RC-11 | REFERENCE | Equal legitimate school charges from different source positions both count. |
-| RC-12 | OPEN | Reviewed import-command idempotency belongs to browser local persistence. |
-| RC-13 | OPEN | Overlapping statement deduplication requires source-import workflow. |
+| RC-12 | PARTIAL | Headless exact repeat is inert and changed decisions conflict; browser local persistence and atomic durability remain open. |
+| RC-13 | PARTIAL | Equal movements at distinct CSV positions survive review, including a second artifact; overlap ambiguity and real statement formats remain open. |
 | RC-14 | REFERENCE | Named reversal fixture retains the 90000-cent historical view, then a source-backed grant correction yields 70000 cents; before/after receipts and exact attribution are fixed in the corpus. Import versioning remains M5 work. |
 | RC-15 | REFERENCE | A reviewed charge cancellation after the corrected source yields 100000 cents. Exact +10000-cent net change equals −20000 for the grant and +30000 for the cancelled charge; both original and corrected source references survive in checked receipts. |
 | RC-16 | REFERENCE | Account coverage gap returns `INSUFFICIENT_COVERAGE`. |
@@ -27,7 +27,7 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-21 | REFERENCE | Competing correction fixture remains contradictory and historically ambiguous. |
 | RC-22 | REFERENCE | Unrelated refund evidence does not alter school-surplus fact attribution. |
 | RC-23 | REFERENCE | Exact-money, overflow, precision, canonical form, and currency rejection tests. |
-| RC-24 | PARTIAL | Headless CSV rejects malformed UTF-8/quotes and byte/row/column/field/cell limits; browser/PDF failure and atomic review gates remain open. |
+| RC-24 | PARTIAL | Headless CSV rejects malformed UTF-8/quotes and byte/row/column/field/cell limits; failed review leaves both input objects unchanged. Browser/PDF failure and atomic storage remain open. |
 | RC-25 | PARTIAL | Native CLI is built and 33 fixed operations plus 200 seeded cases pass locally; WASM and real-browser parity remain open. |
 | RC-26 | REFERENCE | Independent checker catches arithmetic, digest, source, proposal, and aid-item tampering. |
 | RC-27 | OPEN | Device source-unavailable and hash reattachment workflow remains open. |

@@ -237,11 +237,13 @@
       ],
       "tests": [
         "tests/reference/test_model.py — strict schema, exact proposal/source linkage, parser/mapping versions, reviewed edits, duplicate approval prevention",
-        "tests/reference/test_receipt.py — proposal provenance independently checked in derivation receipts"
+        "tests/reference/test_receipt.py — proposal provenance independently checked in derivation receipts",
+        "tests/client/test_review.mjs — proposal, source, decision ledger and approved-event identity"
       ],
       "evidence": [
         "M2-2 red-green run; 25-test reference suite exit 0 before commit",
-        "M2-6b red-green run; 93-test reference suite exit 0 before local commit"
+        "M2-6b red-green run; 93-test reference suite exit 0 before local commit",
+        "M5-2 reviewed bank import preserves proposals and verifies prior artifact/proposal/event chain on exact repeat"
       ],
       "status": "IN_PROGRESS"
     },
@@ -527,8 +529,14 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": ["tests/client/test_bank_csv.mjs"],
-      "evidence": ["M5-1 exact mapped CSV proposals, stable source positions, repeated-row multiplicity, and account-bound artifact IDs pass; review open"],
+      "tests": [
+        "tests/client/test_bank_csv.mjs",
+        "tests/client/test_review.mjs — native-validated atomic bank CSV approval"
+      ],
+      "evidence": [
+        "M5-1 exact mapped CSV proposals, stable source positions, repeated-row multiplicity, and account-bound artifact IDs pass; review open",
+        "M5-2 reviewed CSV decisions produce only approved bank-credit events; browser and real-format validation remain open"
+      ],
       "status": "IN_PROGRESS"
     },
     {
@@ -605,9 +613,13 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/client/test_review.mjs — headless approve/edit/reject/exclude decision command"
+      ],
+      "evidence": [
+        "M5-2 headless review operation passes; visual review screen remains open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-42",
@@ -618,9 +630,13 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/client/test_review.mjs — unchanged repeat, changed decision conflict, stale heads and equal row multiplicity"
+      ],
+      "evidence": [
+        "M5-2 in-memory exact repeat is inert, conflict is typed, and equal movements are retained; durable storage and statement overlap remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-43",
@@ -665,9 +681,13 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/client/test_review.mjs — typed invalid batch, missing ledger, invalid decision, stale head and native validation failure"
+      ],
+      "evidence": [
+        "M5-2 typed review failures leave case and ledger inputs unchanged; unsupported-file continuation remains open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-46",

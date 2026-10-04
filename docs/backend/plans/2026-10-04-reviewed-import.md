@@ -49,12 +49,12 @@
 
 ## Task 2 — Atomic reviewed import
 
-**Requirements:** S-17, S-40, S-41, S-42, S-45; depends on Task 1. **Interfaces:** `reviewImport(case,batch,decisions,command,validateCase): Promise<CaseInput>`; exact decision/event shapes in the contract. **Risk:** critical, financial journal integrity.
+**Requirements:** S-17, S-40, S-41, S-42, S-45; depends on Task 1. **Interfaces:** `reviewImport(case,ledger,batch,decisions,command,validateCase): Promise<{case:CaseV1,ledger:ImportLedger,applied:boolean}>`; exact decision/event shapes in the contract. **Risk:** critical, financial journal integrity.
 
-- [ ] Write failing tests for full decision coverage, approved edited cents, rejected/debit rows, malformed IDs/heads/time, native case-validation failure, unchanged reimport, changed reimport conflict, and two equal legitimate row positions.
-- [ ] Run tests expecting missing review command.
-- [ ] Implement all-or-nothing new-case construction with a mandatory validator, preserving original proposal bytes and source references.
-- [ ] Run native CLI case validation on the result, repeat import/metamorphic tests, typecheck, and commit M5-2.
+- [x] Write failing tests for full decision coverage, approved edited cents, rejected/debit rows, malformed IDs/heads/time, native case-validation failure, unchanged reimport, changed reimport conflict, and two equal legitimate row positions.
+- [x] Run tests expecting missing review command and later a missing ledger-consistency check.
+- [x] Implement all-or-nothing new-case construction with a mandatory validator, preserving original proposal bytes and source references.
+- [x] Run native CLI case validation on the result, repeat import/metamorphic tests, typecheck, and commit M5-2.
 
 ## Task 3 — Manual and unsupported-document path
 

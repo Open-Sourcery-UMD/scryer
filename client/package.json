@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
+    "pretest": "make -C ../engine cli",
     "test": "node --experimental-strip-types --test ../tests/client/*.mjs"
   },
   "devDependencies": {

@@ -28,6 +28,8 @@ test('quoted newline and comma preserve logical source positions and equal-row m
   const otherAccount = await extractBankCsv(bytes, { ...metadata, accountRefId: 'bank-b' }, signed);
   assert.equal(otherAccount.artifact.sha256, first.artifact.sha256);
   assert.notEqual(otherAccount.artifact.artifactId, first.artifact.artifactId);
+  bytes[0] = 88;
+  assert.equal(first.sourceBytes[0], 0xef);
 });
 
 test('debits, zero, bad cents, and bad dates remain unresolved proposals', async () => {
