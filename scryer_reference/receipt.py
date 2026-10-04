@@ -52,6 +52,9 @@ def make_school_surplus_receipt(case: Case, heads: tuple[str, ...], term_id: str
     projection = project_school_surplus(case, heads, term_id)
     if projection.amount_minor is None:
         raise ModelError("UNSUPPORTED_RECEIPT_STATUS")
+    term = next((item for item in case.terms if item.term_id == term_id), None)
+    if term is None:
+        raise ModelError("MISSING_TERM")
     snapshot = snapshot_events(case, heads)
     approvals = {event.fact.fact_id: event for event in snapshot if event.fact is not None}
     corrections: dict[str, list] = {}
@@ -110,6 +113,8 @@ def make_school_surplus_receipt(case: Case, heads: tuple[str, ...], term_id: str
         "caseId": case.case_id,
         "heads": list(projection.heads),
         "termId": term_id,
+        "institutionId": term.institution_id,
+        "accountRefId": term.school_account_ref_id,
         "status": projection.status,
         "amountMinor": str(projection.amount_minor),
         "facts": steps,

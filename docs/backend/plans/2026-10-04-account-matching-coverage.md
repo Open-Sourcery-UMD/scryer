@@ -34,11 +34,11 @@
 
 **Interfaces:** `Case.institutions: tuple[Institution,...]`, `Case.terms: tuple[AcademicTerm,...]`, `Case.account_refs: tuple[AccountRef,...]`; `Fact.account_ref_id: str | None` and `Fact.term_id: str | None`. JSON top level replaces `termIds` with `institutions`, `terms`, and `accountRefs`. `Institution` has opaque `institutionId`; `AcademicTerm` has `termId`, `institutionId`, `schoolAccountRefId`, `startDate`, `endDateExclusive`; `AccountRef` has `accountRefId`, `kind` (`school` or `bank`), and nullable `institutionId`. An artifact may carry an optional account reference. Posted school/refund facts must use the term's school account, a bank credit must use a bank account and may have unknown term, and offer/pending/work-study may have null account.
 
-- [ ] Write failing tests for a valid single-institution fixture, unknown account, wrong account kind, a school account attached to another institution, a bank statement source/account mismatch, unknown-term bank credit, and term bounds. Update synthetic fixtures to include explicit identity fields.
-- [ ] Run targeted model/projection/receipt tests. Expected: parser rejects the new contract before implementation.
-- [ ] Extend parser/dataclasses/schema and update the generator. Project only facts on a school account belonging to the requested term's institution; existing hand-calculated results must remain exact.
-- [ ] Run targeted and full reference suite. Expected: exit 0; no cross-institution/account facts enter a result.
-- [ ] Inspect diff and commit `feat(reference): bind facts to institution and account` with task ID M2-5a and verification.
+- [x] Write failing tests for a valid single-institution fixture, unknown account, wrong account kind, a school account attached to another institution, a bank statement source/account mismatch, unknown-term bank credit, and term bounds. Update synthetic fixtures to include explicit identity fields.
+- [x] Run targeted model/projection/receipt tests. The original parser rejected the new contract.
+- [x] Extend parser/dataclasses/schema and update the generator. Project only facts on the requested term's school account; existing hand-calculated results remain exact.
+- [x] Run targeted and full reference suite: 54 tests and 200 seeded synthetic receipt checks passed.
+- [x] Inspect diff and commit `feat(reference): bind facts to institution and account` with task ID M2-5a and verification.
 
 ### Task 2: Explicit bank statement coverage
 

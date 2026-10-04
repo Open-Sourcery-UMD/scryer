@@ -17,7 +17,7 @@ _MAX = (1 << 63) - 1
 _TOP_KEYS = frozenset(
     {
         "schemaVersion", "engineVersion", "ruleVersion", "metric", "caseId",
-        "heads", "termId", "status", "amountMinor", "facts", "limitations", "digest",
+        "heads", "termId", "institutionId", "accountRefId", "status", "amountMinor", "facts", "limitations", "digest",
     }
 )
 _STEP_KEYS = frozenset(
@@ -162,12 +162,15 @@ def check_receipt(case: Case, receipt: dict[str, object]) -> CheckResult:
         return _failed("CASE_MISMATCH")
     heads = receipt["heads"]
     term_id = receipt["termId"]
+    term = next((item for item in case.terms if item.term_id == term_id), None)
     if (
         type(heads) is not list
         or any(type(head) is not str for head in heads)
         or heads != sorted(set(heads))
         or type(term_id) is not str
-        or term_id not in case.term_ids
+        or term is None
+        or receipt["institutionId"] != term.institution_id
+        or receipt["accountRefId"] != term.school_account_ref_id
     ):
         return _failed("INVALID_REFERENCE")
     try:
@@ -179,6 +182,7 @@ def check_receipt(case: Case, receipt: dict[str, object]) -> CheckResult:
         event.fact.fact_id: event
         for event in snapshot
         if event.fact is not None and event.fact.term_id == term_id
+        and event.fact.account_ref_id == term.school_account_ref_id
         and event.fact.role in {"school_credit", "school_charge"}
     }
     steps = receipt["facts"]

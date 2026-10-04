@@ -88,6 +88,45 @@ class ProjectionTests(unittest.TestCase):
         self.assertEqual(comparison.before.amount_minor, 90000)
         self.assertEqual(comparison.after.amount_minor, 90000)
 
+    def test_second_institution_school_account_does_not_enter_first_terms_total(self):
+        raw = raw_golden()
+        raw["institutions"].append({"institutionId": "institution-b"})
+        raw["accountRefs"].append(
+            {"accountRefId": "school-b", "kind": "school", "institutionId": "institution-b"}
+        )
+        raw["terms"].append(
+            {
+                "termId": "2026-fall-b",
+                "institutionId": "institution-b",
+                "schoolAccountRefId": "school-b",
+                "startDate": "2026-08-20",
+                "endDateExclusive": "2026-12-21",
+            }
+        )
+        raw["events"].append(
+            {
+                "eventId": "event-b-credit",
+                "parents": ["event-extra-charge"],
+                "recordedAt": "2026-09-05T10:00:00Z",
+                "kind": "approve_fact",
+                "fact": {
+                    "factId": "b-credit",
+                    "termId": "2026-fall-b",
+                    "accountRefId": "school-b",
+                    "role": "school_credit",
+                    "amountMinor": "5000",
+                    "effectiveDate": "2026-08-20",
+                    "source": {"kind": "manual", "entryId": "b-credit-entry"},
+                    "reviewId": "review-b-credit",
+                },
+            }
+        )
+        case = parse_case(raw)
+        self.assertEqual(project_school_surplus(case, ("event-b-credit",), "2026-fall").amount_minor, 90000)
+        other = project_school_surplus(case, ("event-b-credit",), "2026-fall-b")
+        self.assertEqual(other.amount_minor, 5000)
+        self.assertEqual(other.fact_ids, ("b-credit",))
+
     def test_manual_fact_makes_support_status_user_asserted(self):
         raw = raw_golden()
         raw["events"][0]["fact"]["source"] = {"kind": "manual", "entryId": "manual-grant"}

@@ -9,13 +9,27 @@ def minimal_case():
     return {
         "schemaVersion": "1",
         "caseId": "case-a",
-        "termIds": ["2026-fall"],
+        "institutions": [{"institutionId": "institution-a"}],
+        "accountRefs": [
+            {"accountRefId": "school-a", "kind": "school", "institutionId": "institution-a"},
+            {"accountRefId": "bank-a", "kind": "bank", "institutionId": None},
+        ],
+        "terms": [
+            {
+                "termId": "2026-fall",
+                "institutionId": "institution-a",
+                "schoolAccountRefId": "school-a",
+                "startDate": "2026-08-20",
+                "endDateExclusive": "2026-12-21",
+            }
+        ],
         "artifacts": [
             {
                 "artifactId": "bill-a",
                 "sha256": "0" * 64,
                 "kind": "school_bill",
                 "observedAt": "2026-09-01T12:00:00Z",
+                "accountRefId": "school-a",
             }
         ],
         "proposals": [],
@@ -28,6 +42,7 @@ def minimal_case():
                 "fact": {
                     "factId": "credit-a",
                     "termId": "2026-fall",
+                    "accountRefId": "school-a",
                     "role": "school_credit",
                     "amountMinor": "650000",
                     "effectiveDate": "2026-08-20",
@@ -49,6 +64,8 @@ class CaseParserTests(unittest.TestCase):
         self.assertEqual(case.case_id, "case-a")
         self.assertEqual(case.events[0].fact.amount_minor, 650000)
         self.assertEqual(case.events[0].fact.source.artifact_id, "bill-a")
+        self.assertEqual(case.events[0].fact.account_ref_id, "school-a")
+        self.assertEqual(case.terms[0].institution_id, "institution-a")
         self.assertEqual(tuple(event.event_id for event in snapshot_events(case, ("event-credit",))), ("event-credit",))
 
     def test_duplicate_json_key_is_rejected(self):
@@ -159,6 +176,7 @@ class CaseParserTests(unittest.TestCase):
                 "fact": {
                     "factId": "charge-a",
                     "termId": "2026-fall",
+                    "accountRefId": "school-a",
                     "role": "school_charge",
                     "amountMinor": "500000",
                     "effectiveDate": "2026-08-21",
@@ -178,6 +196,55 @@ class CaseParserTests(unittest.TestCase):
             tuple(event.event_id for event in snapshot_events(first, ("event-charge",))),
             tuple(event.event_id for event in snapshot_events(second, ("event-charge",))),
         )
+
+    def test_unknown_fact_account_is_rejected(self):
+        raw = minimal_case()
+        raw["events"][0]["fact"]["accountRefId"] = "school-missing"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "MISSING_ACCOUNT")
+
+    def test_bank_observation_on_school_account_is_rejected(self):
+        raw = minimal_case()
+        raw["events"][0]["fact"]["role"] = "bank_credit_observed"
+        raw["events"][0]["fact"]["termId"] = None
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "ACCOUNT_KIND_MISMATCH")
+
+    def test_school_account_from_another_institution_is_rejected(self):
+        raw = minimal_case()
+        raw["institutions"].append({"institutionId": "institution-other"})
+        raw["accountRefs"][0]["institutionId"] = "institution-other"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "TERM_ACCOUNT_MISMATCH")
+
+    def test_bank_fact_cannot_use_a_different_accounts_statement(self):
+        raw = minimal_case()
+        raw["events"][0]["fact"]["role"] = "bank_credit_observed"
+        raw["events"][0]["fact"]["termId"] = None
+        raw["events"][0]["fact"]["accountRefId"] = "bank-a"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "SOURCE_ACCOUNT_MISMATCH")
+
+    def test_bank_credit_can_have_unknown_term(self):
+        raw = minimal_case()
+        raw["artifacts"][0]["accountRefId"] = "bank-a"
+        raw["events"][0]["fact"]["role"] = "bank_credit_observed"
+        raw["events"][0]["fact"]["termId"] = None
+        raw["events"][0]["fact"]["accountRefId"] = "bank-a"
+        case = load_case_json(json_case(raw))
+        self.assertIsNone(case.events[0].fact.term_id)
+        self.assertEqual(case.events[0].fact.account_ref_id, "bank-a")
+
+    def test_reversed_term_interval_is_rejected(self):
+        raw = minimal_case()
+        raw["terms"][0]["endDateExclusive"] = "2026-08-20"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "INVALID_TERM_INTERVAL")
 
     def test_unhashable_head_does_not_escape_as_python_type_error(self):
         case = load_case_json(json_case(minimal_case()))

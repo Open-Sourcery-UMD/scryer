@@ -31,6 +31,7 @@ def generate_case(seed: int) -> Case:
             "fact": {
                 "factId": fact_id,
                 "termId": "2026-fall",
+                "accountRefId": "school-a",
                 "role": role,
                 "amountMinor": str(amount),
                 "effectiveDate": "2026-08-20",
@@ -42,13 +43,22 @@ def generate_case(seed: int) -> Case:
     raw = {
         "schemaVersion": "1",
         "caseId": f"case-{tag}",
-        "termIds": ["2026-fall"],
+        "institutions": [{"institutionId": "institution-a"}],
+        "accountRefs": [{"accountRefId": "school-a", "kind": "school", "institutionId": "institution-a"}],
+        "terms": [{
+            "termId": "2026-fall",
+            "institutionId": "institution-a",
+            "schoolAccountRefId": "school-a",
+            "startDate": "2026-08-20",
+            "endDateExclusive": "2026-12-21",
+        }],
         "artifacts": [
             {
                 "artifactId": artifact_id,
                 "sha256": artifact_hash,
                 "kind": "synthetic_statement",
                 "observedAt": "2026-09-01T10:00:00Z",
+                "accountRefId": "school-a",
             }
         ],
         "proposals": [],

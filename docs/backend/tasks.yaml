@@ -228,7 +228,7 @@
     {
       "id": "M2-5a",
       "title": "Institution and account identity",
-      "status": "NOT_STARTED",
+      "status": "DONE",
       "dependsOn": [
         "M2-4"
       ],
@@ -267,7 +267,7 @@
     {
       "id": "M2-5b",
       "title": "Explicit bank coverage",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "dependsOn": [
         "M2-5a"
       ],

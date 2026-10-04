@@ -60,7 +60,8 @@ def _current_correction(events: list[Event]) -> Event | None:
 
 
 def _evaluate(case: Case, heads: tuple[str, ...], term_id: str) -> _Evaluation:
-    if term_id not in case.term_ids:
+    term = next((item for item in case.terms if item.term_id == term_id), None)
+    if term is None:
         raise ModelError("MISSING_TERM")
     events = snapshot_events(case, heads)
     facts: dict[str, Fact] = {}
@@ -77,7 +78,9 @@ def _evaluate(case: Case, heads: tuple[str, ...], term_id: str) -> _Evaluation:
         sorted(
             fact_id
             for fact_id, fact in facts.items()
-            if fact.term_id == term_id and fact.role in _POSTED_ROLES
+            if fact.term_id == term_id
+            and fact.account_ref_id == term.school_account_ref_id
+            and fact.role in _POSTED_ROLES
         )
     )
     for fact_id in posted_fact_ids:

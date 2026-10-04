@@ -29,6 +29,8 @@ class ReceiptTests(unittest.TestCase):
         self.assertEqual(receipt["metric"], "school_surplus")
         self.assertEqual(receipt["amountMinor"], "90000")
         self.assertEqual(receipt["status"], "SUPPORTED_BY_UPLOADED_RECORDS")
+        self.assertEqual(receipt["institutionId"], "institution-a")
+        self.assertEqual(receipt["accountRefId"], "school-a")
         self.assertEqual(
             {step["factId"]: step["contributionMinor"] for step in receipt["facts"]},
             {"grant": "270000", "other-credit": "350000", "base-charge": "-500000", "extra-charge": "-30000"},
@@ -43,6 +45,15 @@ class ReceiptTests(unittest.TestCase):
         self.assertIn("SOURCE_AUTHENTICITY_NOT_VERIFIED", receipt["limitations"])
         self.assertEqual(len(receipt["digest"]), 64)
         self.assertTrue(check_receipt(case, receipt).valid)
+
+    def test_changed_account_claim_with_recomputed_digest_fails(self):
+        case = golden_case()
+        receipt = make_school_surplus_receipt(case, ("event-extra-charge",), "2026-fall")
+        receipt["accountRefId"] = "different-school-account"
+        redigest(receipt)
+        result = check_receipt(case, receipt)
+        self.assertFalse(result.valid)
+        self.assertEqual(result.code, "INVALID_REFERENCE")
 
     def test_changed_arithmetic_with_recomputed_digest_fails(self):
         case = golden_case()
