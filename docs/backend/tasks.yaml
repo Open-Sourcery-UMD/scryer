@@ -226,11 +226,127 @@
       "done": "The checker detects deliberately altered receipts and generator outputs are repeatable."
     },
     {
+      "id": "M2-5a",
+      "title": "Institution and account identity",
+      "status": "NOT_STARTED",
+      "dependsOn": [
+        "M2-4"
+      ],
+      "requirements": [
+        "S-14",
+        "S-17",
+        "S-20",
+        "S-24"
+      ],
+      "scope": "Bind each relevant fact to an explicit school or bank account and each school account/term to an institution.",
+      "files": [
+        "scryer_reference/model.py",
+        "docs/backend/contracts/case-v1.schema.json",
+        "tests/reference/fixtures/golden-case.json",
+        "scryer_reference/scenarios.py",
+        "tests/reference/test_model.py"
+      ],
+      "interface": "Case.institutions, Case.terms, Case.account_refs, Fact.account_ref_id; see account-matching-coverage plan Task 1.",
+      "invariants": [
+        "Wrong institution/account cannot enter a school projection",
+        "Bank credit requires a bank account",
+        "Term bounds are half-open"
+      ],
+      "tests": [
+        "unknown account",
+        "wrong account kind",
+        "cross-institution fact",
+        "source/account mismatch",
+        "golden value unchanged"
+      ],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -p 'test_*.py' -v",
+      "expected": "Account validation and all reference tests pass",
+      "risk": "HIGH",
+      "done": "New strict schema and goldens pass without account ambiguity."
+    },
+    {
+      "id": "M2-5b",
+      "title": "Explicit bank coverage",
+      "status": "NOT_STARTED",
+      "dependsOn": [
+        "M2-5a"
+      ],
+      "requirements": [
+        "S-21",
+        "S-36"
+      ],
+      "scope": "Represent approved bank statement coverage assertions and evaluate exact half-open interval gaps.",
+      "files": [
+        "scryer_reference/model.py",
+        "scryer_reference/coverage.py",
+        "docs/backend/contracts/case-v1.schema.json",
+        "tests/reference/test_coverage.py"
+      ],
+      "interface": "evaluate_bank_coverage(Case,heads,account_ref_id,start_date,end_date_exclusive)->CoverageResult; see plan Task 2.",
+      "invariants": [
+        "CSV extrema are not coverage",
+        "Wrong account does not cover",
+        "A gap yields INSUFFICIENT_COVERAGE"
+      ],
+      "tests": [
+        "source asserted period",
+        "user asserted period",
+        "early end",
+        "gap",
+        "wrong account",
+        "no assertion"
+      ],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -p 'test_*.py' -v",
+      "expected": "Coverage tests and full reference suite pass",
+      "risk": "HIGH",
+      "done": "Coverage decisions preserve exact gaps and provenance."
+    },
+    {
+      "id": "M2-5c",
+      "title": "Conservative matching and allocations",
+      "status": "NOT_STARTED",
+      "dependsOn": [
+        "M2-5b"
+      ],
+      "requirements": [
+        "S-20",
+        "S-21",
+        "S-24",
+        "S-43"
+      ],
+      "scope": "Bounded refund/deposit candidate suggestions and causally reviewed exact allocations.",
+      "files": [
+        "scryer_reference/model.py",
+        "scryer_reference/matching.py",
+        "docs/backend/contracts/case-v1.schema.json",
+        "tests/reference/test_matching.py"
+      ],
+      "interface": "suggest_refund_deposits(Case,heads,refund_fact_id,bank_account_ref_id,candidate_limit=1000)->MatchResult; see plan Task 3.",
+      "invariants": [
+        "Coincidence is suggestion only",
+        "No over-allocation",
+        "Resource cap returns COMPUTATION_LIMIT",
+        "No false definite nonpayment"
+      ],
+      "tests": [
+        "ambiguous equal candidates",
+        "wrong account/term",
+        "split deposits",
+        "duplicate allocation",
+        "coverage gap",
+        "candidate cap"
+      ],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -p 'test_*.py' -v",
+      "expected": "Matching tests and full reference suite pass",
+      "risk": "HIGH",
+      "done": "Supported matching outcomes and negative cases pass with explicit limitations."
+    },
+    {
       "id": "M3",
       "title": "Native C++20 production engine",
       "status": "NOT_STARTED",
       "dependsOn": [
-        "M2-4"
+        "M2-5c"
       ],
       "requirements": [
         "S-25",
