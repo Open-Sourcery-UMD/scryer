@@ -7,6 +7,8 @@ from typing import Any
 from .model import Case, ModelError, SourceRef, snapshot_events
 from .projection import _current_correction, project_school_surplus
 
+_SUPPORTED_REFERENCE_ENGINES = frozenset({"reference-0.1.0", "reference-0.2.0"})
+
 def _canonical_bytes(value: Any) -> bytes:
     if value is None or type(value) is bool:
         pass
@@ -46,8 +48,13 @@ def _source_ref(source: SourceRef, case: Case) -> dict[str, str]:
     }
 
 
-def make_school_surplus_receipt(case: Case, heads: tuple[str, ...], term_id: str) -> dict[str, object]:
+def make_school_surplus_receipt(
+    case: Case, heads: tuple[str, ...], term_id: str, *, engine_version: str = "reference-0.1.0"
+) -> dict[str, object]:
     """Describe an internally checkable source-based total; not source authenticity."""
+
+    if type(engine_version) is not str or engine_version not in _SUPPORTED_REFERENCE_ENGINES:
+        raise ModelError("UNSUPPORTED_ENGINE_VERSION")
 
     projection = project_school_surplus(case, heads, term_id)
     if projection.amount_minor is None:
@@ -119,7 +126,7 @@ def make_school_surplus_receipt(case: Case, heads: tuple[str, ...], term_id: str
 
     core: dict[str, object] = {
         "schemaVersion": "1",
-        "engineVersion": "reference-0.1.0",
+        "engineVersion": engine_version,
         "ruleVersion": "school-surplus-1",
         "metric": "school_surplus",
         "caseId": case.case_id,

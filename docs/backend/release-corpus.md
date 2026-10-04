@@ -17,8 +17,8 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-11 | REFERENCE | Equal legitimate school charges from different source positions both count. |
 | RC-12 | OPEN | Reviewed import-command idempotency belongs to browser local persistence. |
 | RC-13 | OPEN | Overlapping statement deduplication requires source-import workflow. |
-| RC-14 | PARTIAL | Historical corrected amount is retained; corrected-source import/version workflow remains open. |
-| RC-15 | PARTIAL | Fact cancellation and match reversal are tested separately; full reversal sequences need a named fixture. |
+| RC-14 | REFERENCE | Named reversal fixture retains the 90000-cent historical view, then a source-backed grant correction yields 70000 cents; before/after receipts and exact attribution are fixed in the corpus. Import versioning remains M5 work. |
+| RC-15 | REFERENCE | A reviewed charge cancellation after the corrected source yields 100000 cents. Exact +10000-cent net change equals −20000 for the grant and +30000 for the cancelled charge; both original and corrected source references survive in checked receipts. |
 | RC-16 | REFERENCE | Account coverage gap returns `INSUFFICIENT_COVERAGE`. |
 | RC-17 | PARTIAL | Bank observations do not imply period coverage; real CSV adapter behavior remains open. |
 | RC-18 | REFERENCE | Matching never authenticates an uploaded bank source; explicit limitation code. |
@@ -49,7 +49,7 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-43 | REFERENCE | Candidate cap returns `COMPUTATION_LIMIT`. |
 | RC-44 | OPEN | Browser worker/storage cancellation and recovery tests remain open. |
 | RC-45 | REFERENCE | Divergent heads and cutoff time inversions do not produce a global time winner. |
-| RC-46 | OPEN | Historical receipt versions exist; original-version reproduction versus reanalysis needs an operation and test. |
+| RC-46 | REFERENCE | Explicit local reproduction rebuilds the archived `school-surplus-1` receipt at its recorded heads and reference producer version. Reanalysis at new heads emits a separate `reference-0.2.0` receipt linked by prior digest; unknown versions are typed unsupported. This is reference behavior, not a production engine migration. |
 | RC-47 | OPEN | Identity-provider account-disablement integration remains open. |
 | RC-48 | OPEN | Full local journey with external product network blocked remains open. |
 

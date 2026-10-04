@@ -5,6 +5,7 @@ import unittest
 from scryer_reference.check_receipt import check_receipt
 from scryer_reference.coverage import evaluate_bank_coverage
 from scryer_reference.history import heads_as_known
+from scryer_reference.history_receipts import reproduce_school_surplus_receipt, reanalyze_school_surplus_receipt
 from scryer_reference.lifecycle import project_aid_lifecycle
 from scryer_reference.matching import suggest_refund_deposits
 from scryer_reference.model import load_case_json
@@ -37,6 +38,18 @@ def semantic_result(case, operation):
         receipt = make_school_surplus_receipt(case, tuple(operation["heads"]), operation["termId"])
         assert check_receipt(case, receipt).valid
         return {"amountMinor": receipt["amountMinor"], "digest": receipt["digest"]}
+    if kind == "historical_reanalysis":
+        old = make_school_surplus_receipt(case, tuple(operation["oldHeads"]), operation["termId"])
+        reproduced = reproduce_school_surplus_receipt(case, old)
+        later = reanalyze_school_surplus_receipt(case, old, tuple(operation["newHeads"]))
+        assert check_receipt(case, later.receipt).valid
+        return {
+            "oldReproduced": reproduced == old,
+            "priorDigest": later.prior_digest,
+            "newDigest": later.receipt["digest"],
+            "newEngineVersion": later.receipt["engineVersion"],
+            "newAmountMinor": later.receipt["amountMinor"],
+        }
     if kind == "coverage":
         result = evaluate_bank_coverage(
             case, tuple(operation["heads"]), operation["accountRefId"],

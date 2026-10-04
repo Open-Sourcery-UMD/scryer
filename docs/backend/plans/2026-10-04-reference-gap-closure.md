@@ -32,10 +32,12 @@
 
 **Requirements:** S-16, S-19, S-22, S-23, S-24. **Risk:** HIGH.
 
-- [ ] Add named reversal/cancellation/corrected-source fixtures with before/after receipts and exact attribution.
-- [ ] Freeze a rule-version registry or typed unsupported-version behavior that preserves old receipt verification separately from explicit reanalysis.
-- [ ] Test old results remain reproducible under their recorded rules; never silently rewrite a historical receipt.
-- [ ] Run fixed corpus, 200 seeded smoke, and independent checker negatives before committing.
+**Design review:** The v1 `school-surplus-1` calculation stays unchanged. Freeze reference receipt producer versions `reference-0.1.0` (historical) and `reference-0.2.0` (explicit reanalysis) without pretending that an engine version alone changes the monetary rule. Reproduction validates and regenerates a historical receipt using its recorded heads, rule, and producer version; reanalysis requires explicit new heads and returns a separate receipt linked by the old digest. Unknown versions are typed unsupported. The old receipt is never rewritten. A corrected source and later cancellation supply the before/after evidence.
+
+- [x] Add named reversal/cancellation/corrected-source fixtures with before/after receipts and exact attribution.
+- [x] Freeze a rule-version registry or typed unsupported-version behavior that preserves old receipt verification separately from explicit reanalysis.
+- [x] Test old results remain reproducible under their recorded rules; never silently rewrite a historical receipt.
+- [x] Run fixed corpus, 200 seeded smoke, and independent checker negatives before committing.
 
 ## Gate to M3
 

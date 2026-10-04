@@ -440,7 +440,7 @@
     {
       "id": "M2-7c",
       "title": "Reversal and historical rule evidence",
-      "status": "NOT_STARTED",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": ["M2-7b"],
       "requirements": ["S-16", "S-19", "S-22", "S-23", "S-24"],
       "scope": "Freeze corrected-source/reversal fixtures and explicit original-version reproduction versus reanalysis behavior.",
