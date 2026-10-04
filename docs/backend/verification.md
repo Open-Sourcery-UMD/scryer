@@ -8,4 +8,6 @@ For the independent Python reference, the runnable command is `PYTHONDONTWRITEBY
 
 The first native slice has `make -C engine test-money` (Apple clang C++20; exit 0) and a local address/undefined sanitizer compile/run (exit 0). These checks cover exact cent parsing and checked arithmetic only. They are not native case/receipt parity evidence.
 
+The bounded JSON boundary also has `make -C engine test-json` and a local address/undefined sanitizer compile/run (both exit 0). It rejects duplicate keys, malformed UTF-8, inputs over 20 MiB, and nesting beyond 64; it does not yet validate Scryer case fields. The vendored `nlohmann/json` v3.12.0 header checksum matched the published SHA-256. Build and tests read the vendored header locally, with no build-time network fetch.
+
 Full targets from the brief: 200 seeded cases for fast differential, 10,000 for full, 30 seconds per available fuzz target for smoke and 10 minutes for milestone, domain/reference 90% line and 85% branch coverage, sync/client 85% line and 80% branch coverage. These are requirements, not observed results. Every run records source revision, command, exit status, executed count, skips, and environment.

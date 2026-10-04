@@ -59,11 +59,11 @@
 
 **Interfaces:** `using Json = nlohmann::json` in `json_boundary.hpp`; `parse_document(std::string_view)->Json`, `canonical_json(const Json&)->std::string`, with exact duplicate-key, UTF-8, depth, size, and number-type checks. Use nlohmann/json only if the downloaded header matches the pinned SHA-256 and license; do not relax validation to accommodate its defaults.
 
-- [ ] Write `tests/engine/test_json_boundary.cpp`: duplicate key fails, 65-level nesting fails at documented max 64, malformed UTF-8 fails, 20 MiB bound fails, semantically equivalent object key order produces identical canonical bytes.
-- [ ] Run `make -C engine test-json` expecting failure before implementation.
-- [ ] Download the public release asset under existing network controls, verify checksum/license, record source/version; on denied download keep this task `BLOCKED_TOOLING` and continue independent native money work.
-- [ ] Implement bounded preflight plus duplicate-key parse callback; keep source strings owned and reject JSON numeric money at case validation.
-- [ ] Run focused native test, Python suite, and sanitizer target if the local runtime supports it; commit Task M3-2.
+- [x] Write `tests/engine/test_json_boundary.cpp`: duplicate key fails, 65-level nesting fails at documented max 64, malformed UTF-8 fails, 20 MiB bound fails, semantically equivalent object key order produces identical canonical bytes.
+- [x] Run `make -C engine test-json` expecting failure before implementation.
+- [x] Download the public release asset under existing network controls, verify checksum/license, record source/version; on denied download keep this task `BLOCKED_TOOLING` and continue independent native money work.
+- [x] Implement bounded preflight plus duplicate-key parse callback; keep source strings owned and reject JSON numeric money at case validation.
+- [x] Run focused native test, Python suite, and sanitizer target if the local runtime supports it; commit Task M3-2.
 
 ## Task 3 — Strict case parser and causal snapshots
 
