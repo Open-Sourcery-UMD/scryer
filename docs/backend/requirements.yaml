@@ -892,10 +892,13 @@
       ],
       "tests": [
         "tests/sync/test_protocol.py — strict ciphertext chunk/manifest validation and exact package assembly",
-        "tests/browser/test_sync_wire.mjs — Chrome outbox accepted by independent Python parser"
+        "tests/browser/test_sync_wire.mjs — Chrome outbox accepted by independent Python parser",
+        "tests/sync/test_rls.py — real app-role direct-SQL isolation under forced RLS",
+        "tests/sync/test_migrations.py — checksum, rollback, forward repair, and future-version rejection"
       ],
       "evidence": [
-        "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass; authenticated sync and tenant isolation remain open"
+        "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass",
+        "M7-2 six direct app-role RLS tests and four migration tests pass on fresh private PostgreSQL 15.11; OIDC/HTTP sync remain open"
       ],
       "status": "IN_PROGRESS"
     },

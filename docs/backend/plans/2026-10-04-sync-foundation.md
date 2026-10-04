@@ -42,14 +42,14 @@
 
 ### Task 2: Signed tenant context and forced RLS
 
-**Files:** Create `migrations/0001_sync.sql`, `sync/db_context.py`, `tests/sync/test_rls.py`, and a small isolated local test-cluster runner under `scripts/`; update the sync contract.
+**Files:** Create `migrations/0001_sync.sql`, `sync/db_context.py`, `sync/migrate.py`, `tests/sync/test_rls.py`, `tests/sync/test_migrations.py`, and a small isolated local test-cluster runner under `scripts/`; update the sync contract and local operations note.
 
 **Interfaces:** `begin_tenant_transaction(conn, account_id: str, context_key: bytes)` sets transaction-local account, transaction ID, and HMAC. SQL function `scryer_private.tenant_ok(text)` validates those values before RLS grants access.
 
-- [ ] Write real PostgreSQL tests for no context, forged `SET`, replay across transactions, authorized own-row access, cross-tenant read/write denial, and role attributes.
-- [ ] Observe the missing migration/context code fail those tests.
-- [ ] Add migration, roles/grants/policies, and context helper; run the same tests on the private Unix-socket PostgreSQL cluster.
-- [ ] Record that PostgreSQL 15.11 is the available test target and PostgreSQL 16 remains a separate compatibility gate; inspect diff and commit M7-2.
+- [x] Write real PostgreSQL tests for no context, forged `SET`, replay across transactions, authorized own-row access, cross-tenant read/write denial, and role attributes.
+- [x] Observe the missing migration/context code fail those tests.
+- [x] Add migration, roles/grants/policies, and context helper; run the same tests on the private Unix-socket PostgreSQL cluster.
+- [x] Record that PostgreSQL 15.11 is the available test target and PostgreSQL 16 remains a separate compatibility gate; inspect diff and commit M7-2.
 
 ### Task 3: Atomic opaque revision store
 
