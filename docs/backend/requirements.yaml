@@ -28,8 +28,10 @@
         "M1"
       ],
       "tests": [],
-      "evidence": [],
-      "status": "IN_PROGRESS"
+      "evidence": [
+        "docs/backend/repository-audit.md at local branch baseline"
+      ],
+      "status": "VERIFIED_LOCAL"
     },
     {
       "id": "S-03",
@@ -195,9 +197,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_money.py — 11 exact-money and arithmetic tests"
+      ],
+      "evidence": [
+        "M2-1 red-green run; local unittest discover exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-16",
