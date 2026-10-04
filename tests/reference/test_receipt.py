@@ -27,6 +27,7 @@ class ReceiptTests(unittest.TestCase):
         case = golden_case()
         receipt = make_school_surplus_receipt(case, ("event-extra-charge",), "2026-fall")
         self.assertEqual(receipt["metric"], "school_surplus")
+        self.assertEqual(receipt["currency"], "USD")
         self.assertEqual(receipt["amountMinor"], "90000")
         self.assertEqual(receipt["status"], "SUPPORTED_BY_UPLOADED_RECORDS")
         self.assertEqual(receipt["institutionId"], "institution-a")
@@ -72,6 +73,15 @@ class ReceiptTests(unittest.TestCase):
         result = check_receipt(case, receipt)
         self.assertFalse(result.valid)
         self.assertEqual(result.code, "DIGEST_MISMATCH")
+
+    def test_changed_currency_with_recomputed_digest_fails(self):
+        case = golden_case()
+        receipt = make_school_surplus_receipt(case, ("event-extra-charge",), "2026-fall")
+        receipt["currency"] = "EUR"
+        redigest(receipt)
+        result = check_receipt(case, receipt)
+        self.assertFalse(result.valid)
+        self.assertEqual(result.code, "CURRENCY_MISMATCH")
 
     def test_missing_participating_fact_fails_even_with_valid_digest(self):
         case = golden_case()

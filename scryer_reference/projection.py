@@ -13,6 +13,7 @@ class Projection:
     case_id: str
     heads: tuple[str, ...]
     term_id: str
+    currency: str
     status: str
     amount_minor: int | None
     fact_ids: tuple[str, ...]
@@ -71,6 +72,8 @@ def _evaluate(case: Case, heads: tuple[str, ...], term_id: str) -> _Evaluation:
             facts[event.fact.fact_id] = event.fact
         elif event.correction is not None:
             corrections.setdefault(event.correction.fact_id, []).append(event)
+    if any(fact.currency != case.currency for fact in facts.values()):
+        raise ModelError("CURRENCY_MISMATCH")
 
     contribution_map: dict[str, int] = {}
     manually_asserted = False
@@ -95,6 +98,7 @@ def _evaluate(case: Case, heads: tuple[str, ...], term_id: str) -> _Evaluation:
                     case_id=case.case_id,
                     heads=tuple(sorted(heads)),
                     term_id=term_id,
+                    currency=case.currency,
                     status="CONTRADICTORY_EVIDENCE",
                     amount_minor=None,
                     fact_ids=posted_fact_ids,
@@ -121,6 +125,7 @@ def _evaluate(case: Case, heads: tuple[str, ...], term_id: str) -> _Evaluation:
                 case_id=case.case_id,
                 heads=tuple(sorted(heads)),
                 term_id=term_id,
+                currency=case.currency,
                 status="INSUFFICIENT_COVERAGE",
                 amount_minor=None,
                 fact_ids=(),
@@ -138,6 +143,7 @@ def _evaluate(case: Case, heads: tuple[str, ...], term_id: str) -> _Evaluation:
             case_id=case.case_id,
             heads=tuple(sorted(heads)),
             term_id=term_id,
+            currency=case.currency,
             status="USER_ASSERTED" if manually_asserted else "SUPPORTED_BY_UPLOADED_RECORDS",
             amount_minor=total,
             fact_ids=tuple(sorted(contribution_map)),

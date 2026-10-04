@@ -5,10 +5,11 @@
   "description": "Parser additionally rejects duplicate JSON keys, out-of-range i64 values, invalid Gregorian dates, missing references, duplicate IDs, event cycles, invalid account/source/coverage bindings, and decoded proposal fields over 65536 UTF-8 bytes.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "caseId", "institutions", "accountRefs", "terms", "artifacts", "proposals", "events"],
+  "required": ["schemaVersion", "caseId", "currency", "institutions", "accountRefs", "terms", "artifacts", "proposals", "events"],
   "properties": {
     "schemaVersion": {"const": "1"},
     "caseId": {"$ref": "#/$defs/id"},
+    "currency": {"const": "USD"},
     "institutions": {"type": "array", "items": {"$ref": "#/$defs/institution"}},
     "accountRefs": {"type": "array", "items": {"$ref": "#/$defs/accountRef"}},
     "terms": {"type": "array", "items": {"$ref": "#/$defs/term"}},
@@ -89,11 +90,12 @@
     },
     "fact": {
       "type": "object", "additionalProperties": false,
-      "required": ["factId", "termId", "accountRefId", "role", "amountMinor", "effectiveDate", "source", "reviewId"],
+      "required": ["factId", "termId", "accountRefId", "currency", "role", "amountMinor", "effectiveDate", "source", "reviewId"],
       "properties": {
         "factId": {"$ref": "#/$defs/id"},
         "termId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
         "accountRefId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
+        "currency": {"const": "USD"},
         "role": {"enum": ["school_credit", "school_charge", "refund_issued", "bank_credit_observed", "aid_offer", "aid_pending", "balance_snapshot", "work_study_offer"]},
         "amountMinor": {"$ref": "#/$defs/nonnegativeMinor"},
         "effectiveDate": {"$ref": "#/$defs/sourceDate"},

@@ -95,6 +95,7 @@ class MatchingTests(unittest.TestCase):
     def test_one_equal_bank_credit_is_suggestion_not_confirmation(self):
         result = query(raw_case())
         self.assertEqual(result.status, "SUGGESTED")
+        self.assertEqual(result.currency, "USD")
         self.assertEqual(result.candidate_fact_ids, ("bank-credit",))
         self.assertEqual(result.confirmed_allocations, ())
         self.assertEqual(result.remaining_minor, 90000)

@@ -1,9 +1,10 @@
 import copy
+from dataclasses import replace
 import json
 from pathlib import Path
 import unittest
 
-from scryer_reference.model import load_case_json
+from scryer_reference.model import ModelError, load_case_json
 from scryer_reference.projection import compare_school_surplus, project_school_surplus
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "golden-case.json"
@@ -21,9 +22,19 @@ class ProjectionTests(unittest.TestCase):
     def test_golden_before_correction_is_1500_dollars(self):
         projection = project_school_surplus(parse_case(raw_golden()), ("event-base-charge",), "2026-fall")
         self.assertEqual(projection.status, "SUPPORTED_BY_UPLOADED_RECORDS")
+        self.assertEqual(projection.currency, "USD")
         self.assertEqual(projection.amount_minor, 150000)
         self.assertEqual(projection.fact_ids, ("base-charge", "grant", "other-credit"))
         self.assertIn("NOT_ENTITLEMENT", projection.limitation_codes)
+
+    def test_in_memory_mixed_currency_case_is_rejected_before_aggregation(self):
+        case = parse_case(raw_golden())
+        event = case.events[0]
+        altered = replace(event, fact=replace(event.fact, currency="EUR"))
+        case = replace(case, events=(altered,) + case.events[1:])
+        with self.assertRaises(ModelError) as raised:
+            project_school_surplus(case, ("event-base-charge",), "2026-fall")
+        self.assertEqual(raised.exception.code, "CURRENCY_MISMATCH")
 
     def test_golden_after_two_reviewed_changes_is_900_dollars(self):
         projection = project_school_surplus(parse_case(raw_golden()), ("event-extra-charge",), "2026-fall")
@@ -113,6 +124,7 @@ class ProjectionTests(unittest.TestCase):
                     "factId": "b-credit",
                     "termId": "2026-fall-b",
                     "accountRefId": "school-b",
+                    "currency": "USD",
                     "role": "school_credit",
                     "amountMinor": "5000",
                     "effectiveDate": "2026-08-20",

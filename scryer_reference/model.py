@@ -89,6 +89,7 @@ class Fact:
     fact_id: str
     term_id: str | None
     account_ref_id: str | None
+    currency: str
     role: str
     amount_minor: int
     effective_date: str | None
@@ -150,6 +151,7 @@ class Event:
 class Case:
     schema_version: str
     case_id: str
+    currency: str
     institutions: tuple[Institution, ...]
     terms: tuple[AcademicTerm, ...]
     account_refs: tuple[AccountRef, ...]
@@ -180,6 +182,12 @@ def _fields(value: Any, required: set[str]) -> dict[str, Any]:
 def _identifier(value: Any) -> str:
     if type(value) is not str or _ID.fullmatch(value) is None:
         raise ModelError("INVALID_ID")
+    return value
+
+
+def _currency(value: Any) -> str:
+    if value != "USD" or type(value) is not str:
+        raise ModelError("UNSUPPORTED_CURRENCY")
     return value
 
 
@@ -348,7 +356,7 @@ def _fact(
 ) -> Fact:
     value = _fields(
         value,
-        {"factId", "termId", "accountRefId", "role", "amountMinor", "effectiveDate", "source", "reviewId"},
+        {"factId", "termId", "accountRefId", "currency", "role", "amountMinor", "effectiveDate", "source", "reviewId"},
     )
     role = value["role"]
     if type(role) is not str or role not in _ROLES:
@@ -388,6 +396,7 @@ def _fact(
         fact_id=_identifier(value["factId"]),
         term_id=term_id,
         account_ref_id=account_id,
+        currency=_currency(value["currency"]),
         role=role,
         amount_minor=_nonnegative_money(value["amountMinor"]),
         effective_date=_source_date(value["effectiveDate"]),
@@ -589,10 +598,11 @@ def load_case_json(document: str) -> Case:
         raise ModelError("INVALID_JSON") from error
     raw = _fields(
         raw,
-        {"schemaVersion", "caseId", "institutions", "accountRefs", "terms", "artifacts", "proposals", "events"},
+        {"schemaVersion", "caseId", "currency", "institutions", "accountRefs", "terms", "artifacts", "proposals", "events"},
     )
     if raw["schemaVersion"] != "1":
         raise ModelError("UNSUPPORTED_VERSION")
+    currency = _currency(raw["currency"])
     institutions = tuple(_institution(value) for value in _array(raw["institutions"]))
     institution_ids = {institution.institution_id for institution in institutions}
     if len(institution_ids) != len(institutions):
@@ -664,6 +674,7 @@ def load_case_json(document: str) -> Case:
     return Case(
         schema_version="1",
         case_id=_identifier(raw["caseId"]),
+        currency=currency,
         institutions=tuple(sorted(institutions, key=lambda institution: institution.institution_id)),
         terms=tuple(sorted(terms, key=lambda term: term.term_id)),
         account_refs=tuple(sorted(accounts, key=lambda account: account.account_ref_id)),

@@ -57,7 +57,8 @@
           "location": "row:1"
         },
         "reviewId": "review-grant",
-        "accountRefId": "school-a"
+        "accountRefId": "school-a",
+        "currency": "USD"
       }
     },
     {
@@ -79,7 +80,8 @@
           "location": "row:2"
         },
         "reviewId": "review-other-credit",
-        "accountRefId": "school-a"
+        "accountRefId": "school-a",
+        "currency": "USD"
       }
     },
     {
@@ -101,7 +103,8 @@
           "location": "row:1"
         },
         "reviewId": "review-base-charge",
-        "accountRefId": "school-a"
+        "accountRefId": "school-a",
+        "currency": "USD"
       }
     },
     {
@@ -143,7 +146,8 @@
           "location": "row:2"
         },
         "reviewId": "review-extra-charge",
-        "accountRefId": "school-a"
+        "accountRefId": "school-a",
+        "currency": "USD"
       }
     },
     {
@@ -165,7 +169,8 @@
           "location": "page:1"
         },
         "reviewId": "review-issued-refund",
-        "accountRefId": "school-a"
+        "accountRefId": "school-a",
+        "currency": "USD"
       }
     },
     {
@@ -187,7 +192,8 @@
           "location": "row:1"
         },
         "reviewId": "review-bank-credit",
-        "accountRefId": "bank-a"
+        "accountRefId": "bank-a",
+        "currency": "USD"
       }
     }
   ],
@@ -216,5 +222,6 @@
       "startDate": "2026-08-20",
       "endDateExclusive": "2026-12-21"
     }
-  ]
+  ],
+  "currency": "USD"
 }

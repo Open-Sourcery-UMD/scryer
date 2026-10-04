@@ -16,7 +16,7 @@ _MIN = -(1 << 63)
 _MAX = (1 << 63) - 1
 _TOP_KEYS = frozenset(
     {
-        "schemaVersion", "engineVersion", "ruleVersion", "metric", "caseId",
+        "schemaVersion", "engineVersion", "ruleVersion", "metric", "caseId", "currency",
         "heads", "termId", "institutionId", "accountRefId", "status", "amountMinor", "facts", "limitations", "digest",
     }
 )
@@ -160,6 +160,8 @@ def check_receipt(case: Case, receipt: dict[str, object]) -> CheckResult:
 
     if receipt["caseId"] != case.case_id:
         return _failed("CASE_MISMATCH")
+    if receipt["currency"] != case.currency:
+        return _failed("CURRENCY_MISMATCH")
     heads = receipt["heads"]
     term_id = receipt["termId"]
     term = next((item for item in case.terms if item.term_id == term_id), None)
@@ -177,6 +179,8 @@ def check_receipt(case: Case, receipt: dict[str, object]) -> CheckResult:
         snapshot = snapshot_events(case, tuple(heads))
     except ModelError:
         return _failed("INVALID_REFERENCE")
+    if any(event.fact is not None and event.fact.currency != case.currency for event in snapshot):
+        return _failed("CURRENCY_MISMATCH")
 
     approvals = {
         event.fact.fact_id: event

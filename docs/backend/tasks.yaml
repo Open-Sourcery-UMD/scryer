@@ -228,7 +228,7 @@
     {
       "id": "M2-5a",
       "title": "Institution and account identity",
-      "status": "DONE",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": [
         "M2-4"
       ],
@@ -267,7 +267,7 @@
     {
       "id": "M2-5b",
       "title": "Explicit bank coverage",
-      "status": "DONE",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": [
         "M2-5a"
       ],
@@ -304,7 +304,7 @@
     {
       "id": "M2-5c",
       "title": "Conservative matching and allocations",
-      "status": "DONE",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": [
         "M2-5b"
       ],
@@ -342,11 +342,75 @@
       "done": "Supported matching outcomes and negative cases pass with explicit limitations."
     },
     {
+      "id": "M2-6a",
+      "title": "Explicit currency binding",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": ["M2-5c"],
+      "requirements": ["S-14", "S-15", "S-17", "S-24"],
+      "scope": "Require USD currency across approved monetary facts, projections, matching, and receipts; reject mixed/unsupported values before computation.",
+      "files": ["scryer_reference/model.py", "scryer_reference/projection.py", "scryer_reference/receipt.py", "scryer_reference/check_receipt.py", "docs/backend/contracts/case-v1.schema.json", "tests/reference/"],
+      "interface": "Case.currency and Fact.currency are explicit USD; receipt/projection currency is checked against the case.",
+      "invariants": ["No implicit currency conversion", "Mixed-currency case rejected", "Exact prior golden values unchanged"],
+      "tests": ["unsupported case/fact currency", "receipt tampering", "seeded goldens"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "All reference tests pass with currency binding",
+      "risk": "HIGH",
+      "done": "Versioned case, projection, and receipt contracts reject non-USD/mixed currency."
+    },
+    {
+      "id": "M2-6b",
+      "title": "Link approved facts to reviewed proposals",
+      "status": "IN_PROGRESS",
+      "dependsOn": ["M2-6a"],
+      "requirements": ["S-14", "S-17", "S-24"],
+      "scope": "Preserve parser/mapping version and original proposed value, and validate approved fact links to the exact source proposal.",
+      "files": ["scryer_reference/model.py", "scryer_reference/scenarios.py", "docs/backend/contracts/case-v1.schema.json", "tests/reference/"],
+      "interface": "Proposal parserVersion/mappingVersion/proposedAmountMinor; Fact.proposalId optionally links to the matching artifact/source location.",
+      "invariants": ["Proposal alone has no monetary effect", "Reviewed edits preserve original proposed amount", "Source and proposal position cannot disagree"],
+      "tests": ["proposal acceptance/edit", "missing proposal", "source mismatch", "unreviewed proposal", "version bounds"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "Provenance goldens and negative cases pass",
+      "risk": "HIGH",
+      "done": "Every linked approval is traceable to the exact original proposal without changing projection semantics."
+    },
+    {
+      "id": "M2-6c",
+      "title": "Aid lifecycle evidence and findings",
+      "status": "NOT_STARTED",
+      "dependsOn": ["M2-6b"],
+      "requirements": ["S-18", "S-19", "S-21", "S-22", "S-24"],
+      "scope": "Model explicitly linked aid-item evidence stages and deterministic non-entitlement findings.",
+      "files": ["scryer_reference/model.py", "scryer_reference/lifecycle.py", "docs/backend/contracts/case-v1.schema.json", "tests/reference/test_lifecycle.py"],
+      "interface": "project_aid_lifecycle(Case, heads, term_id, aid_item_id)->LifecycleResult with source-linked observations and next-action codes.",
+      "invariants": ["No mandatory invented stages", "No offer/pending/work-study as posted credits", "No automatic expected refund from surplus"],
+      "tests": ["out-of-order stages", "pending replacement", "split disbursement", "multiple terms", "parent recipient", "balance snapshot"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "Lifecycle goldens and negative cases pass",
+      "risk": "HIGH",
+      "done": "Supported lifecycle classifications are evidence-bound and explicit about unknown stages."
+    },
+    {
+      "id": "M2-6d",
+      "title": "Historical mapping and release corpus",
+      "status": "NOT_STARTED",
+      "dependsOn": ["M2-6c"],
+      "requirements": ["S-16", "S-19", "S-22", "S-23", "S-24", "S-26"],
+      "scope": "Map declared as-known cutoffs to approved causal heads and freeze hand-checked synthetic parity scenarios.",
+      "files": ["scryer_reference/history.py", "scryer_reference/scenarios.py", "tests/reference/", "docs/backend/verification.md"],
+      "interface": "heads_as_known(Case, cutoff_utc)->unique head or typed ambiguity; deterministic corpus manifest for C++/WASM parity.",
+      "invariants": ["No wall-clock tie winner", "Unreviewed proposals cannot enter history", "Same event set permutation has identical result"],
+      "tests": ["divergent branches", "different review histories", "golden exact deltas", "fixed-seed corpus"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "Historical and corpus tests pass locally",
+      "risk": "HIGH",
+      "done": "Native-port corpus has unambiguous expected semantics and unresolved scenarios remain open."
+    },
+    {
       "id": "M3",
       "title": "Native C++20 production engine",
       "status": "NOT_STARTED",
       "dependsOn": [
-        "M2-5c"
+        "M2-6d"
       ],
       "requirements": [
         "S-25",

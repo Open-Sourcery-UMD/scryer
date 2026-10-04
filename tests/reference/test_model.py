@@ -9,6 +9,7 @@ def minimal_case():
     return {
         "schemaVersion": "1",
         "caseId": "case-a",
+        "currency": "USD",
         "institutions": [{"institutionId": "institution-a"}],
         "accountRefs": [
             {"accountRefId": "school-a", "kind": "school", "institutionId": "institution-a"},
@@ -43,6 +44,7 @@ def minimal_case():
                     "factId": "credit-a",
                     "termId": "2026-fall",
                     "accountRefId": "school-a",
+                    "currency": "USD",
                     "role": "school_credit",
                     "amountMinor": "650000",
                     "effectiveDate": "2026-08-20",
@@ -62,7 +64,9 @@ class CaseParserTests(unittest.TestCase):
     def test_minimal_approved_fact_has_exact_provenance(self):
         case = load_case_json(json_case(minimal_case()))
         self.assertEqual(case.case_id, "case-a")
+        self.assertEqual(case.currency, "USD")
         self.assertEqual(case.events[0].fact.amount_minor, 650000)
+        self.assertEqual(case.events[0].fact.currency, "USD")
         self.assertEqual(case.events[0].fact.source.artifact_id, "bill-a")
         self.assertEqual(case.events[0].fact.account_ref_id, "school-a")
         self.assertEqual(case.terms[0].institution_id, "institution-a")
@@ -177,6 +181,7 @@ class CaseParserTests(unittest.TestCase):
                     "factId": "charge-a",
                     "termId": "2026-fall",
                     "accountRefId": "school-a",
+                    "currency": "USD",
                     "role": "school_charge",
                     "amountMinor": "500000",
                     "effectiveDate": "2026-08-21",
@@ -203,6 +208,18 @@ class CaseParserTests(unittest.TestCase):
         with self.assertRaises(ModelError) as raised:
             load_case_json(json_case(raw))
         self.assertEqual(raised.exception.code, "MISSING_ACCOUNT")
+
+    def test_unsupported_case_and_fact_currency_are_rejected(self):
+        raw = minimal_case()
+        raw["currency"] = "EUR"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "UNSUPPORTED_CURRENCY")
+        raw["currency"] = "USD"
+        raw["events"][0]["fact"]["currency"] = "EUR"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "UNSUPPORTED_CURRENCY")
 
     def test_bank_observation_on_school_account_is_rejected(self):
         raw = minimal_case()

@@ -111,6 +111,7 @@ def make_school_surplus_receipt(case: Case, heads: tuple[str, ...], term_id: str
         "ruleVersion": "school-surplus-1",
         "metric": "school_surplus",
         "caseId": case.case_id,
+        "currency": case.currency,
         "heads": list(projection.heads),
         "termId": term_id,
         "institutionId": term.institution_id,

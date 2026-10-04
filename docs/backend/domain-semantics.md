@@ -2,6 +2,8 @@
 
 ## Money and roles
 
+The case and every approved monetary fact explicitly name `USD`. Unsupported or mixed currency is rejected before computation; no currency conversion is inferred.
+
 Only `USD` is supported. The cross-language monetary value is an integer number of cents in the signed 64-bit range `[-9223372036854775808, 9223372036854775807]`. JSON carries it as a canonical base-10 string: `0` or `-?[1-9][0-9]*`; `-0`, leading plus, leading zeros, exponents, fractions, and JSON numeric money are invalid. Intermediate arithmetic is checked before narrowing. A positive fact amount means magnitude, not an accounting sign. `school_credit` adds to school surplus; `school_charge` subtracts. `refund_issued` and `bank_credit_observed` are distinct evidence and never silently change the school surplus metric. `aid_offer`, `aid_pending`, `balance_snapshot`, and `work_study_offer` are not posted movements.
 
 Source decimal parsing accepts explicit US-style decimal point and optional grouped comma thousands only when grouping is valid, with at most two fractional digits. Parentheses or one leading minus may indicate a negative source value, but an adapter must state its column/sign convention before assigning a fact role. A value with both debit and credit, unknown locale, or more than two fractional digits needs review or an unsupported result. No binary float path is permitted.

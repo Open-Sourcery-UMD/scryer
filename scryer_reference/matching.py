@@ -20,6 +20,7 @@ class Allocation:
 class MatchResult:
     refund_fact_id: str
     bank_account_ref_id: str
+    currency: str
     status: str
     refund_amount_minor: int | None
     candidate_fact_ids: tuple[str, ...]
@@ -65,6 +66,7 @@ def _result(
     return MatchResult(
         refund_fact_id=refund_id,
         bank_account_ref_id=account_id,
+        currency="USD",
         status=status,
         refund_amount_minor=amount,
         candidate_fact_ids=candidates,
@@ -97,6 +99,8 @@ def suggest_refund_deposits(
 
     snapshot = snapshot_events(case, heads)
     approvals = {event.fact.fact_id: event.fact for event in snapshot if event.fact is not None}
+    if any(fact.currency != case.currency for fact in approvals.values()):
+        raise ModelError("CURRENCY_MISMATCH")
     refund = approvals.get(refund_fact_id)
     if refund is None:
         raise ModelError("MISSING_FACT_IN_SNAPSHOT")

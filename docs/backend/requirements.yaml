@@ -286,9 +286,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_matching.py — suggestions, ambiguity, account isolation, reviewed decisions, split allocations, limits, corrections"
+      ],
+      "evidence": [
+        "M2-5c red-green run; 85-test reference suite exit 0 before local commit ef81a3e"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-21",
@@ -300,10 +304,13 @@
         "M2"
       ],
       "tests": [
-        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens"
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens",
+        "tests/reference/test_coverage.py — account-specific intervals, gaps, source binding, retraction, chronology",
+        "tests/reference/test_matching.py — missing coverage and no false nonpayment outcome"
       ],
       "evidence": [
-        "M2-3 red-green run; 36-test reference suite exit 0 before commit"
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit",
+        "M2-5b/M2-5c red-green runs; 85-test reference suite exit 0 before local commit ef81a3e"
       ],
       "status": "IN_PROGRESS"
     },
