@@ -333,9 +333,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_receipt.py — canonical digest, independent arithmetic/source checks, seeded generator"
+      ],
+      "evidence": [
+        "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-24",
@@ -346,9 +350,13 @@
       "implementationTasks": [
         "M2"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_receipt.py — canonical digest, independent arithmetic/source checks, seeded generator"
+      ],
+      "evidence": [
+        "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-25",
@@ -622,9 +630,13 @@
       "implementationTasks": [
         "M5"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/reference/test_receipt.py — canonical digest, independent arithmetic/source checks, seeded generator"
+      ],
+      "evidence": [
+        "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-45",

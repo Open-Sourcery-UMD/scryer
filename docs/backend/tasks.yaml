@@ -192,7 +192,7 @@
     {
       "id": "M2-4",
       "title": "Independent receipts and scenarios",
-      "status": "NOT_STARTED",
+      "status": "VERIFIED_LOCAL",
       "dependsOn": [
         "M2-3"
       ],
