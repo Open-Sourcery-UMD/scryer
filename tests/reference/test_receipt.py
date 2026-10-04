@@ -7,7 +7,7 @@ import unittest
 from scryer_reference.check_receipt import check_receipt, load_receipt_json
 from scryer_reference.model import ModelError, load_case_json
 from scryer_reference.receipt import make_school_surplus_receipt
-from scryer_reference.scenarios import generate_case
+from scryer_reference.scenarios import generate_case, generate_raw_case
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "golden-case.json"
 
@@ -179,6 +179,11 @@ class ReceiptTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertNotEqual(first, third)
         self.assertEqual(first.schema_version, "1")
+
+    def test_raw_synthetic_generator_preserves_parsed_case_semantics(self):
+        for seed in (0, 1, 42, -7, 199):
+            raw = generate_raw_case(seed)
+            self.assertEqual(load_case_json(json.dumps(raw, separators=(",", ":"))), generate_case(seed))
 
 
 if __name__ == "__main__":

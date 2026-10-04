@@ -7,8 +7,8 @@ import random
 from .model import Case, load_case_json
 
 
-def generate_case(seed: int) -> Case:
-    """Generate one reproducible, synthetic single-term school-account case."""
+def generate_raw_case(seed: int) -> dict:
+    """Generate one reproducible synthetic case before strict JSON validation."""
 
     if type(seed) is not int or seed < -(1 << 63) or seed > (1 << 63) - 1:
         raise ValueError("INVALID_SEED")
@@ -74,4 +74,10 @@ def generate_case(seed: int) -> Case:
             approved("event-charge", ["event-credit-b"], "charge", "school_charge", charge, 3),
         ],
     }
-    return load_case_json(json.dumps(raw, separators=(",", ":")))
+    return raw
+
+
+def generate_case(seed: int) -> Case:
+    """Generate and validate one reproducible synthetic school-account case."""
+
+    return load_case_json(json.dumps(generate_raw_case(seed), separators=(",", ":")))

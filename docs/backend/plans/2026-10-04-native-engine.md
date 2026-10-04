@@ -69,10 +69,10 @@
 
 **Interfaces:** `using Heads = std::span<const std::string>` in `case.hpp`; `parse_case(const Json&)->Case`, `snapshot(const Case&, Heads)->std::vector<const Event*>`, `heads_as_known(const Case&, std::string_view utc)->HistoryResult`. Mirror `case-v1.schema.json` fields and stable Python error categories.
 
-- [ ] Write tests for the golden case, absent references, duplicate IDs, term/account/recipient/proposal bindings, duplicate review IDs, cycle/missing parent, event permutation, and incomparable correction branches.
-- [ ] Run native tests expecting failures.
-- [ ] Implement owned records and deterministic topological order; reject unknown fields, bad dates/instants, noncanonical money, unsupported currency, and invalid causal links.
-- [ ] Extend `scryer_reference/scenarios.py` with `generate_raw_case(seed: int)->dict` while preserving `generate_case(seed: int)->Case`, then run native focused tests and 200 generated raw-case validation comparisons; commit Task M3-3 after self-review.
+- [x] Write tests for the golden case, absent references, duplicate IDs, term/account/recipient/proposal bindings, duplicate review IDs, cycle/missing parent, event permutation, and incomparable correction branches.
+- [x] Run native tests expecting failures.
+- [x] Implement owned records and deterministic topological order; reject unknown fields, bad dates/instants, noncanonical money, unsupported currency, and invalid causal links.
+- [x] Extend `scryer_reference/scenarios.py` with `generate_raw_case(seed: int)->dict` while preserving `generate_case(seed: int)->Case`, then run native focused tests and 200 generated raw-case validation comparisons; commit Task M3-3 after self-review.
 
 ## Task 4 — Projection, history, and attribution
 
