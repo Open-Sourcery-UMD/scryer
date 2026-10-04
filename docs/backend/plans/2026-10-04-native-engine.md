@@ -78,10 +78,10 @@
 
 **Interfaces:** `project_school_surplus(const Case&, Heads, term_id)->Projection`, `compare_school_surplus(const Case&, Heads before, Heads after, term_id)->Comparison`; `HistoryResult` from Task 3 maps cutoffs to heads without imposing global clock order.
 
-- [ ] Add golden 150000→90000 tests, corrected-source 90000→70000→100000 tests, canceled charge, overflow, manual-source status, unrelated evidence, and divergent correction tests.
-- [ ] Run focused native tests expecting failures.
-- [ ] Implement checked per-fact signed contributions and exact delta attribution using immutable snapshot inputs.
-- [ ] Compare all fixed project/compare/history operations to `tests/reference/corpus/manifest.json`; run 200 seeded differential cases; commit Task M3-4.
+- [x] Add golden 150000→90000 tests, corrected-source 90000→70000→100000 tests, canceled charge, overflow, manual-source status, unrelated evidence, and divergent correction tests.
+- [x] Run focused native tests expecting failures.
+- [x] Implement checked per-fact signed contributions and exact delta attribution using immutable snapshot inputs.
+- [x] Compare all fixed project/compare/history operations to `tests/reference/corpus/manifest.json`; run 200 seeded differential cases; commit Task M3-4.
 
 ## Task 5 — Canonical receipts and historical reproduction
 

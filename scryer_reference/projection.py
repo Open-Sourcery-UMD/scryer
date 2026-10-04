@@ -134,7 +134,9 @@ def _evaluate(case: Case, heads: tuple[str, ...], term_id: str) -> _Evaluation:
             contributions={},
         )
 
-    total = checked_add(0, sum(contribution_map.values()))
+    total = 0
+    for fact_id in sorted(contribution_map):
+        total = checked_add(total, contribution_map[fact_id])
     limitations = {"NOT_ENTITLEMENT", "SOURCE_SET_MAY_BE_INCOMPLETE"}
     if manually_asserted:
         limitations.add("MANUAL_SOURCE")
@@ -197,7 +199,10 @@ def compare_school_surplus(
         for fact_id in sorted(before.contributions.keys() | after.contributions.keys())
         if before.contributions.get(fact_id, 0) != after.contributions.get(fact_id, 0)
     )
-    if sum(item.delta_minor for item in contributions) != delta:
+    attribution_total = 0
+    for item in contributions:
+        attribution_total = checked_add(attribution_total, item.delta_minor)
+    if attribution_total != delta:
         raise ModelError("ATTRIBUTION_INCOMPLETE")
     status = (
         "USER_ASSERTED"

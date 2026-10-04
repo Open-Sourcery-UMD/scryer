@@ -5,6 +5,7 @@ from pathlib import Path
 import unittest
 
 from scryer_reference.model import ModelError, load_case_json
+from scryer_reference.money import MoneyError
 from scryer_reference.projection import compare_school_surplus, project_school_surplus
 
 _FIXTURE = Path(__file__).parent / "fixtures" / "golden-case.json"
@@ -183,6 +184,23 @@ class ProjectionTests(unittest.TestCase):
         )
         self.assertEqual(projection.status, "CONTRADICTORY_EVIDENCE")
         self.assertEqual(projection.fact_ids, ("base-charge", "grant", "other-credit"))
+
+    def test_intermediate_cent_overflow_is_rejected_even_if_later_charge_cancels_it(self):
+        raw = raw_golden()
+        raw["events"][0]["fact"]["amountMinor"] = "9223372036854775807"
+        raw["events"][1]["fact"]["amountMinor"] = "1"
+        raw["events"][2]["fact"]["amountMinor"] = "0"
+        tail = copy.deepcopy(raw["events"][2])
+        tail["eventId"] = "event-tail-charge"
+        tail["parents"] = ["event-base-charge"]
+        tail["fact"]["factId"] = "zz-charge"
+        tail["fact"]["reviewId"] = "review-tail-charge"
+        tail["fact"]["amountMinor"] = "1"
+        tail["fact"]["source"]["location"] = "row:tail"
+        raw["events"].append(tail)
+        with self.assertRaises(MoneyError) as raised:
+            project_school_surplus(parse_case(raw), ("event-tail-charge",), "2026-fall")
+        self.assertEqual(raised.exception.code, "MONEY_OVERFLOW")
 
 
 if __name__ == "__main__":
