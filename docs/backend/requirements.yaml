@@ -941,10 +941,14 @@
         "tests/client/test_crypto.mjs — recovery re-entry, wrong secret and second-device unlock",
         "tests/browser/test_crypto.mjs — fresh Chrome page recovery",
         "tests/browser/test_archive.mjs — recovery-secret-gated fresh-device archive restore",
-        "tests/browser/test_rotation.mjs — new-root secret re-entry, wrong-secret refusal, second-device unlock"
+        "tests/browser/test_rotation.mjs — new-root secret re-entry, wrong-secret refusal, second-device unlock",
+        "tests/sync/test_recovery.py — exact recovery wrapper wire and precondition validation",
+        "tests/sync/test_api.py — initial encrypted wrapper HTTP create/read with tenant isolation",
+        "tests/sync/test_client_integration.mjs — Chrome-generated wrapper round trip through local API"
       ],
       "evidence": [
-        "M6-2 high-entropy recovery secret and authenticated root wrapper pass local tests; M6-4 Chrome archive restore works in a fresh profile; M6-5 new-root rotation passes local interruption/re-entry checks; frontend key-save UX remains open"
+        "M6-2 high-entropy recovery secret and authenticated root wrapper pass local tests; M6-4 Chrome archive restore works in a fresh profile; M6-5 new-root rotation passes local interruption/re-entry checks",
+        "M7-6 initial wrapper create/read passes 46 sync tests on PostgreSQL 15.11 and 16.15, plus one Chrome/API/PostgreSQL exact-byte fresh-page recovery check; standalone server rotation returns 409 until an atomic account-wide protocol exists; frontend key-save UX remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -969,13 +973,14 @@
         "tests/client/test_sync_transport.mjs — exact saved-byte requests, account/receipt validation, retry and conflict outcomes",
         "tests/sync/test_client_integration.mjs — Chrome/FastAPI/PostgreSQL ciphertext journey with synthetic verifier",
         "tests/sync/test_api.py — tenant-scoped keyset listing, historical ciphertext read, deletion and corruption refusal",
-        "tests/sync/test_pagination.py — cursor expiry, exact timestamp, tenant binding, and tamper refusal"
+        "tests/sync/test_pagination.py — cursor expiry, exact timestamp, tenant binding, and tamper refusal",
+        "tests/sync/test_recovery.py — exact encrypted recovery wrapper wire and strong preconditions"
       ],
       "evidence": [
         "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass",
         "M7-2 six direct app-role RLS tests and four migration tests pass on fresh private PostgreSQL 15.11",
         "M7-3 thirteen PostgreSQL store tests pass; OIDC/HTTP sync remain open",
-        "M7-4a HTTP boundary and M7-5 ciphertext read paths pass 41 sync tests on PostgreSQL 15.11 and 16.15; real Keycloak PKCE passes separately; M8 browser/API/PostgreSQL synthetic journey passes; JWT-to-API integration remains blocked"
+        "M7-4a HTTP boundary, M7-5 ciphertext read paths, and M7-6 initial wrapper API pass 46 sync tests on PostgreSQL 15.11 and 16.15; real Keycloak PKCE passes separately; M8 browser/API/PostgreSQL synthetic journey passes; JWT-to-API integration remains blocked"
       ],
       "status": "IN_PROGRESS"
     },

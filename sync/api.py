@@ -24,8 +24,10 @@ from .db_context import begin_tenant_transaction
 from .pagination import CaseCursorCodec, CursorError
 from .protocol import (CHUNK_BODY_BYTES, MANIFEST_BODY_BYTES, ID, ProtocolError,
                        parse_chunk, parse_manifest)
+from .recovery import RECOVERY_BODY_BYTES
 from .store import (StoreError, commit_manifest, delete_case, get_head,
-                    get_revision, list_cases, stage_chunk)
+                    get_recovery_envelope, get_revision, list_cases,
+                    put_recovery_envelope, stage_chunk)
 
 
 HTTP_BODY_BYTES = 12 * 1024 * 1024
@@ -104,6 +106,24 @@ class CaseListResponse(StrictWireModel):
     nextCursor: str | None
 
 
+class RecoveryEnvelopeWire(StrictWireModel):
+    schemaVersion: Literal["1"]
+    format: Literal["scryer-recovery-wrap-v1"]
+    algorithm: Literal["AES-256-GCM+HKDF-SHA-256"]
+    accountId: str
+    salt: str
+    nonce: str
+    ciphertext: str
+    tag: str
+
+
+class RecoveryReceipt(StrictWireModel):
+    kind: Literal["recovery"]
+    generation: int
+    wrapperDigest: str
+    etag: str
+
+
 class ChunkReceipt(StrictWireModel):
     kind: Literal["chunk"]
     caseId: str
@@ -141,6 +161,18 @@ ERROR_RESPONSES = {status: {"model": ErrorEnvelope} for status in
                    (400, 401, 403, 404, 409, 412, 413, 415, 428, 500, 503)}
 IDEMPOTENCY_HEADER = {"name": "Idempotency-Key", "in": "header", "required": True,
                       "schema": {"type": "string", "minLength": 1, "maxLength": 160}}
+RECOVERY_PRECONDITION_HEADERS = [
+    {"name": "If-Match", "in": "header", "required": False,
+     "description": "Reserved for replacement; matching generation currently returns 409.",
+     "schema": {"type": "string"}},
+    {"name": "If-None-Match", "in": "header", "required": False,
+     "description": "Required for initial creation; value must be *.",
+     "schema": {"type": "string"}},
+]
+RECOVERY_ETAG_RESPONSE = {"ETag": {
+    "description": "Strong quoted recovery-wrapper generation.",
+    "schema": {"type": "string", "pattern": '^"[1-9][0-9]{0,9}"$'},
+}}
 
 
 def raw_json_body(model: type[BaseModel]) -> dict:
@@ -177,7 +209,7 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
     app = FastAPI(title="Scryer Ciphertext Sync API", version="1.0.0",
                   docs_url=None, redoc_url=None)
     app.add_middleware(CORSMiddleware, allow_origins=list(allowed_origins),
-                       allow_credentials=False, allow_methods=["GET", "POST", "DELETE"],
+                       allow_credentials=False, allow_methods=["GET", "POST", "PUT", "DELETE"],
                        allow_headers=["Authorization", "Content-Type", "Idempotency-Key",
                                       "If-Match", "If-None-Match"],
                        expose_headers=["ETag", "Retry-After"], max_age=600)
@@ -333,6 +365,40 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
                       {"accountId": account_id, "status": "active", "usedBytes": used,
                        "quotaBytes": 256 * 1024 * 1024,
                        "capabilities": ["ciphertext-sync-v1"]})
+
+    @app.get("/v1/account/recovery-envelope", response_class=Response,
+             responses={200: {"model": RecoveryEnvelopeWire,
+                              "headers": RECOVERY_ETAG_RESPONSE}, **ERROR_RESPONSES})
+    def recovery_envelope(request: Request):
+        verified = identity(request)
+        found = tenant(verified, lambda conn, account_id, _used:
+                       get_recovery_envelope(conn, account_id))
+        if found is None:
+            raise ApiError("RECOVERY_ENVELOPE_NOT_FOUND", 404)
+        return Response(content=found.body, media_type="application/json",
+                        headers={"ETag": f'"{found.generation}"'})
+
+    @app.put("/v1/account/recovery-envelope", response_model=RecoveryReceipt,
+             responses={200: {"model": RecoveryReceipt,
+                              "headers": RECOVERY_ETAG_RESPONSE}, **ERROR_RESPONSES},
+             openapi_extra={**raw_json_body(RecoveryEnvelopeWire),
+                 "parameters": [IDEMPOTENCY_HEADER, *RECOVERY_PRECONDITION_HEADERS]})
+    async def create_recovery_envelope(request: Request):
+        verified = identity(request)
+        key = header_one(request, "idempotency-key")
+        create_precondition = header_one(request, "if-none-match", required=False)
+        update_precondition = header_one(request, "if-match", required=False)
+        if (create_precondition is not None and update_precondition is not None) or \
+                (create_precondition is not None and create_precondition != "*") or \
+                update_precondition == "*":
+            raise ApiError("INVALID_PRECONDITION", 400)
+        precondition = (create_precondition if create_precondition is not None
+                        else update_precondition)
+        raw = await body(request, RECOVERY_BODY_BYTES)
+        receipt = await run_in_threadpool(tenant, verified,
+            lambda conn, account_id, _used:
+                put_recovery_envelope(conn, account_id, key, raw, precondition))
+        return JSONResponse(content=receipt, headers={"ETag": receipt["etag"]})
 
     @app.get("/v1/cases", response_model=CaseListResponse,
              responses=ERROR_RESPONSES,

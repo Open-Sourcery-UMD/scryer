@@ -19,6 +19,7 @@ from sync.auth import VerifiedIdentity, derive_account_id
 from sync.api import create_sync_app
 from sync.migrate import apply_migrations
 from sync.protocol import CHUNK_KEYS, MANIFEST_KEYS
+from test_recovery import wrapper
 from test_store import prepared
 
 
@@ -124,6 +125,16 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(list_parameters["limit"]["schema"]["minimum"], 1)
         self.assertEqual(list_parameters["limit"]["schema"]["maximum"], 200)
         self.assertFalse(list_parameters["cursor"]["required"])
+        recovery_path = paths["/v1/account/recovery-envelope"]
+        self.assertIn("RecoveryEnvelopeWire", str(recovery_path["get"]["responses"]["200"]))
+        self.assertIn("RecoveryReceipt", str(recovery_path["put"]["responses"]["200"]))
+        self.assertIn("ETag", recovery_path["get"]["responses"]["200"]["headers"])
+        self.assertIn("ETag", recovery_path["put"]["responses"]["200"]["headers"])
+        self.assertIn("application/json", recovery_path["put"]["requestBody"]["content"])
+        recovery_parameters = {parameter["name"] for parameter in
+                               recovery_path["put"]["parameters"]}
+        self.assertEqual(recovery_parameters,
+                         {"Idempotency-Key", "If-Match", "If-None-Match"})
         chunk_operation = paths["/v1/cases/{case_id}/chunks"]["post"]
         self.assertIn("application/json", chunk_operation["requestBody"]["content"])
         self.assertIn("202", chunk_operation["responses"])
@@ -398,6 +409,61 @@ class ApiTests(unittest.TestCase):
         after_delete = mine("GET", "/v1/cases")
         self.assertEqual({item["caseId"] for item in after_delete.json()["cases"]},
                          {"case-list-b", "case-list-c"})
+
+    def test_recovery_wrapper_exact_bytes_cas_and_tenant_isolation(self):
+        path = "/v1/account/recovery-envelope"
+        account = self.account_id("three")
+        first = wrapper(account)
+        changed = wrapper(account, nonce_seed=1)
+
+        def get(token="three"):
+            return self.request("GET", path, token=token)
+
+        def put(raw, key, precondition, token="three"):
+            headers = {"Content-Type": "application/json", "Idempotency-Key": key}
+            if precondition == "*":
+                headers["If-None-Match"] = "*"
+            elif precondition is not None:
+                headers["If-Match"] = precondition
+            return self.request("PUT", path, token=token, content=raw, headers=headers)
+
+        self.assertEqual(get().status_code, 404)
+        for header, value in (("If-Match", "*"), ("If-None-Match", '"1"')):
+            rejected = self.request("PUT", path, token="three", content=first,
+                headers={"Content-Type": "application/json",
+                         "Idempotency-Key": f"recovery:wrong-header:{header}",
+                         header: value})
+            self.assertEqual(rejected.status_code, 400)
+            self.assertEqual(get().status_code, 404)
+        created = put(first, "recovery:create", "*")
+        self.assertEqual(created.status_code, 200, created.text)
+        self.assertEqual(created.json()["generation"], 1)
+        self.assertEqual(created.headers["etag"], '"1"')
+        self.assertEqual(put(first, "recovery:create", "*").json(), created.json())
+        fetched = get()
+        self.assertEqual(fetched.content, first)
+        self.assertEqual(fetched.headers["etag"], '"1"')
+        self.assertEqual(fetched.headers["cache-control"], "no-store")
+        self.assertEqual(get("two").status_code, 404)
+        self.assertEqual(put(wrapper(self.account_id("two")), "recovery:wrong", "*")
+                         .status_code, 400)
+        self.assertEqual(put(changed, "recovery:create", "*").status_code, 409)
+        self.assertEqual(put(changed, "recovery:none", None).status_code, 428)
+        self.assertEqual(put(changed, "recovery:stale", '"2"').status_code, 412)
+        self.assertEqual(put(first + b" " * 4096, "recovery:large", '"1"').status_code, 413)
+        self.assertEqual(put(changed, "recovery:update", '"1"').status_code, 409)
+        self.assertEqual(get().content, first)
+        self.assertEqual(put(first, "recovery:create", "*").status_code, 200)
+        with psycopg.connect(host=SOCKET, dbname=self.dbname, user=ADMIN) as admin:
+            admin.execute("UPDATE scryer.accounts SET status='disabled' WHERE account_id=%s",
+                          (account,))
+        try:
+            self.assertEqual(get().status_code, 403)
+            self.assertEqual(put(changed, "recovery:update", '"1"').status_code, 403)
+        finally:
+            with psycopg.connect(host=SOCKET, dbname=self.dbname, user=ADMIN) as admin:
+                admin.execute("UPDATE scryer.accounts SET status='active' WHERE account_id=%s",
+                              (account,))
 
 
 if __name__ == "__main__":

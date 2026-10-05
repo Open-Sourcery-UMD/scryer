@@ -20,6 +20,7 @@ from .protocol import (
     ChunkRequest, ProtocolError, assemble_package, parse_chunk, parse_manifest,
     parse_precondition, request_digest,
 )
+from .recovery import parse_generation_precondition, parse_recovery_wrapper
 
 
 QUOTA = 256 * 1024 * 1024
@@ -47,6 +48,13 @@ class CaseSummary:
     case_id: str
     head_revision_id: str
     updated_at: datetime
+
+
+@dataclass(frozen=True)
+class StoredRecovery:
+    generation: int
+    digest: str
+    body: bytes
 
 
 def _id(value: str) -> str:
@@ -111,7 +119,7 @@ def _tombstoned(conn: Connection, account_id: str, case_id: str) -> bool:
 
 
 def _idempotent(conn: Connection, account_id: str, key: str,
-                digest: str, operation: str, case_id: str) -> dict | None:
+                digest: str, operation: str, case_id: str | None) -> dict | None:
     row = conn.execute("SELECT request_digest, operation, case_id, response "
                        "FROM scryer.idempotency WHERE account_id=%s AND key=%s",
                        (account_id, key)).fetchone()
@@ -129,7 +137,7 @@ def _idempotent(conn: Connection, account_id: str, key: str,
 
 
 def _save_receipt(conn: Connection, account_id: str, key: str, digest: str,
-                  operation: str, case_id: str, receipt: dict) -> None:
+                  operation: str, case_id: str | None, receipt: dict) -> None:
     conn.execute("INSERT INTO scryer.idempotency "
                  "(account_id, key, request_digest, operation, case_id, response) "
                  "VALUES (%s,%s,%s,%s,%s,%s)",
@@ -323,6 +331,64 @@ def list_cases(conn: Connection, account_id: str, limit: int,
     if any(not head or not exists for _case_id, head, _updated, exists in page):
         raise StoreError("CORRUPT_RECORD", 500)
     return ([CaseSummary(*row[:3]) for row in page], len(rows) > limit)
+
+
+def _stored_recovery(conn: Connection, account_id: str) -> StoredRecovery | None:
+    row = conn.execute("SELECT generation, wrapper_digest, wrapper FROM "
+                       "scryer.recovery_wrappers WHERE account_id=%s",
+                       (account_id,)).fetchone()
+    if row is None:
+        return None
+    if hashlib.sha256(row[2]).hexdigest() != row[1]:
+        raise StoreError("CORRUPT_RECORD", 500)
+    try:
+        parse_recovery_wrapper(row[2], account_id)
+    except ProtocolError:
+        raise StoreError("CORRUPT_RECORD", 500) from None
+    return StoredRecovery(*row)
+
+
+def get_recovery_envelope(conn: Connection, account_id: str) -> StoredRecovery | None:
+    _transaction(conn)
+    account_id = _id(account_id)
+    _lock_account(conn, account_id)
+    return _stored_recovery(conn, account_id)
+
+
+def put_recovery_envelope(conn: Connection, account_id: str, idempotency_key: str,
+                          body: bytes, precondition: str | None) -> dict:
+    _transaction(conn)
+    account_id, idempotency_key = _id(account_id), _key(idempotency_key)
+    parsed = _parse(parse_recovery_wrapper, body, account_id)
+    creating = precondition == "*"
+    expected = _parse(parse_generation_precondition, precondition, creating)
+    _prune_expired(conn, account_id, _lock_account(conn, account_id))
+    digest = request_digest("PUT", "/v1/account/recovery-envelope", body, precondition)
+    cached = _idempotent(conn, account_id, idempotency_key, digest, "recovery", None)
+    current = _stored_recovery(conn, account_id)
+    if cached is not None:
+        if current is None or current.generation != cached.get("generation") or \
+                current.digest != cached.get("wrapperDigest"):
+            raise StoreError("STALE_RECOVERY_ENVELOPE", 412)
+        return cached
+    if creating:
+        if current is not None:
+            raise StoreError("STALE_RECOVERY_ENVELOPE", 412)
+        generation = 1
+        conn.execute("INSERT INTO scryer.recovery_wrappers "
+                     "(account_id,generation,wrapper,wrapper_digest) "
+                     "VALUES (%s,%s,%s,%s)",
+                     (account_id, generation, parsed.body, parsed.digest))
+    else:
+        if current is None or current.generation != expected:
+            raise StoreError("STALE_RECOVERY_ENVELOPE", 412)
+        # Switching this wrapper alone can strand cases under the old root.
+        # M8 must atomically coordinate wrapper, encrypted heads, and devices.
+        raise StoreError("RECOVERY_ROTATION_UNSUPPORTED")
+    receipt = {"kind": "recovery", "generation": generation,
+               "wrapperDigest": parsed.digest, "etag": f'"{generation}"'}
+    _save_receipt(conn, account_id, idempotency_key, digest, "recovery", None, receipt)
+    return receipt
 
 
 def delete_case(conn: Connection, account_id: str, case_id: str,

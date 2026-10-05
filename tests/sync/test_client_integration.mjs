@@ -86,10 +86,30 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
   assert.notEqual(one.accountId, two.accountId);
   const dbName = `scryer-api-browser-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const first = await page.evaluate(async ({ accountId, dbName, api }) => {
-    const { createAccountKeys } = await import('/crypto/keys.js');
+    const { createAccountKeys, verifyRecoverySecret } = await import('/crypto/keys.js');
+    const { base64UrlEncode } = await import('/crypto/codec.js');
     const { openLocalRepository } = await import('/storage/repository.js');
     const { syncCase } = await import('/sync/transport.js');
     const created = await createAccountKeys(accountId);
+    const wrongSecret = `scryer-recovery-v1:${base64UrlEncode(new Uint8Array(32))}`;
+    if (await verifyRecoverySecret(created.session, created.recoveryEnvelope, wrongSecret)) {
+      throw new Error('wrong synthetic recovery secret accepted');
+    }
+    const missingBeforeVerification = await fetch(`${api}/v1/account/recovery-envelope`, {
+      headers: { Authorization: 'Bearer one' },
+    });
+    if (missingBeforeVerification.status !== 404) {
+      throw new Error('wrapper uploaded before recovery re-entry');
+    }
+    if (!await verifyRecoverySecret(created.session, created.recoveryEnvelope,
+      created.recoverySecret)) throw new Error('synthetic recovery re-entry failed');
+    const wrapperBody = JSON.stringify(created.recoveryEnvelope);
+    const wrapperUpload = await fetch(`${api}/v1/account/recovery-envelope`, {
+      method: 'PUT', headers: { Authorization: 'Bearer one',
+        'Content-Type': 'application/json', 'Idempotency-Key': 'browser:wrapper:create',
+        'If-None-Match': '*' }, body: wrapperBody,
+    });
+    if (wrapperUpload.status !== 200) throw new Error('synthetic wrapper upload failed');
     const repo = await openLocalRepository({ dbName, session: created.session,
       recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
       validateCase: async () => {} });
@@ -119,11 +139,25 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
     const snapshot = await repo.encryptedSnapshot();
     repo.close();
     return { before, result, after, packageJson: JSON.stringify(snapshot.cases[0].package),
-      recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret };
+      recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
+      wrapperBody, wrapperEtag: wrapperUpload.headers.get('etag') };
   }, { accountId: one.accountId, dbName, api });
   assert.equal(first.before.length, 2);
   assert.equal(first.result.status, 'interrupted');
   assert.deepEqual(first.after, first.before);
+  assert.equal(first.wrapperEtag, '"1"');
+  const wrapperGet = await fetch(`${api}/v1/account/recovery-envelope`, {
+    headers: { Authorization: 'Bearer one' },
+  });
+  assert.equal(wrapperGet.status, 200);
+  assert.equal(wrapperGet.headers.get('etag'), '"1"');
+  const retrievedWrapper = await wrapperGet.text();
+  assert.equal(retrievedWrapper, first.wrapperBody);
+  const serverEnvelope = JSON.parse(retrievedWrapper);
+  const otherWrapper = await fetch(`${api}/v1/account/recovery-envelope`, {
+    headers: { Authorization: 'Bearer two' },
+  });
+  assert.equal(otherWrapper.status, 404);
   const committedBeforeAck = await fetch(`${api}/v1/cases/case-browser-api`, {
     headers: { Authorization: 'Bearer one' },
   });
@@ -155,7 +189,7 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
     repo.close();
     return { pendingBefore, sent, result, pendingAfter };
   }, { accountId: one.accountId, dbName, api,
-    envelope: first.recoveryEnvelope, secret: first.recoverySecret });
+    envelope: serverEnvelope, secret: first.recoverySecret });
   assert.deepEqual(resumed.pendingBefore, first.before);
   assert.deepEqual(resumed.result, { status: 'committed', revisionId: 'rev-two', count: 2 });
   assert.deepEqual(resumed.pendingAfter, []);
@@ -199,7 +233,7 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
     repoA.close(); repoB.close();
     return { wrongAccount, winner, loser, remaining };
   }, { accountId: one.accountId, dbName, api,
-    envelope: first.recoveryEnvelope, secret: first.recoverySecret });
+    envelope: serverEnvelope, secret: first.recoverySecret });
   assert.equal(conflict.wrongAccount.status, 'permanent');
   assert.deepEqual(conflict.winner, { status: 'committed', revisionId: 'rev-three', count: 1 });
   assert.equal(conflict.loser.status, 'conflict');
@@ -223,7 +257,7 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
     repo.close();
     return { result, pending };
   }, { accountId: one.accountId, dbName, api,
-    envelope: first.recoveryEnvelope, secret: first.recoverySecret });
+    envelope: serverEnvelope, secret: first.recoverySecret });
   assert.equal(afterDelete.result.status, 'permanent');
   assert.equal(afterDelete.result.httpStatus, 409);
   assert.equal(afterDelete.pending.length, 1);

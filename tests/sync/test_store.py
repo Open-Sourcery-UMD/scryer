@@ -15,7 +15,9 @@ import psycopg
 from _db_harness import APP, app_connect, ensure_test_app_role
 from sync.db_context import begin_tenant_transaction
 from sync.migrate import apply_migrations
-from sync.store import StoreError, stage_chunk, commit_manifest, get_head, delete_case
+from sync.store import (StoreError, stage_chunk, commit_manifest, get_head,
+                        delete_case, get_recovery_envelope, put_recovery_envelope)
+from test_recovery import wrapper
 
 
 MIGRATIONS = Path(__file__).resolve().parents[2] / "migrations"
@@ -171,6 +173,46 @@ class StoreTests(unittest.TestCase):
                                  "WHERE account_id='acct-a'").fetchall()
         updated = dict(rows)
         self.assertGreater(updated["case-late"], updated["case-early"])
+
+    def test_recovery_wrapper_cas_retry_and_tenant_boundary(self):
+        first = wrapper()
+        changed = wrapper(nonce_seed=1)
+        put = lambda key, raw, precondition: self.run_as(lambda app:
+            put_recovery_envelope(app, "acct-a", key, raw, precondition))
+        get = lambda: self.run_as(lambda app: get_recovery_envelope(app, "acct-a"))
+        self.assertIsNone(get())
+        created = put("recovery:create", first, "*")
+        self.assertEqual(created["generation"], 1)
+        self.assertEqual(created["etag"], '"1"')
+        self.assertEqual(get().body, first)
+        self.assertEqual(get().generation, 1)
+        self.assertEqual(put("recovery:create", first, "*"), created)
+        self.assertIsNone(self.run_as(lambda app: get_recovery_envelope(app, "acct-b"),
+                                      account_id="acct-b"))
+        self.assert_code("WRONG_ACCOUNT", put, "recovery:wrong", wrapper("acct-b"), "*")
+        self.assert_code("IDEMPOTENCY_CONFLICT", put, "recovery:create", changed, "*")
+        self.assert_code("PRECONDITION_REQUIRED", put, "recovery:none", changed, None)
+        self.assert_code("STALE_RECOVERY_ENVELOPE", put, "recovery:stale", changed, '"2"')
+        self.assert_code("RECOVERY_ROTATION_UNSUPPORTED", put, "recovery:update",
+                         changed, '"1"')
+        self.assertEqual(get().body, first)
+        self.assertEqual(put("recovery:create", first, "*"), created)
+        with self.admin() as admin:
+            self.assertEqual(admin.execute("SELECT count(*) FROM scryer.recovery_wrappers")
+                             .fetchone()[0], 1)
+            admin.execute("UPDATE scryer.recovery_wrappers SET generation=2, wrapper=%s, "
+                          "wrapper_digest=%s WHERE account_id='acct-a'",
+                          (changed, hashlib.sha256(changed).hexdigest()))
+        self.assert_code("STALE_RECOVERY_ENVELOPE", put, "recovery:create", first, "*")
+        self.assertEqual(get().body, changed)
+        with self.admin() as admin:
+            admin.execute("UPDATE scryer.recovery_wrappers SET wrapper=%s "
+                          "WHERE account_id='acct-a'", (b"corrupt",))
+        self.assert_code("CORRUPT_RECORD", get)
+        with self.admin() as admin:
+            admin.execute("UPDATE scryer.recovery_wrappers SET wrapper_digest=%s "
+                          "WHERE account_id='acct-a'", (hashlib.sha256(b"corrupt").hexdigest(),))
+        self.assert_code("CORRUPT_RECORD", get)
 
     def test_stale_and_absent_head_preconditions_preserve_head(self):
         chunk, manifest, _ = prepared()
