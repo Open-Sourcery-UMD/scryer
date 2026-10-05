@@ -1,6 +1,6 @@
 # Account deletion and provider reconciliation plan
 
-Status: M7-7 local transaction and generic worker implemented and tested with a synthetic provider; real Keycloak adapter/wiring, authenticated backup deletion ledger, and public policy remain open. This plan does not claim physical erasure from backups and devices.
+Status: M7-7 local transaction and generic worker implemented; a bounded real local Keycloak adapter and one-shot runner have passed a permission-failure/retry/completion test with a disposable PostgreSQL database. Authenticated backup deletion ledger, real token-to-API test, scheduler/backlog monitoring, and public policy remain open. This plan does not claim physical erasure from backups and devices.
 
 ## Required state transition
 
@@ -21,5 +21,5 @@ Deleting live rows is not erasure of older backups, an offline browser, or physi
 1. **Done locally:** forward migration, role grants/RLS, legacy-row refusal, initial job binding, and no app-role job reads or direct lifecycle updates.
 2. **Done locally:** account deletion with a published case, staged chunk, wrapper, device and case tombstone; exact/changed retry, confirmation/body refusal, reused-key conflict, competing tenant, and a write racing deletion.
 3. **Done with synthetic provider:** provider failure/retry, crash after success at the retry limit, already-missing provider user, terminal failure visibility, competing workers, and final anonymous tombstone.
-4. **Open:** configure a real local Keycloak adapter and worker entrypoint; verify provider delete/failure/retry and old-token denial. The maintained JWT verifier is unavailable under current dependency permissions, so real token-to-API remains blocked.
-5. **Observed:** 65 sync tests passed on PostgreSQL 15.11 and 16.15, plus one synthetic Chrome/API/PostgreSQL regression. Backup-restore and public policy gates remain open.
+4. **Done locally:** Keycloak client-credentials adapter and one-shot restricted-role runner; real local service-account permission failure, SQL retry, role grant, provider delete, and anonymous tombstone. A POSIX wall-clock alarm bounds the whole provider attempt, including a stalled token source. See `operations/deletion-worker.md`.
+5. **Open:** real old-token-to-API denial. The maintained JWT verifier is unavailable under current dependency permissions, so this authenticated integration remains blocked. Backup-restore, scheduled operations, and public policy gates remain open.

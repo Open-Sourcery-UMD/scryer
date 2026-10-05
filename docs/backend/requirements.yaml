@@ -1042,10 +1042,12 @@
       "tests": [
         "tests/sync/test_store.py — case tombstone, ciphertext removal, and old retry nonresurrection",
         "tests/sync/test_account_deletion.py — atomic account wipe, role nonresurrection, exact retry, provider worker failure/crash/lease, and anonymous tombstone",
-        "tests/sync/test_migrations.py — forward-only deletion migration and legacy lifecycle preflight"
+        "tests/sync/test_migrations.py — forward-only deletion migration and legacy lifecycle preflight",
+        "tests/sync/test_keycloak_provider.py and test_deletion_runner.py — bounded provider protocol and restricted one-shot runner",
+        "tests/sync/test_keycloak_local.py — real local Keycloak service-account failure, PostgreSQL retry, provider deletion, and anonymous tombstone"
       ],
       "evidence": [
-        "M7-7 account deletion and synthetic provider reconciliation pass 65 sync tests on PostgreSQL 15.11 and 16.15; real Keycloak adapter/worker wiring, old-backup deletion ledger, real JWT integration, and public policy review remain open"
+        "M7-7 account deletion passes 65 sync tests on PostgreSQL 15.11 and 16.15; M7-8 real local Keycloak/worker reconciliation passes within 80 sync tests on PostgreSQL 15.11 and 16.15 with real local Keycloak enabled; old-backup deletion ledger, real JWT integration, deployed scheduler, scalable provider-absence proof beyond 5,000 users, and public policy review remain open"
       ],
       "status": "IN_PROGRESS"
     },

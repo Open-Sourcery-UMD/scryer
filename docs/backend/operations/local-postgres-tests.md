@@ -1,6 +1,6 @@
 # Local PostgreSQL isolation tests
 
-`scripts/verify-sync-db.sh` is a development gate for M7's SQL boundary. It needs a project-local Python environment with psycopg 3.3.5 and a locally installed PostgreSQL binary directory containing `initdb` and `pg_ctl`. The observed private-cluster run used Python 3.14.3 and PostgreSQL 15.11. The 65-test suite passed against both that cluster and a temporary cached PostgreSQL 16.15 Docker image, using separate randomly generated admin/application credentials and a port bound to `127.0.0.1`. Neither test needed a registry request. The script itself neither starts Docker nor contacts a registry.
+`scripts/verify-sync-db.sh` is a development gate for M7's SQL boundary. It needs a project-local Python environment with psycopg 3.3.5 and a locally installed PostgreSQL binary directory containing `initdb` and `pg_ctl`. The observed private-cluster run used Python 3.14.3 and PostgreSQL 15.11. The M7-7 65-test suite passed against both that cluster and a temporary cached PostgreSQL 16.15 Docker image; the later 80-test suite passed with real local Keycloak enabled on PostgreSQL 15.11 and 16.15, using separate randomly generated admin/application credentials and a port bound to `127.0.0.1`. Neither test needed a registry request. The script itself neither starts Docker nor contacts a registry.
 
 From the repository root, using dependencies already approved and available in the local cache:
 
