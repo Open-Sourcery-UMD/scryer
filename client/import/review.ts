@@ -177,7 +177,7 @@ function checkNewIds(caseData: CaseV1, decisions: readonly ReviewDecision[]): vo
   const events = new Set(caseData.events.map((event) => event.eventId));
   const facts = new Set(caseData.events.flatMap((event) => event.fact ? [event.fact.factId] : []));
   const reviews = new Set(caseData.events.flatMap((event) => {
-    const payload = event.fact ?? event.correction ?? event.coverage ?? event.retraction ?? event.decision;
+    const payload = event.fact ?? event.correction ?? event.coverage ?? event.retraction ?? event.decision ?? event.resolution;
     return payload ? [payload.reviewId] : [];
   }));
   for (const decision of decisions) {

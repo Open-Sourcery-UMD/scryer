@@ -156,6 +156,11 @@ class MatchDecision:
 
 
 @dataclass(frozen=True)
+class BranchResolution:
+    review_id: str
+
+
+@dataclass(frozen=True)
 class Event:
     event_id: str
     parents: tuple[str, ...]
@@ -166,6 +171,7 @@ class Event:
     coverage: CoverageAssertion | None = None
     retraction: CoverageRetraction | None = None
     decision: MatchDecision | None = None
+    resolution: BranchResolution | None = None
 
 
 @dataclass(frozen=True)
@@ -615,6 +621,7 @@ def _event(
         raise ModelError("INVALID_SCHEMA")
     kind = value.get("kind")
     common = {"eventId", "parents", "recordedAt", "kind"}
+    resolution = None
     if kind == "approve_fact":
         value = _fields(value, common | {"fact"})
         fact = _fact(value["fact"], terms, accounts, artifacts, proposals, aid_items)
@@ -650,11 +657,23 @@ def _event(
         coverage = None
         retraction = None
         decision = _match_decision(value["decision"], set(artifacts))
+    elif kind == "resolve_branches":
+        value = _fields(value, common | {"resolution"})
+        payload = _fields(value["resolution"], {"reviewId"})
+        fact = None
+        correction = None
+        coverage = None
+        retraction = None
+        decision = None
+        resolution = BranchResolution(_identifier(payload["reviewId"]))
     else:
         raise ModelError("UNSUPPORTED_EVENT")
+    parents = _unique_identifiers(value["parents"])
+    if resolution is not None and len(parents) != 2:
+        raise ModelError("INVALID_RESOLUTION_PARENTS")
     return Event(
         event_id=_identifier(value["eventId"]),
-        parents=_unique_identifiers(value["parents"]),
+        parents=parents,
         recorded_at=_utc_instant(value["recordedAt"]),
         kind=kind,
         fact=fact,
@@ -662,6 +681,7 @@ def _event(
         coverage=coverage,
         retraction=retraction,
         decision=decision,
+        resolution=resolution,
     )
 
 
@@ -762,7 +782,8 @@ def load_case_json(document: str) -> Case:
         event.correction.review_id if event.correction is not None else
         event.coverage.review_id if event.coverage is not None else
         event.retraction.review_id if event.retraction is not None else
-        event.decision.review_id
+        event.decision.review_id if event.decision is not None else
+        event.resolution.review_id
         for event in ordered
     ]
     if len(reviews) != len(set(reviews)):

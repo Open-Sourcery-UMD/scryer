@@ -98,6 +98,7 @@ struct MatchDecision {
     std::optional<SourceRef> recipient_evidence;
     std::string review_id;
 };
+struct BranchResolution { std::string review_id; };
 struct Event {
     std::string event_id;
     std::vector<std::string> parents;
@@ -108,6 +109,7 @@ struct Event {
     std::optional<Coverage> coverage;
     std::optional<CoverageRetraction> retraction;
     std::optional<MatchDecision> decision;
+    std::optional<BranchResolution> resolution;
 };
 struct Case {
     std::string schema_version;

@@ -131,5 +131,43 @@ int main() {
     require(divergent.status == "AMBIGUOUS");
     require(divergent.heads == branches);
     require(divergent.reason_codes == std::vector<std::string>{"DIVERGENT_HEADS"});
+    auto join_raw = fixture("golden-case");
+    auto branch_a = join_raw["events"].back();
+    branch_a["eventId"] = "event-branch-a";
+    branch_a["parents"] = scryer::Json::array({"event-bank-credit"});
+    branch_a["recordedAt"] = "2026-10-03T12:00:00Z";
+    branch_a["fact"]["factId"] = "bank-branch-a";
+    branch_a["fact"]["reviewId"] = "review-branch-a";
+    branch_a["fact"]["proposalId"] = nullptr;
+    branch_a["fact"]["source"] = scryer::Json{{"kind", "manual"}, {"entryId", "entry-branch-a"}};
+    auto branch_b = branch_a;
+    branch_b["eventId"] = "event-branch-b";
+    branch_b["fact"]["factId"] = "bank-branch-b";
+    branch_b["fact"]["reviewId"] = "review-branch-b";
+    branch_b["fact"]["source"]["entryId"] = "entry-branch-b";
+    join_raw["events"].push_back(branch_a);
+    join_raw["events"].push_back(branch_b);
+    join_raw["events"].push_back(scryer::Json{{"eventId", "event-join"},
+        {"parents", scryer::Json::array({"event-branch-a", "event-branch-b"})},
+        {"recordedAt", "2026-10-04T12:00:00Z"}, {"kind", "resolve_branches"},
+        {"resolution", scryer::Json{{"reviewId", "review-join"}}}});
+    const auto joined_case = parse_case(join_raw);
+    const std::vector<std::string> joined_head{"event-join"};
+    require(ids(snapshot(joined_case, joined_head)).size() == case_a.events.size() + 3);
+    auto invalid_join = join_raw;
+    invalid_join["events"].back()["parents"] = scryer::Json::array({"event-branch-a"});
+    expect_error("INVALID_RESOLUTION_PARENTS", [&] { (void)parse_case(invalid_join); });
+    invalid_join = join_raw;
+    invalid_join["events"].back()["parents"] = scryer::Json::array({"event-branch-a", "event-branch-a"});
+    expect_error("DUPLICATE_ID", [&] { (void)parse_case(invalid_join); });
+    invalid_join = join_raw;
+    invalid_join["events"].back()["parents"] = scryer::Json::array({"event-branch-a", "missing"});
+    expect_error("MISSING_PARENT", [&] { (void)parse_case(invalid_join); });
+    invalid_join = join_raw;
+    invalid_join["events"].back()["resolution"]["reviewId"] = "review-grant";
+    expect_error("DUPLICATE_REVIEW_ID", [&] { (void)parse_case(invalid_join); });
+    invalid_join = join_raw;
+    invalid_join["events"].back()["resolution"]["note"] = "bad";
+    expect_error("INVALID_SCHEMA", [&] { (void)parse_case(invalid_join); });
     expect_error("INVALID_INSTANT", [&] { (void)scryer::heads_as_known(case_a, "2026-02-30T12:00:00Z"); });
 }

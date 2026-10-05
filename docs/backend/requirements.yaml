@@ -221,10 +221,12 @@
       ],
       "tests": [
         "tests/reference/test_model.py — strict schema, provenance, DAG, and hostile-input checks",
+        "tests/reference/test_model.py and tests/engine/test_case.cpp — exact branch-join event shape, parent validation, and unique review ID",
+        "tests/engine/test_projection.cpp and tests/engine/test_cli.py — a join preserves contradiction between competing corrections",
         "tests/client/test_conflict_analysis.mjs — concurrent cross-device corrections and event identity collisions"
       ],
       "evidence": [
-        "M2-2 red-green run; 25-test reference suite exit 0 before commit; M8-5a read-only branch analysis passes local headless and Chrome checks, while reviewed merge remains open"
+        "M2-2 red-green run; 25-test reference suite exit 0 before commit; M8-5a read-only branch analysis passes local headless and Chrome checks; M8-6c nonmonetary join marker passes Python/native parity while reviewed writer remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1013,10 +1015,12 @@
         "tests/client/test_sync_transport.mjs — historical base retrieval, unavailable base, and malformed historical response",
         "tests/client/test_conflict_analysis.mjs — candidate-base event and metadata retention without merge permission",
         "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — read-only disjoint manual-approval union candidate and conservative refusal",
+        "tests/reference/test_model.py and tests/engine/test_cli.py — explicit causal join of independent approval branches preserves both without overwriting",
+        "tests/client/test_review.mjs — import review ID cannot collide with a branch-join review ID",
         "tests/sync/test_client_integration.mjs — competing encrypted browser branch preserved after server CAS loss"
       ],
       "evidence": [
-        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, encrypted historical-base candidate inspection, and narrow read-only disjoint-approval candidate pass; reviewed atomic remote conflict resolution remains open"
+        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, encrypted historical-base candidate inspection, narrow read-only disjoint-approval candidate, and M8-6c nonmonetary join parser pass; reviewed atomic remote conflict resolution remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1174,11 +1178,12 @@
         "tests/client/test_conflict_analysis.mjs — branch divergence and unresolved decision hazards",
         "tests/client/test_conflict_analysis.mjs — conservative candidate-base content retention on both branches",
         "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — candidate union of disjoint manual approvals requires review and does not mutate the pending branch",
+        "tests/engine/test_cli.py — independently branched approvals have one joined current head without changing their amounts",
         "tests/client/test_sync_transport.mjs — tagged historical base lookup and fail-closed malformed response",
         "tests/sync/test_client_integration.mjs — Chrome, FastAPI, PostgreSQL, two identities, response loss, conflict, deletion"
       ],
       "evidence": [
-        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; a narrow read-only candidate for disjoint manual approvals passes native validation but requires explicit review and atomic publication; synthetic Chrome/API/PostgreSQL integration previews both the returned conflict head and a retained encrypted ancestor candidate; reviewed publish and real JWT/WASM-backed user journey remain open"
+        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; a narrow read-only candidate for disjoint manual approvals passes native validation; M8-6c adds a locally verified nonmonetary causal join parser but no browser writer; synthetic Chrome/API/PostgreSQL integration previews both the returned conflict head and a retained encrypted ancestor candidate; reviewed publish and real JWT/WASM-backed user journey remain open"
       ],
       "status": "IN_PROGRESS"
     },

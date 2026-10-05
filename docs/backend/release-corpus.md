@@ -24,7 +24,7 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-18 | REFERENCE | Matching never authenticates an uploaded bank source; explicit limitation code. |
 | RC-19 | REFERENCE | Event permutation and changed review time are distinct history tests. |
 | RC-20 | REFERENCE | Unreviewed proposals do not affect projection or matching. |
-| RC-21 | REFERENCE | Competing correction fixture remains contradictory and historically ambiguous. |
+| RC-21 | REFERENCE | Competing correction fixture remains contradictory and historically ambiguous. Python and native tests also show that a nonmonetary `resolve_branches` join leaves that contradiction unresolved; a reviewed superseding correction writer remains open. |
 | RC-22 | REFERENCE | Unrelated refund evidence does not alter school-surplus fact attribution. |
 | RC-23 | REFERENCE | Exact-money, overflow, precision, canonical form, and currency rejection tests. |
 | RC-24 | PARTIAL | Headless CSV rejects malformed UTF-8/quotes and byte/row/column/field/cell limits; real-browser worker returns typed malformed/oversized errors and terminates on cancel/timeout. Failed review and manual commands leave inputs unchanged. PDFs route to manual entry. Precise PDF diagnostics and atomic storage remain open. |

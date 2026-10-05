@@ -66,6 +66,7 @@ export type CaseEvent = {
   coverage?: { reviewId: string };
   retraction?: { reviewId: string };
   decision?: { reviewId: string };
+  resolution?: { reviewId: string };
 };
 
 export type CaseV1 = {

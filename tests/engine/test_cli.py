@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 from scryer_reference.model import load_case_json
+from scryer_reference.projection import project_school_surplus
 from scryer_reference.check_receipt import check_receipt
 from scryer_reference.receipt import make_school_surplus_receipt
 from scryer_reference.scenarios import generate_raw_case
@@ -40,6 +41,44 @@ def result(process, operation):
 
 
 class NativeCliTests(unittest.TestCase):
+    def test_reviewed_branch_join_parity_and_unresolved_correction(self):
+        golden = fixture("golden")
+        bank = next(item for item in golden["events"] if item["eventId"] == "event-bank-credit")
+        for suffix, role, amount in (("a", "school_charge", "10000"),
+                                     ("b", "school_credit", "20000")):
+            branch = copy.deepcopy(bank)
+            branch["eventId"] = f"event-branch-{suffix}"
+            branch["parents"] = ["event-bank-credit"]
+            branch["recordedAt"] = "2026-10-03T12:00:00Z"
+            branch["fact"].update(factId=f"school-branch-{suffix}", role=role,
+                                  amountMinor=amount, termId="2026-fall",
+                                  accountRefId="school-a", reviewId=f"review-branch-{suffix}", proposalId=None,
+                                  source={"kind": "manual", "entryId": f"entry-branch-{suffix}"})
+            golden["events"].append(branch)
+        golden["events"].append({"eventId": "event-join", "parents": [
+            "event-branch-a", "event-branch-b"],
+            "recordedAt": "2026-10-04T12:00:00Z", "kind": "resolve_branches",
+            "resolution": {"reviewId": "review-join"}})
+        reference = project_school_surplus(load_case_json(json.dumps(golden)),
+                                           ("event-join",), "2026-fall")
+        native = result(call(request("project", case=golden, heads=["event-join"],
+                                     termId="2026-fall")), "project")
+        self.assertEqual(native["amountMinor"], str(reference.amount_minor))
+        self.assertEqual(native["amountMinor"], "100000")
+        self.assertEqual(native["status"], reference.status)
+        current = result(call(request("current", case=golden,
+                                      termId="2026-fall")), "current")
+        self.assertEqual(current["projection"]["amountMinor"], native["amountMinor"])
+        ambiguous = fixture("ambiguous")
+        ambiguous["events"].append({"eventId": "event-join", "parents": [
+            "event-bank-credit", "event-grant-correction-b"],
+            "recordedAt": "2026-10-04T12:00:00Z", "kind": "resolve_branches",
+            "resolution": {"reviewId": "review-join"}})
+        native_conflict = result(call(request("project", case=ambiguous,
+                                             heads=["event-join"], termId="2026-fall")), "project")
+        self.assertEqual(native_conflict["status"], "CONTRADICTORY_EVIDENCE")
+        self.assertIsNone(native_conflict["amountMinor"])
+
     def test_all_named_operations_and_synthetic_demo(self):
         self.assertTrue(BIN.exists())
         golden = fixture("golden")

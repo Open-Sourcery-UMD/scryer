@@ -90,6 +90,15 @@ int main() {
     require(conflict.fact_ids == first.fact_ids);
     const auto blocked = compare_school_surplus(ambiguous, before, divergent, "2026-fall");
     require(blocked.status == "CONTRADICTORY_EVIDENCE" && !blocked.delta_minor);
+    auto joined_conflict_raw = fixture("ambiguous-case");
+    joined_conflict_raw["events"].push_back(scryer::Json{{"eventId", "event-join"},
+        {"parents", scryer::Json::array({"event-bank-credit", "event-grant-correction-b"})},
+        {"recordedAt", "2026-10-04T12:00:00Z"}, {"kind", "resolve_branches"},
+        {"resolution", scryer::Json{{"reviewId", "review-join"}}}});
+    const auto joined_conflict = parse_case(joined_conflict_raw);
+    const std::vector<std::string> join_head{"event-join"};
+    const auto still_conflicted = project_school_surplus(joined_conflict, join_head, "2026-fall");
+    require(still_conflicted.status == "CONTRADICTORY_EVIDENCE" && !still_conflicted.amount_minor);
 
     auto high = fixture("golden-case");
     high["events"][0]["fact"]["amountMinor"] = "9223372036854775807";

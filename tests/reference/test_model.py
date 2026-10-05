@@ -1,8 +1,10 @@
 import copy
 import json
+from pathlib import Path
 import unittest
 
 from scryer_reference.model import ModelError, load_case_json, snapshot_events
+from scryer_reference.projection import project_school_surplus
 
 
 def minimal_case():
@@ -77,6 +79,55 @@ def proposal(raw_value="6500.00", proposed_minor="650000", location="row:1"):
 
 
 class CaseParserTests(unittest.TestCase):
+    def test_reviewed_branch_join_preserves_both_causal_histories(self):
+        raw = minimal_case()
+        original = raw["events"][0]
+        for suffix, role, amount in (("a", "school_charge", "10000"),
+                                     ("b", "school_credit", "20000")):
+            branch = copy.deepcopy(original)
+            branch["eventId"] = f"event-{suffix}"
+            branch["parents"] = ["event-credit"]
+            branch["recordedAt"] = "2026-09-03T12:00:00Z"
+            branch["fact"].update(factId=f"fact-{suffix}", role=role,
+                                  amountMinor=amount, reviewId=f"review-{suffix}",
+                                  source={"kind": "manual", "entryId": f"entry-{suffix}"})
+            raw["events"].append(branch)
+        raw["events"].append({"eventId": "event-join", "parents": ["event-a", "event-b"],
+                              "recordedAt": "2026-09-04T12:00:00Z", "kind": "resolve_branches",
+                              "resolution": {"reviewId": "review-join"}})
+        case = load_case_json(json_case(raw))
+        self.assertEqual(tuple(event.event_id for event in snapshot_events(case, ("event-join",))),
+                         ("event-credit", "event-a", "event-b", "event-join"))
+        joined = project_school_surplus(case, ("event-join",), "2026-fall")
+        both = project_school_surplus(case, ("event-a", "event-b"), "2026-fall")
+        self.assertEqual(joined.amount_minor, both.amount_minor)
+        self.assertEqual(joined.amount_minor, 660000)
+        for change, code in (
+            ({"parents": ["event-a"]}, "INVALID_RESOLUTION_PARENTS"),
+            ({"parents": ["event-a", "event-a"]}, "DUPLICATE_ID"),
+            ({"parents": ["event-a", "missing"]}, "MISSING_PARENT"),
+            ({"resolution": {"reviewId": "review-credit"}}, "DUPLICATE_REVIEW_ID"),
+            ({"resolution": {"reviewId": "review-join", "note": "bad"}}, "INVALID_SCHEMA"),
+        ):
+            with self.subTest(code=code, change=change):
+                broken = copy.deepcopy(raw)
+                broken["events"][-1].update(change)
+                with self.assertRaises(ModelError) as raised:
+                    load_case_json(json_case(broken))
+                self.assertEqual(raised.exception.code, code)
+
+    def test_branch_join_does_not_settle_concurrent_corrections(self):
+        path = Path(__file__).parent / "fixtures" / "ambiguous-case.json"
+        raw = json.loads(path.read_text())
+        raw["events"].append({"eventId": "event-join", "parents": [
+            "event-bank-credit", "event-grant-correction-b"],
+            "recordedAt": "2026-10-04T12:00:00Z", "kind": "resolve_branches",
+            "resolution": {"reviewId": "review-join"}})
+        case = load_case_json(json_case(raw))
+        projection = project_school_surplus(case, ("event-join",), "2026-fall")
+        self.assertEqual(projection.status, "CONTRADICTORY_EVIDENCE")
+        self.assertIsNone(projection.amount_minor)
+
     def test_minimal_approved_fact_has_exact_provenance(self):
         case = load_case_json(json_case(minimal_case()))
         self.assertEqual(case.case_id, "case-a")

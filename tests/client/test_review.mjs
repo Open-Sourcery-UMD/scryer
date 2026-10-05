@@ -128,6 +128,30 @@ test('incomplete or invalid decisions and stale heads leave both inputs unchange
   assert.equal(JSON.stringify({ original, ledger }), before);
 });
 
+test('import review IDs cannot reuse a branch resolution review ID', async () => {
+  const source = await batch();
+  const joined = originalCase();
+  const bank = joined.events.at(-1);
+  for (const suffix of ['left', 'right']) {
+    const event = structuredClone(bank);
+    event.eventId = `event-branch-${suffix}`;
+    event.parents = [bank.eventId];
+    event.recordedAt = '2026-09-08T10:00:00Z';
+    event.fact.factId = `bank-credit-${suffix}`;
+    event.fact.reviewId = `review-branch-${suffix}`;
+    event.fact.source.location = `row:${suffix}`;
+    joined.events.push(event);
+  }
+  joined.events.push({
+    eventId: 'event-join', parents: ['event-branch-left', 'event-branch-right'],
+    recordedAt: '2026-09-09T10:00:00Z', kind: 'resolve_branches',
+    resolution: { reviewId: 'review-import-1' },
+  });
+  await nativeValidate(joined);
+  assert.equal(await codeOf(() => reviewImport(joined, emptyLedger(), source, decisionsFor(source),
+    { ...command, baseHead: 'event-join' }, async () => {})), 'DUPLICATE_ID');
+});
+
 test('validator failure is atomic and equal movements at different source positions are retained', async () => {
   const source = await batch();
   const original = originalCase();

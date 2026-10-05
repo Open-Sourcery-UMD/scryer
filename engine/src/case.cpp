@@ -480,11 +480,18 @@ Event parse_event(
     } else if (kind == "decide_match") {
         fields(value, {"eventId", "parents", "recordedAt", "kind", "decision"});
         event.decision = parse_decision(value.at("decision"), artifacts);
+    } else if (kind == "resolve_branches") {
+        fields(value, {"eventId", "parents", "recordedAt", "kind", "resolution"});
+        fields(value.at("resolution"), {"reviewId"});
+        event.resolution = BranchResolution{identifier(value.at("resolution").at("reviewId"))};
     } else {
         throw ScryerError("UNSUPPORTED_EVENT");
     }
     event.event_id = identifier(value.at("eventId"));
     event.parents = unique_ids(value.at("parents"));
+    if (event.resolution && event.parents.size() != 2) {
+        throw ScryerError("INVALID_RESOLUTION_PARENTS");
+    }
     event.recorded_at = utc_instant(value.at("recordedAt"));
     event.kind = std::move(kind);
     return event;
@@ -676,7 +683,8 @@ Case parse_case(const Json& document) {
             }
         } else {
             const auto& review = event.correction ? event.correction->review_id :
-                event.retraction ? event.retraction->review_id : event.decision->review_id;
+                event.retraction ? event.retraction->review_id :
+                event.decision ? event.decision->review_id : event.resolution->review_id;
             if (!reviews.insert(review).second) {
                 throw ScryerError("DUPLICATE_REVIEW_ID");
             }
