@@ -1,0 +1,25 @@
+# Account deletion and provider reconciliation plan
+
+Status: M7-7 local transaction and generic worker implemented and tested with a synthetic provider; real Keycloak adapter/wiring, authenticated backup deletion ledger, and public policy remain open. This plan does not claim physical erasure from backups and devices.
+
+## Required state transition
+
+`DELETE /v1/account` requires a verified access token, an explicit account-ID confirmation header, a bounded idempotency key, and an empty body. The service derives the account ID from trusted issuer/subject and compares the confirmation header. One transaction locks that account, records the exact request identity, changes it to `deleting`, removes all live case revisions, staged chunks, wrappers, devices, case idempotency rows, and case tombstones, zeroes its ciphertext counter, and inserts a durable provider-deletion job. After commit, every ordinary route denies the token. An exact deletion retry may return the original `202` receipt while the job is pending; a changed retry is refused. A request racing this transaction either commits before deletion or is denied after the row lock releases. No API call directly performs a fallible provider deletion after returning success.
+
+The existing `accounts` row remains as a permanent opaque account-ID tombstone, so a stale token cannot trigger `tenant()`'s account creation path after deletion. Once provider cleanup succeeds, a separate least-privilege worker sets status `deleted`, clears the issuer/subject columns, and removes the job in one transaction. A failed or interrupted provider call leaves the job retryable. A provider `not found` response is success for idempotency after a crash. The worker never reads ciphertext tables and does not log tokens, provider bodies, or raw identities. Operator-visible attempts/state use bounded codes only.
+
+## Database and privilege design
+
+Migration 0004 is forward-only; checksummed migrations 0001–0003 remain unchanged. It refuses legacy `deleting`/`deleted` rows for explicit operator review, permits null issuer/subject only in `deleted` accounts, and adds bounded deletion request fields. The ordinary app role cannot update lifecycle fields, delete an account row, or read/write provider jobs. Its only deletion capability is a fixed-search-path, tenant-signed `SECURITY DEFINER` function whose owner is itself bound by forced RLS; that function rejects reused operation keys and atomically wipes live rows while queuing a matching job. Invoker triggers bind the initial job to the account identity and lock/check active account state before any tenant data insert/update, so direct app-role SQL cannot restore data after deletion. A separate non-login worker role can access only lifecycle fields and jobs under explicit RLS policies; its login credential must be provisioned outside Git. The worker takes a bounded lease, requires a provider-declared maximum duration at most 30 seconds against its 60-second lease, calls a supplied identity-provider adapter without holding a SQL transaction, and counts confirmed failures toward bounded retry exhaustion. A crash after provider success can retry the same job and treat provider `not found` as success. The provider adapter must actually enforce its declared bound; that is an integration gate, not a property proved by synthetic adapters.
+
+## Recovery and restore limit
+
+Deleting live rows is not erasure of older backups, an offline browser, or physical storage. A restore from a pre-deletion database backup must replay a separately retained, authenticated deletion ledger before accepting traffic. The ledger and fresh-stack restore test are M10 gates; until then this local API can prove immediate live-row removal and nonresurrection but cannot satisfy the full backup-retention promise. The identity-provider adapter must be tested with real local Keycloak and a forced failure/retry before M7 closes; a synthetic adapter alone is not that evidence.
+
+## Executable sequence
+
+1. **Done locally:** forward migration, role grants/RLS, legacy-row refusal, initial job binding, and no app-role job reads or direct lifecycle updates.
+2. **Done locally:** account deletion with a published case, staged chunk, wrapper, device and case tombstone; exact/changed retry, confirmation/body refusal, reused-key conflict, competing tenant, and a write racing deletion.
+3. **Done with synthetic provider:** provider failure/retry, crash after success at the retry limit, already-missing provider user, terminal failure visibility, competing workers, and final anonymous tombstone.
+4. **Open:** configure a real local Keycloak adapter and worker entrypoint; verify provider delete/failure/retry and old-token denial. The maintained JWT verifier is unavailable under current dependency permissions, so real token-to-API remains blocked.
+5. **Observed:** 65 sync tests passed on PostgreSQL 15.11 and 16.15, plus one synthetic Chrome/API/PostgreSQL regression. Backup-restore and public policy gates remain open.

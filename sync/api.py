@@ -25,7 +25,7 @@ from .pagination import CaseCursorCodec, CursorError
 from .protocol import (CHUNK_BODY_BYTES, MANIFEST_BODY_BYTES, ID, ProtocolError,
                        parse_chunk, parse_manifest)
 from .recovery import RECOVERY_BODY_BYTES
-from .store import (StoreError, commit_manifest, delete_case, get_head,
+from .store import (StoreError, commit_manifest, delete_account, delete_case, get_head,
                     get_recovery_envelope, get_revision, list_cases,
                     put_recovery_envelope, stage_chunk)
 
@@ -148,6 +148,12 @@ class DeleteReceipt(StrictWireModel):
     tombstone: Literal[True]
 
 
+class AccountDeletionReceipt(StrictWireModel):
+    kind: Literal["account-deletion"]
+    accountId: str
+    status: Literal["deleting"]
+
+
 class ErrorDetail(StrictWireModel):
     code: str
     requestId: str
@@ -211,7 +217,7 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
     app.add_middleware(CORSMiddleware, allow_origins=list(allowed_origins),
                        allow_credentials=False, allow_methods=["GET", "POST", "PUT", "DELETE"],
                        allow_headers=["Authorization", "Content-Type", "Idempotency-Key",
-                                      "If-Match", "If-None-Match"],
+                                      "If-Match", "If-None-Match", "X-Confirm-Account-ID"],
                        expose_headers=["ETag", "Retry-After"], max_age=600)
 
     @app.middleware("http")
@@ -312,7 +318,7 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
             raise ApiError("INVALID_ID", 400)
         return value
 
-    def tenant(verified: VerifiedIdentity, operation):
+    def tenant(verified: VerifiedIdentity, operation, *, allow_deleting=False):
         account_id = derive_account_id(verified.issuer, verified.subject, account_key)
         with connect() as conn:
             with conn.transaction():
@@ -326,7 +332,7 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
                                    (account_id,)).fetchone()
                 if row is None or row[:2] != (verified.issuer, verified.subject):
                     raise ApiError("ACCOUNT_UNAVAILABLE", 403)
-                if row[2] != "active":
+                if row[2] != "active" and not (allow_deleting and row[2] == "deleting"):
                     raise ApiError("ACCOUNT_DISABLED", 403)
                 return operation(conn, account_id, row[3])
 
@@ -354,6 +360,16 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
                     if conn.execute("SELECT to_regclass('scryer.cases_live_updated_keyset')") \
                             .fetchone()[0] is None:
                         return error_response(request, "STORAGE_UNAVAILABLE", 503)
+                    if conn.execute("SELECT to_regprocedure("
+                            "'scryer.begin_account_deletion(text,text,text)')") \
+                            .fetchone()[0] is None:
+                        return error_response(request, "STORAGE_UNAVAILABLE", 503)
+                    for relation, column in (("scryer.accounts", "deletion_key"),
+                                             ("scryer.deletion_jobs", "lease_token")):
+                        if not conn.execute("SELECT 1 FROM pg_attribute WHERE "
+                                "attrelid=%s::regclass AND attname=%s AND NOT attisdropped",
+                                (relation, column)).fetchone():
+                            return error_response(request, "STORAGE_UNAVAILABLE", 503)
         except psycopg.Error:
             return error_response(request, "STORAGE_UNAVAILABLE", 503)
         return {"status": "ready"}
@@ -365,6 +381,24 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
                       {"accountId": account_id, "status": "active", "usedBytes": used,
                        "quotaBytes": 256 * 1024 * 1024,
                        "capabilities": ["ciphertext-sync-v1"]})
+
+    @app.delete("/v1/account", status_code=202,
+                response_model=AccountDeletionReceipt, responses=ERROR_RESPONSES,
+                openapi_extra={"parameters": [IDEMPOTENCY_HEADER, {
+                    "name": "X-Confirm-Account-ID", "in": "header", "required": True,
+                    "description": "Exact opaque accountId returned by GET /v1/account.",
+                    "schema": {"type": "string", "minLength": 1, "maxLength": 64}}]})
+    async def account_deletion(request: Request):
+        verified = identity(request)
+        key = header_one(request, "idempotency-key")
+        confirmation = header_one(request, "x-confirm-account-id", required=False)
+        if confirmation is None:
+            raise ApiError("ACCOUNT_CONFIRMATION_REQUIRED", 428)
+        await require_empty_body(request)
+        receipt = await run_in_threadpool(tenant, verified,
+            lambda conn, account_id, _used:
+                delete_account(conn, account_id, key, confirmation), allow_deleting=True)
+        return JSONResponse(status_code=202, content=receipt)
 
     @app.get("/v1/account/recovery-envelope", response_class=Response,
              responses={200: {"model": RecoveryEnvelopeWire,

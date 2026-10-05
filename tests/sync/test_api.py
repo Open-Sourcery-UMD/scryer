@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 import os
 from pathlib import Path
 import secrets
+import tempfile
 import time
 import unittest
 
@@ -276,6 +277,31 @@ class ApiTests(unittest.TestCase):
                 admin.execute("CREATE INDEX cases_live_updated_keyset ON scryer.cases "
                               "(account_id, updated_at DESC, case_id DESC) "
                               "WHERE deleted_at IS NULL")
+
+    def test_readiness_refuses_database_missing_account_deletion_migration(self):
+        old_name = "scryer_old_schema_" + secrets.token_hex(5)
+        with psycopg.connect(host=SOCKET, dbname="postgres", user=ADMIN,
+                             autocommit=True) as admin:
+            admin.execute(f'CREATE DATABASE "{old_name}"')
+        try:
+            with tempfile.TemporaryDirectory() as temp:
+                for name in ("0001_sync.sql", "0002_account_identity.sql",
+                             "0003_case_listing.sql"):
+                    (Path(temp) / name).write_bytes((MIGRATIONS / name).read_bytes())
+                with psycopg.connect(host=SOCKET, dbname=old_name, user=ADMIN) as admin:
+                    apply_migrations(admin, Path(temp))
+                    admin.execute("INSERT INTO scryer_private.tenant_key(singleton,secret) "
+                                  "VALUES (true,%s)", (self.context_key,))
+            app = create_sync_app(
+                connect=lambda: app_connect(SOCKET, old_name),
+                verifier=FixtureVerifier(), context_key=self.context_key,
+                account_key=self.account_key, issuer=ISSUER, audience=AUDIENCE)
+            with TestClient(app) as client:
+                self.assertEqual(client.get("/health/ready").status_code, 503)
+        finally:
+            with psycopg.connect(host=SOCKET, dbname="postgres", user=ADMIN,
+                                 autocommit=True) as admin:
+                admin.execute(f'DROP DATABASE "{old_name}" WITH (FORCE)')
 
     def test_delete_body_and_extreme_content_length_are_typed_errors(self):
         nonempty = self.request("DELETE", "/v1/cases/case-never",

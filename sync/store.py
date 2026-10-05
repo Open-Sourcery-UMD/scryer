@@ -438,3 +438,30 @@ def delete_case(conn: Connection, account_id: str, case_id: str,
                "deletedHead": expected, "tombstone": True}
     _save_receipt(conn, account_id, idempotency_key, digest, "delete", case_id, receipt)
     return receipt
+
+
+def delete_account(conn: Connection, account_id: str, idempotency_key: str,
+                   confirmation: str) -> dict:
+    """Deny access and remove all live account data in one tenant transaction."""
+    _transaction(conn)
+    account_id, idempotency_key = _id(account_id), _key(idempotency_key)
+    if confirmation != account_id:
+        raise StoreError("ACCOUNT_CONFIRMATION_MISMATCH", 412)
+    digest = request_digest("DELETE", "/v1/account", b"", confirmation)
+    outcome = conn.execute("SELECT scryer.begin_account_deletion(%s,%s,%s)",
+                           (account_id, idempotency_key, digest)).fetchone()[0]
+    receipt = {"kind": "account-deletion", "accountId": account_id,
+               "status": "deleting"}
+    if outcome in ("created", "retry"):
+        return receipt
+    if outcome == "conflict":
+        raise StoreError("ACCOUNT_DELETION_CONFLICT")
+    if outcome == "key-conflict":
+        raise StoreError("IDEMPOTENCY_CONFLICT")
+    if outcome == "stalled":
+        raise StoreError("ACCOUNT_DELETION_STALLED", 503)
+    if outcome == "disabled":
+        raise StoreError("ACCOUNT_DISABLED", 403)
+    if outcome == "missing":
+        raise StoreError("ACCOUNT_UNAVAILABLE", 404)
+    raise StoreError("ACCOUNT_DELETION_FAILURE", 500)

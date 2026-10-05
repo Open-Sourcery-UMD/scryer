@@ -99,7 +99,8 @@ class TenantBoundaryTests(unittest.TestCase):
                             "VALUES ('acct-a', 'case-created')")
             with app.transaction():
                 begin_tenant_transaction(app, "acct-a", self.key)
-                with self.assertRaises(psycopg.errors.InsufficientPrivilege):
+                with self.assertRaises((psycopg.errors.InsufficientPrivilege,
+                                        psycopg.errors.CheckViolation)):
                     app.execute("INSERT INTO scryer.cases(account_id, case_id) "
                                 "VALUES ('acct-b', 'case-forged')")
 

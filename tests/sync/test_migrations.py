@@ -38,13 +38,13 @@ class MigrationTests(unittest.TestCase):
         with self.connect() as conn:
             self.assertEqual(apply_migrations(conn, MIGRATIONS),
                              ["0001_sync.sql", "0002_account_identity.sql",
-                              "0003_case_listing.sql"])
+                              "0003_case_listing.sql", "0004_account_deletion.sql"])
             self.assertEqual(apply_migrations(conn, MIGRATIONS), [])
             rows = conn.execute("SELECT filename, checksum FROM "
                                 "scryer_private.schema_migrations").fetchall()
             self.assertEqual([row[0] for row in rows],
                              ["0001_sync.sql", "0002_account_identity.sql",
-                              "0003_case_listing.sql"])
+                              "0003_case_listing.sql", "0004_account_deletion.sql"])
             self.assertEqual(len(rows[0][1]), 64)
 
     def test_changed_applied_migration_is_rejected(self):
@@ -65,7 +65,48 @@ class MigrationTests(unittest.TestCase):
             self.assertIsNone(conn.execute("SELECT to_regnamespace('scryer')").fetchone()[0])
             self.assertEqual(apply_migrations(conn, MIGRATIONS),
                              ["0001_sync.sql", "0002_account_identity.sql",
-                              "0003_case_listing.sql"])
+                              "0003_case_listing.sql", "0004_account_deletion.sql"])
+
+    def test_existing_active_account_survives_forward_deletion_migration(self):
+        with self.connect() as conn, tempfile.TemporaryDirectory() as temp:
+            for name in ("0001_sync.sql", "0002_account_identity.sql",
+                         "0003_case_listing.sql"):
+                (Path(temp) / name).write_bytes((MIGRATIONS / name).read_bytes())
+            self.assertEqual(len(apply_migrations(conn, Path(temp))), 3)
+            conn.execute("INSERT INTO scryer.accounts "
+                         "(account_id,identity_issuer,identity_subject) "
+                         "VALUES ('existing','https://issuer.invalid','old-user')")
+            conn.execute("INSERT INTO scryer.cases(account_id,case_id) "
+                         "VALUES ('existing','case-existing')")
+            conn.commit()
+            self.assertEqual(apply_migrations(conn, MIGRATIONS),
+                             ["0004_account_deletion.sql"])
+            self.assertEqual(conn.execute("SELECT status,identity_subject "
+                                          "FROM scryer.accounts WHERE account_id='existing'")
+                             .fetchone(), ("active", "old-user"))
+            self.assertEqual(conn.execute("SELECT case_id FROM scryer.cases "
+                                          "WHERE account_id='existing'").fetchone()[0],
+                             "case-existing")
+
+    def test_legacy_lifecycle_row_requires_operator_review_before_forward_migration(self):
+        with self.connect() as conn, tempfile.TemporaryDirectory() as temp:
+            for name in ("0001_sync.sql", "0002_account_identity.sql",
+                         "0003_case_listing.sql"):
+                (Path(temp) / name).write_bytes((MIGRATIONS / name).read_bytes())
+            apply_migrations(conn, Path(temp))
+            conn.execute("INSERT INTO scryer.accounts "
+                         "(account_id,identity_issuer,identity_subject,status) "
+                         "VALUES ('legacy','https://issuer.invalid','old-user','deleting')")
+            conn.commit()
+            with self.assertRaisesRegex(psycopg.errors.CheckViolation,
+                                        "LEGACY_ACCOUNT_LIFECYCLE_REVIEW_REQUIRED"):
+                apply_migrations(conn, MIGRATIONS)
+            conn.rollback()
+            self.assertEqual(conn.execute("SELECT filename FROM "
+                                          "scryer_private.schema_migrations ORDER BY filename")
+                             .fetchall(), [("0001_sync.sql",),
+                                           ("0002_account_identity.sql",),
+                                           ("0003_case_listing.sql",)])
 
     def test_existing_duplicate_identity_blocks_forward_migration_without_partial_apply(self):
         with self.connect() as conn, tempfile.TemporaryDirectory() as temp:
