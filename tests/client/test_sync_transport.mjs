@@ -171,6 +171,10 @@ test('stale precondition returns encrypted remote head without dropping the loca
   const result = await syncCase(repo, 'case-unit', { baseUrl: 'https://api.example.test',
     accessToken: 'unit-token', fetchImpl });
   assert.equal(result.status, 'conflict');
+  assert.equal(result.pendingOperationId, 'op-1');
+  assert.equal(result.pendingRevisionId, 'rev-1');
+  assert.equal(result.pendingManifestDigest, sha(operation(1).steps[1].body));
+  assert.equal(result.pendingExpectedServerRevision, null);
   assert.equal(result.remote.revisionId, 'rev-remote');
   assert.equal(result.remote.ciphertextBody, JSON.stringify(remote));
   assert.deepEqual(repo.acknowledgments, []);

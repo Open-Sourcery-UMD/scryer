@@ -669,7 +669,7 @@
         "S-60",
         "S-69"
       ],
-      "scope": "Exercise two devices, divergent heads, conflict review, retry, account disablement and lifecycle races with the official headless client.",
+      "scope": "Exercise two devices, divergent heads, authenticated read-only conflict preview, reviewed resolution, retry, account disablement and lifecycle races with the official headless client.",
       "files": [
         "client/sync/",
         "tests/browser/",
@@ -683,6 +683,7 @@
       ],
       "tests": [
         "Concurrency/crash matrix 1–16",
+        "Chrome remote-branch decrypt/validation and unchanged outbox on preview",
         "RC-31–RC-39",
         "RC-45",
         "RC-47"

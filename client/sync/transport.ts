@@ -8,7 +8,8 @@ type SyncRepository = Pick<LocalRepository, 'prepareSync' | 'ackSync'> &
 export type SyncResult =
   | { status: 'idle' }
   | { status: 'committed'; revisionId: string; count: number }
-  | { status: 'conflict'; pendingRevisionId: string; remote: {
+  | { status: 'conflict'; pendingOperationId: string; pendingRevisionId: string;
+      pendingManifestDigest: string; pendingExpectedServerRevision: string | null; remote: {
       revisionId: string; etag: string; ciphertextBody: string } }
   | { status: 'retryable' | 'permanent' | 'interrupted'; code: string; httpStatus?: number };
 
@@ -61,7 +62,7 @@ function canonicalObject(source: string, keys: readonly string[]): Record<string
   return value as Record<string, unknown>;
 }
 
-async function digest(source: string): Promise<string> {
+export async function syncBodyDigest(source: string): Promise<string> {
   const bytes = utf8Bytes(source);
   const hash = new Uint8Array(await cryptoApi().subtle.digest('SHA-256', bytes));
   bytes.fill(0);
@@ -109,7 +110,7 @@ async function validatePending(item: PreparedSync, accountId: string, caseId: st
         wire.accountId !== accountId || wire.caseId !== caseId ||
         wire.revisionId !== item.revisionId || wire.packageId !== manifest.packageId ||
         wire.index !== index || wire.chunkCount !== count) throw new SyncFault('INVALID_OUTBOX');
-    const hash = await digest(step.body);
+    const hash = await syncBodyDigest(step.body);
     if (manifest.chunkDigests[index] !== hash) throw new SyncFault('INVALID_OUTBOX');
     chunkBodies.push({ step, wire, digest: hash });
   }
@@ -347,7 +348,10 @@ export async function syncCase(repo: SyncRepository, caseId: string,
         const remote = validatedHead(read.value, repo.session.accountId, caseId);
         const etag = `"${remote.revisionId}"`;
         if (head.response.headers.get('etag') !== etag) throw new SyncFault('INVALID_SYNC_RESPONSE');
-        return { status: 'conflict', pendingRevisionId: item.revisionId,
+        return { status: 'conflict', pendingOperationId: item.operationId,
+          pendingRevisionId: item.revisionId,
+          pendingManifestDigest: await syncBodyDigest(prepared.manifestStep.body),
+          pendingExpectedServerRevision: item.expectedServerRevision,
           remote: { revisionId: remote.revisionId, etag, ciphertextBody: read.text } };
       } catch { return { status: 'permanent', code: 'INVALID_SYNC_RESPONSE' }; }
     }

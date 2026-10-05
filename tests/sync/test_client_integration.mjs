@@ -210,6 +210,7 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
     const { unlockRecovery } = await import('/crypto/keys.js');
     const { openLocalRepository } = await import('/storage/repository.js');
     const { syncCase } = await import('/sync/transport.js');
+    const { previewSyncConflict } = await import('/sync/conflict.js');
     const sessionA = await unlockRecovery(envelope, secret, accountId);
     const repoA = await openLocalRepository({ dbName, session: sessionA,
       validateCase: async () => {} });
@@ -229,9 +230,16 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
       accessToken: 'one' });
     const loser = await syncCase(repoB, 'case-browser-api', { baseUrl: api,
       accessToken: 'one' });
+    const preview = loser.status === 'conflict' ?
+      await previewSyncConflict(repoB, 'case-browser-api', loser) : null;
     const remaining = await repoB.prepareSync('case-browser-api');
     repoA.close(); repoB.close();
-    return { wrongAccount, winner, loser, remaining };
+    return { wrongAccount, winner, loser, remaining,
+      preview: preview && { caseId: preview.caseId,
+        pendingRevisionId: preview.pendingRevisionId,
+        localRevisionId: preview.local.revisionId,
+        remoteRevisionId: preview.remote.revisionId,
+        localHeads: preview.local.heads, remoteHeads: preview.remote.heads } };
   }, { accountId: one.accountId, dbName, api,
     envelope: serverEnvelope, secret: first.recoverySecret });
   assert.equal(conflict.wrongAccount.status, 'permanent');
@@ -239,6 +247,9 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
   assert.equal(conflict.loser.status, 'conflict');
   assert.equal(conflict.loser.remote.revisionId, 'rev-three');
   assert.equal(conflict.remaining.length, 1);
+  assert.deepEqual(conflict.preview, { caseId: 'case-browser-api',
+    pendingRevisionId: 'rev-divergent', localRevisionId: 'rev-divergent',
+    remoteRevisionId: 'rev-three', localHeads: [], remoteHeads: [] });
 
   const deleted = await fetch(`${api}/v1/cases/case-browser-api`, { method: 'DELETE',
     headers: { Authorization: 'Bearer one', 'Idempotency-Key': 'browser:delete',

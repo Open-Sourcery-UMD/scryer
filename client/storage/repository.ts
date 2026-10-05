@@ -220,6 +220,30 @@ export class LocalRepository {
     return loaded?.revisionId ?? null;
   }
 
+  async inspectRemoteCase(input: unknown, caseId: string, revisionId: string): Promise<LoadedCase> {
+    const db = this.db();
+    if (!validId(caseId) || !validId(revisionId)) throw new StorageError('REMOTE_UNVERIFIED');
+    const expectedRootProof = await this.rootProof();
+    const currentAccount = await transactionResult<AccountRecord | undefined>(db, ['accounts'],
+      'readonly', (tx, finish) => {
+        const request = tx.objectStore('accounts').get(this.session.accountId);
+        request.onsuccess = () => finish(request.result as AccountRecord | undefined);
+      });
+    if (!currentAccount || currentAccount.rootProof !== expectedRootProof ||
+        currentAccount.deviceId !== this.session.deviceId) {
+      throw new StorageError('STALE_ACCOUNT_ROOT');
+    }
+    let copied: CasePackageV1;
+    try { copied = structuredClone(input) as CasePackageV1; }
+    catch { throw new StorageError('REMOTE_UNVERIFIED'); }
+    try {
+      const plaintext = await openCase(this.session, copied, caseId, revisionId);
+      const stored = await validateStored(parseStored(plaintext), caseId, this.#validateCase);
+      return { case: stored.case, ledger: stored.ledger, revisionId,
+        keyGeneration: copied.keyGeneration };
+    } catch { throw new StorageError('REMOTE_UNVERIFIED'); }
+  }
+
   async inspectArchivedCases(records: CaseRecord[]): Promise<Array<{
     caseId: string; archivedRevision: string; currentRevision: string | null;
     sameCiphertext: boolean; artifacts: Array<{ artifactId: string; sha256: string }>;
