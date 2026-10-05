@@ -929,7 +929,7 @@
         "M6-3 encrypted IndexedDB persistence and durable encryption-use budgets pass Chrome failure tests",
         "M6-4 archive-wide HMAC membership check passes Chrome and independent Node/OpenSSL",
         "M6-5 two-case rotation and interruption tests pass Chrome; browser regressions cover database recreation, direct-constructor binding, rotated-session binding, stale-tab restore refusal, and one package device ID across header/key derivation; independent human review remains open",
-        "M8-6a Chrome/FastAPI/PostgreSQL synthetic sentinel journey passes; public auth, WASM validation, deployed logs and backups remain open"
+        "M8-6a and M8-6f Chrome/FastAPI/PostgreSQL synthetic sentinel journeys pass, including reviewed joined-case publication; public auth, WASM validation, deployed logs and backups remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -983,14 +983,15 @@
         "tests/sync/test_pagination.py — cursor expiry, exact timestamp, tenant binding, and tamper refusal",
         "tests/sync/test_recovery.py — exact encrypted recovery wrapper wire and strong preconditions",
         "tests/sync/test_protocol.py, test_store.py, and test_api.py — exact device registry wire, active-device publication gate, tenant isolation, retirement, and limits",
-        "tests/sync/test_client_integration.mjs — synthetic plaintext boundary sentinel with recovered amount, all browser API request bodies, logs, and disposable database scan"
+        "tests/sync/test_client_integration.mjs — synthetic plaintext boundary sentinel with recovered amount, all browser API request bodies, logs, and disposable database scan",
+        "tests/sync/test_client_integration.mjs — two-device reviewed joined-case ciphertext publication, current server head, and cross-tenant denial"
       ],
       "evidence": [
         "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass",
         "M7-2 six direct app-role RLS tests and four migration tests pass on fresh private PostgreSQL 15.11",
         "M7-3 thirteen PostgreSQL store tests pass; OIDC/HTTP sync remain open",
         "M7 device registry, HTTP boundary, ciphertext reads, and initial wrapper API pass within 85 sync tests on PostgreSQL 15.11 and 16.15 with local Keycloak; 32 headless client tests, 33 Chrome tests, and one synthetic browser/API/PostgreSQL journey pass; JWT-to-API integration remains blocked",
-        "M8-6a Chrome/FastAPI/PostgreSQL synthetic sentinel stays in decrypted case but absent from observed browser API bodies, HTTP ciphertext, collected API logs, and disposable PostgreSQL tables; production identity and WASM validation remain open"
+        "M8-6a and M8-6f Chrome/FastAPI/PostgreSQL synthetic sentinel stays in decrypted cases but absent from observed browser API bodies, HTTP ciphertext, collected API logs, and disposable PostgreSQL tables, including after a joined-case publish; production identity and WASM validation remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1020,10 +1021,10 @@
         "tests/client/test_review.mjs — import review ID cannot collide with a branch-join review ID",
         "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — exact review-command bindings and joined native-valid candidate without a local write",
         "tests/browser/test_conflict_commit.mjs — atomic encrypted local replacement retains both branch events and refuses stale/quota/multi-pending cases",
-        "tests/sync/test_client_integration.mjs — competing encrypted browser branch preserved after server CAS loss"
+        "tests/sync/test_client_integration.mjs — competing encrypted browser branch preserved after server CAS loss, then joined and published under a reviewed remote-revision precondition"
       ],
       "evidence": [
-        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, encrypted historical-base candidate inspection, narrow read-only disjoint-approval candidate, M8-6c join parser, M8-6d bound review command, and M8-6e atomic local replacement pass; joined-case server publication remains open"
+        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, encrypted historical-base candidate inspection, narrow disjoint-approval candidate, M8-6c join parser, M8-6d bound review command, M8-6e atomic local replacement, and M8-6f synthetic joined-case server publication pass; repeated remote-advance conflict and production identity/WASM paths remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1185,10 +1186,10 @@
         "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — explicit review command binds candidate and produces one validated joined head in memory",
         "tests/browser/test_conflict_commit.mjs — one reviewed joined case and new remote-CAS outbox survive reload while old pending operation disappears atomically",
         "tests/client/test_sync_transport.mjs — tagged historical base lookup and fail-closed malformed response",
-        "tests/sync/test_client_integration.mjs — Chrome, FastAPI, PostgreSQL, two identities, response loss, conflict, deletion"
+        "tests/sync/test_client_integration.mjs — Chrome, FastAPI, PostgreSQL, two identities, response loss, conflict, deletion, and reviewed joined-case publication"
       ],
       "evidence": [
-        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; a narrow disjoint manual-approval candidate passes native validation; M8-6c adds the causal join parser, M8-6d binds an explicit review command, and M8-6e atomically replaces one pending local branch; synthetic Chrome/API/PostgreSQL integration previews both the returned conflict head and a retained encrypted ancestor candidate; joined-case server publication and real JWT/WASM-backed user journey remain open"
+        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; a narrow disjoint manual-approval candidate passes native validation; M8-6c adds the causal join parser, M8-6d binds an explicit review command, M8-6e atomically replaces one pending local branch, and M8-6f publishes the joined ciphertext through synthetic Chrome/API/PostgreSQL; real JWT/WASM-backed and human-reviewed user journeys remain open"
       ],
       "status": "IN_PROGRESS"
     },

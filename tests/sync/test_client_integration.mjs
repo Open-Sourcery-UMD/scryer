@@ -395,3 +395,147 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
     'synthetic source text appeared in a browser API request body');
   assert.equal(logHasSentinel(), false);
 });
+
+test('Chrome publishes a reviewed disjoint-approval join through local API and PostgreSQL', async (t) => {
+  const { page } = await openBrowserHarness(t);
+  const { api, scanSentinel, logHasSentinel } = await startApi(t,
+    new URL(page.url()).origin);
+  const one = await account(api, 'one').catch((error) => {
+    throw new Error('joined journey account one failed', { cause: error });
+  });
+  const two = await account(api, 'two').catch((error) => {
+    throw new Error('joined journey account two failed', { cause: error });
+  });
+  const wireBodies = [];
+  const sentinelBytes = Buffer.from(sentinel, 'utf8');
+  page.on('request', (request) => {
+    if (new URL(request.url()).origin !== api) return;
+    const body = request.postDataBuffer();
+    if (body !== null) wireBodies.push(body.includes(sentinelBytes));
+  });
+  const dbName = `scryer-join-api-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const journey = await page.evaluate(async ({ accountId, dbName, api, sentinel }) => {
+    const { createAccountKeys, unlockRecovery } = await import('/crypto/keys.js');
+    const { openLocalRepository } = await import('/storage/repository.js');
+    const { syncCase } = await import('/sync/transport.js');
+    const { previewSyncConflict } = await import('/sync/conflict.js');
+    const { digestDisjointApprovalCandidate } = await import('/sync/analysis.js');
+    const { commitReviewedApprovalJoin } = await import('/sync/resolve.js');
+    const created = await createAccountKeys(accountId);
+    const validateCase = async (value) => {
+      if (value.events.some((event) => event.kind === 'invalid')) throw new Error('INVALID_CASE');
+    };
+    const repoA = await openLocalRepository({ dbName, session: created.session,
+      recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
+      validateCase });
+    const shell = { schemaVersion: '1', caseId: 'case-joined-api', currency: 'USD',
+      institutions: [], accountRefs: [{ accountRefId: 'account-bank', kind: 'bank',
+        institutionId: null, holderKind: 'student' }], terms: [], aidItems: [],
+      artifacts: [{ artifactId: 'artifact-join', sha256: 'a'.repeat(64),
+        kind: 'bank_statement', observedAt: '2026-10-04T00:00:00Z',
+        accountRefId: 'account-bank' }],
+      proposals: [{ proposalId: 'proposal-join', artifactId: 'artifact-join',
+        sourceLocation: 'row:1', rawValue: sentinel, parserVersion: 'synthetic.1',
+        mappingVersion: 'synthetic.1', proposedAmountMinor: '100' }] };
+    const approved = (eventId, factId, amountMinor, parents) => ({ eventId, parents,
+      recordedAt: '2026-10-05T00:00:00Z', kind: 'approve_fact', fact: {
+        factId, termId: null, accountRefId: 'account-bank', aidItemId: null,
+        currency: 'USD', role: 'bank_credit_observed', recipientKind: null,
+        amountMinor, proposalId: null, effectiveDate: '2026-10-03',
+        source: { kind: 'manual', entryId: `entry-${factId}` },
+        reviewId: `review-${factId}` } });
+    const baseEvent = approved('event-base', 'fact-base', '100', []);
+    const baseCase = { ...shell, events: [baseEvent] };
+    const ledger = { schemaVersion: '1', reviews: [] };
+    await repoA.commitReviewed({ case: baseCase, ledger, revisionId: 'rev-base',
+      operationId: 'op-base', expectedLocalRevision: null, serverRevision: null });
+    const basePublished = await syncCase(repoA, shell.caseId,
+      { baseUrl: api, accessToken: 'one' });
+    const sessionB = await unlockRecovery(created.recoveryEnvelope,
+      created.recoverySecret, accountId);
+    const repoB = await openLocalRepository({ dbName: `${dbName}-device-b`, session: sessionB,
+      recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
+      validateCase });
+    const branchB = { ...shell, events: [baseEvent,
+      approved('event-b', 'fact-b', '300', ['event-base'])] };
+    await repoB.commitReviewed({ case: branchB, ledger, revisionId: 'rev-b',
+      operationId: 'op-b', expectedLocalRevision: null, serverRevision: 'rev-base' });
+    const branchA = { ...shell, events: [baseEvent,
+      approved('event-a', 'fact-a', '200', ['event-base'])] };
+    await repoA.commitReviewed({ case: branchA, ledger, revisionId: 'rev-a',
+      operationId: 'op-a', expectedLocalRevision: 'rev-base', serverRevision: 'rev-base' });
+    const winner = await syncCase(repoA, shell.caseId,
+      { baseUrl: api, accessToken: 'one' });
+    const loser = await syncCase(repoB, shell.caseId,
+      { baseUrl: api, accessToken: 'one' });
+    if (loser.status !== 'conflict') throw new Error('expected synthetic CAS conflict');
+    const preview = await previewSyncConflict(repoB, shell.caseId, loser);
+    const candidateDigest = await digestDisjointApprovalCandidate(preview);
+    const command = { caseId: preview.caseId,
+      pendingOperationId: preview.pendingOperationId,
+      pendingRevisionId: preview.pendingRevisionId,
+      pendingManifestDigest: preview.pendingManifestDigest,
+      pendingStepsDigest: preview.pendingStepsDigest,
+      localCiphertextDigest: preview.localCiphertextDigest,
+      localRevisionId: preview.local.revisionId,
+      remoteRevisionId: preview.remote.revisionId,
+      baseRevisionId: preview.ancestor.branch.revisionId,
+      localHead: 'event-b', remoteHead: 'event-a',
+      localOnlyEventIds: ['event-b'], remoteOnlyEventIds: ['event-a'],
+      candidateDigest, eventId: 'event-join', reviewId: 'review-join',
+      recordedAt: '2026-10-05T12:00:00Z' };
+    const committedLocally = await commitReviewedApprovalJoin(repoB, loser, command,
+      'rev-joined', 'op-joined', validateCase);
+    const pendingBeforePublish = await repoB.prepareSync(shell.caseId);
+    const joinedBeforePublish = await repoB.loadCase(shell.caseId);
+    const published = await syncCase(repoB, shell.caseId,
+      { baseUrl: api, accessToken: 'one' });
+    const pendingAfterPublish = await repoB.prepareSync(shell.caseId);
+    const joined = await repoB.loadCase(shell.caseId);
+    repoA.close(); repoB.close();
+    return { basePublished, winner, loserStatus: loser.status,
+      previewHeads: [preview.local.heads, preview.remote.heads],
+      committedLocally, pendingBeforePublish, joinedBeforePublish,
+      published, pendingAfterPublish, joined,
+      localSourceRetained: joined.case.proposals[0].rawValue === sentinel };
+  }, { accountId: one.accountId, dbName, api, sentinel });
+  assert.equal(journey.basePublished.status, 'committed');
+  assert.equal(journey.winner.status, 'committed');
+  assert.equal(journey.loserStatus, 'conflict');
+  assert.deepEqual(journey.previewHeads, [['event-b'], ['event-a']]);
+  assert.equal(journey.committedLocally.joinEventId, 'event-join');
+  assert.equal(journey.pendingBeforePublish.length, 1);
+  assert.equal(journey.pendingBeforePublish[0].operationId, 'op-joined');
+  assert.equal(journey.pendingBeforePublish[0].expectedServerRevision, 'rev-a');
+  assert.deepEqual(journey.joinedBeforePublish.case.events.map((event) => event.eventId),
+    ['event-a', 'event-b', 'event-base', 'event-join']);
+  assert.equal(journey.published.status, 'committed');
+  assert.equal(journey.published.revisionId, 'rev-joined');
+  assert.equal(journey.pendingAfterPublish.length, 0);
+  assert.equal(journey.localSourceRetained, true);
+  assert.deepEqual(journey.joined.case.events.at(-1).parents, ['event-a', 'event-b']);
+  const head = await fetch(`${api}/v1/cases/case-joined-api`, {
+    headers: { Authorization: 'Bearer one' },
+  }).catch((error) => { throw new Error('joined journey head fetch failed', { cause: error }); });
+  assert.equal(head.status, 200);
+  assert.equal(head.headers.get('etag'), '"rev-joined"');
+  assert.equal((await head.text()).includes(sentinel), false);
+  const otherHead = await fetch(`${api}/v1/cases/case-joined-api`, {
+    headers: { Authorization: 'Bearer two' },
+  }).catch((error) => { throw new Error('joined journey cross-tenant fetch failed', { cause: error }); });
+  assert.equal(otherHead.status, 404);
+  const counts = scanSentinel(sentinel);
+  assert.equal(counts.matches, 0);
+  assert.ok(counts.revisions >= 3);
+  assert.ok(wireBodies.length > 0);
+  assert.ok(wireBodies.every((found) => !found));
+  assert.equal(logHasSentinel(), false);
+  // Synchronous native compilation follows the HTTP checks so an idle keep-alive
+  // connection is not reused after the fixture server closes it.
+  const built = spawnSync('make', ['-C', `${root}/engine`, 'cli'], { encoding: 'utf8' });
+  assert.equal(built.status, 0, built.stderr);
+  const native = spawnSync(`${root}/engine/build/scryer-native`, [], {
+    input: JSON.stringify({ schemaVersion: '1', operation: 'validate', case: journey.joined.case }),
+    encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
+  assert.equal(native.status, 0, native.stderr);
+});
