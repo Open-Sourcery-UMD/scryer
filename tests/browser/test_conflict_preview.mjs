@@ -16,7 +16,8 @@ test('real browser previews both authenticated encrypted conflict branches witho
     const { openLocalRepository } = await import('/storage/repository.js');
     const { previewSyncConflict } = await import('/sync/conflict.js');
     const { analyzeConflictPreview, analyzeAncestorCandidate,
-      proposeDisjointApprovalUnion } =
+      proposeDisjointApprovalUnion, digestDisjointApprovalCandidate,
+      prepareReviewedApprovalJoin } =
       await import('/sync/analysis.js');
     const created = await createAccountKeys('acct-conflict-preview');
     const validateCase = async (value) => {
@@ -70,6 +71,18 @@ test('real browser previews both authenticated encrypted conflict branches witho
     const analysis = analyzeConflictPreview(preview);
     const baseAnalysis = analyzeAncestorCandidate(preview);
     const unionProposal = proposeDisjointApprovalUnion(preview);
+    const candidateDigest = await digestDisjointApprovalCandidate(preview);
+    const reviewed = await prepareReviewedApprovalJoin(preview, {
+      caseId: preview.caseId, pendingOperationId: preview.pendingOperationId,
+      pendingRevisionId: preview.pendingRevisionId,
+      pendingManifestDigest: preview.pendingManifestDigest,
+      localRevisionId: preview.local.revisionId, remoteRevisionId: preview.remote.revisionId,
+      baseRevisionId: preview.ancestor.branch.revisionId,
+      localHead: 'event-local', remoteHead: 'event-remote',
+      localOnlyEventIds: ['event-local'], remoteOnlyEventIds: ['event-remote'],
+      candidateDigest, eventId: 'event-join', reviewId: 'review-join',
+      recordedAt: '2026-10-05T12:00:00Z',
+    }, validateCase);
     const afterLocal = JSON.stringify(await repo.loadCase('case-conflict-preview'));
     const afterPending = JSON.stringify(await repo.prepareSync('case-conflict-preview'));
     const codeOf = async (candidate) => {
@@ -151,7 +164,7 @@ test('real browser previews both authenticated encrypted conflict branches witho
     const initialReadRace = await codeOf(freshConflict);
     repo.loadCase = load;
     repo.close();
-    return { preview, analysis, baseAnalysis, unionProposal,
+    return { preview, analysis, baseAnalysis, unionProposal, reviewed,
       unchanged: beforeLocal === afterLocal && beforePending === afterPending,
       refusalUnchanged: beforePending === pendingAfterRefusals &&
         beforeLocal === localAfterRefusals,
@@ -162,7 +175,7 @@ test('real browser previews both authenticated encrypted conflict branches witho
   assert.equal(built.status, 0, built.stderr);
   for (const branch of [result.preview.ancestor.branch, result.preview.local,
     result.preview.remote, result.unionProposal.status === 'candidate' ?
-      result.unionProposal : null].filter(Boolean)) {
+      result.unionProposal : null, result.reviewed].filter(Boolean)) {
     const validated = spawnSync(nativeCli, [], { input: JSON.stringify({ schemaVersion: '1',
       operation: 'validate', case: branch.case }), encoding: 'utf8',
       maxBuffer: 8 * 1024 * 1024 });
@@ -194,6 +207,11 @@ test('real browser previews both authenticated encrypted conflict branches witho
   assert.equal(result.unionProposal.requiresReview, true);
   assert.deepEqual(result.unionProposal.case.events.map((item) => item.eventId),
     ['event-base', 'event-local', 'event-remote']);
+  assert.equal(result.reviewed.joinEventId, 'event-join');
+  assert.deepEqual(result.reviewed.parentHeads, ['event-local', 'event-remote']);
+  assert.deepEqual(result.reviewed.case.events.at(-1), { eventId: 'event-join',
+    parents: ['event-local', 'event-remote'], recordedAt: '2026-10-05T12:00:00Z',
+    kind: 'resolve_branches', resolution: { reviewId: 'review-join' } });
   assert.equal(result.unchanged, true);
   assert.equal(result.refusalUnchanged, true);
   for (const [name, code] of Object.entries(result.refused)) {

@@ -235,6 +235,88 @@ test('disjoint approval union candidate retains both branches for review without
     'candidate changed when branch and member order changed');
 });
 
+test('explicit review command binds a disjoint approval candidate and produces one native-valid head', async () => {
+  const baseEvent = approved('event-base', 'fact-base', '100', []);
+  const baseBranch = validBranch([baseEvent]);
+  baseBranch.revisionId = 'rev-base';
+  baseBranch.heads = ['event-base'];
+  const local = validBranch([baseEvent, approved('event-local', 'fact-local', '200')]);
+  local.revisionId = 'rev-local';
+  local.heads = ['event-local'];
+  const remote = validBranch([baseEvent, approved('event-remote', 'fact-remote', '300')]);
+  remote.revisionId = 'rev-remote';
+  remote.heads = ['event-remote'];
+  const input = { ...preview(local, remote), ancestor: { status: 'available', branch: baseBranch } };
+  for (const item of [baseBranch, local, remote]) nativeValidate(item.case);
+  const before = JSON.stringify(input);
+  const digest = await conflictAnalysis.digestDisjointApprovalCandidate(input);
+  const command = { caseId: input.caseId, pendingOperationId: input.pendingOperationId,
+    pendingRevisionId: input.pendingRevisionId,
+    pendingManifestDigest: input.pendingManifestDigest, localRevisionId: local.revisionId,
+    remoteRevisionId: remote.revisionId, baseRevisionId: baseBranch.revisionId,
+    localHead: 'event-local', remoteHead: 'event-remote',
+    localOnlyEventIds: ['event-local'], remoteOnlyEventIds: ['event-remote'],
+    candidateDigest: digest, eventId: 'event-join', reviewId: 'review-join',
+    recordedAt: '2026-10-05T12:00:00Z' };
+  const validate = async (caseData) => nativeValidate(caseData);
+  const prepared = await conflictAnalysis.prepareReviewedApprovalJoin(input, command, validate);
+  assert.equal(prepared.joinEventId, 'event-join');
+  assert.deepEqual(prepared.parentHeads, ['event-local', 'event-remote']);
+  assert.deepEqual(prepared.case.events.at(-1), {
+    eventId: 'event-join', parents: ['event-local', 'event-remote'],
+    recordedAt: command.recordedAt, kind: 'resolve_branches',
+    resolution: { reviewId: 'review-join' },
+  });
+  assert.deepEqual(prepared.case.events.filter((item) => item.kind === 'approve_fact')
+    .map((item) => item.fact.amountMinor).sort(), ['100', '200', '300']);
+  assert.deepEqual(prepared.ledger, local.ledger);
+  nativeValidate(prepared.case);
+  assert.equal(JSON.stringify(input), before);
+  const reject = async (changedInput, changedCommand, expected) => {
+    await assert.rejects(() => conflictAnalysis.prepareReviewedApprovalJoin(
+      changedInput, changedCommand, validate), { code: expected });
+  };
+  await reject(input, { ...command, candidateDigest: 'f'.repeat(64) }, 'REVIEW_MISMATCH');
+  await reject(input, { ...command, remoteRevisionId: 'rev-wrong' }, 'REVIEW_MISMATCH');
+  await reject(input, { ...command, pendingRevisionId: 'rev-wrong' }, 'REVIEW_MISMATCH');
+  await reject(input, { ...command, baseRevisionId: 'rev-wrong' }, 'REVIEW_MISMATCH');
+  await reject(input, { ...command, pendingOperationId: 'op-wrong' }, 'REVIEW_MISMATCH');
+  await reject(input, { ...command, pendingManifestDigest: 'f'.repeat(64) }, 'REVIEW_MISMATCH');
+  await reject(input, { ...command, localOnlyEventIds: [] }, 'REVIEW_MISMATCH');
+  await reject(input, { ...command, localHead: 'event-base' }, 'AMBIGUOUS_HEADS');
+  await reject(input, { ...command, reviewId: 'review-fact-local' }, 'DUPLICATE_ID');
+  await reject(input, { ...command, eventId: 'event-local' }, 'DUPLICATE_ID');
+  await reject(input, { ...command, recordedAt: 'bad' }, 'INVALID_JOIN_COMMAND');
+  await reject(input, { ...command, note: 'unreviewed' }, 'INVALID_JOIN_COMMAND');
+  const changed = structuredClone(input);
+  changed.local.case.events.find((item) => item.eventId === 'event-local').fact.amountMinor = '201';
+  nativeValidate(changed.local.case);
+  await reject(changed, command, 'REVIEW_MISMATCH');
+  const changedMetadata = structuredClone(input);
+  const extraArtifact = artifact('artifact-extra', 'e'.repeat(64));
+  changedMetadata.local.case.artifacts.push(extraArtifact);
+  changedMetadata.remote.case.artifacts.push(extraArtifact);
+  for (const branch of [changedMetadata.local, changedMetadata.remote]) nativeValidate(branch.case);
+  await reject(changedMetadata, command, 'REVIEW_MISMATCH');
+  const changedLedger = structuredClone(changedMetadata);
+  const addedReview = review(extraArtifact.artifactId, extraArtifact.sha256, 'command-extra');
+  changedLedger.local.ledger.reviews.push(addedReview);
+  changedLedger.remote.ledger.reviews.push(addedReview);
+  await reject(changedLedger, command, 'REVIEW_MISMATCH');
+  const multiHead = structuredClone(input);
+  multiHead.local.case.events.push(approved('event-local-2', 'fact-local-2', '400'));
+  multiHead.local.heads = ['event-local', 'event-local-2'];
+  nativeValidate(multiHead.local.case);
+  await reject(multiHead, { ...command,
+    localOnlyEventIds: ['event-local', 'event-local-2'],
+    candidateDigest: await conflictAnalysis.digestDisjointApprovalCandidate(multiHead),
+  }, 'AMBIGUOUS_HEADS');
+  await reject({ ...input, ancestor: { status: 'unavailable' } }, command, 'CANDIDATE_REFUSED');
+  await assert.rejects(() => conflictAnalysis.prepareReviewedApprovalJoin(input, command,
+    async () => { throw new Error('synthetic validator refusal'); }), { code: 'INVALID_JOINED_CASE' });
+  assert.equal(JSON.stringify(input), before);
+});
+
 test('disjoint approval union refuses unverifiable or semantically hazardous branches', () => {
   const baseEvent = approved('event-base', 'fact-base', '100', []);
   const baseBranch = validBranch([baseEvent]);

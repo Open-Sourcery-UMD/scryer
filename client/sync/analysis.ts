@@ -1,5 +1,8 @@
-import { validId } from '../crypto/codec.ts';
-import type { CaseEvent, CaseV1 } from '../import/types.ts';
+import { exactKeys, validId } from '../crypto/codec.ts';
+import { sha256Hex } from '../import/hash.ts';
+import { maximalHeads } from '../import/case-shape.ts';
+import type { CaseEvent, CaseV1, CaseValidator } from '../import/types.ts';
+import { validInstant } from '../import/validation.ts';
 import type { ConflictPreview } from './conflict.ts';
 
 type IssueCode = 'EVENT_ID_COLLISION' | 'FACT_ID_COLLISION' |
@@ -21,6 +24,16 @@ export type ApprovalUnionProposal =
   | { status: 'refused'; reason: 'NO_BASE_CANDIDATE' | 'BASE_CONTENT_DIVERGED' |
       'EVENT_CONFLICT' | 'METADATA_DIVERGED' | 'NON_APPROVAL_CHANGE' |
       'SOURCE_IDENTITY_COLLISION' | 'NO_BRANCH_DIVERGENCE' };
+export type ApprovalJoinReviewCommand = {
+  caseId: string; pendingOperationId: string; pendingRevisionId: string;
+  pendingManifestDigest: string;
+  localRevisionId: string; remoteRevisionId: string; baseRevisionId: string;
+  localHead: string; remoteHead: string;
+  localOnlyEventIds: string[]; remoteOnlyEventIds: string[];
+  candidateDigest: string; eventId: string; reviewId: string; recordedAt: string;
+};
+export type PreparedApprovalJoin = { case: CaseV1;
+  ledger: ConflictPreview['local']['ledger']; joinEventId: string; parentHeads: string[] };
 
 const CASE_FIELDS = ['institutions', 'accountRefs', 'terms', 'aidItems',
   'artifacts', 'proposals'] as const;
@@ -28,6 +41,11 @@ const CASE_FIELDS = ['institutions', 'accountRefs', 'terms', 'aidItems',
 export class ConflictAnalysisError extends Error {
   readonly code = 'INVALID_CONFLICT_PREVIEW';
   constructor() { super('INVALID_CONFLICT_PREVIEW'); this.name = 'ConflictAnalysisError'; }
+}
+
+export class ConflictJoinError extends Error {
+  readonly code: string;
+  constructor(code: string) { super(code); this.name = 'ConflictJoinError'; this.code = code; }
 }
 
 function canonicalJson(value: unknown, depth = 0, seen = new WeakSet<object>()): string {
@@ -239,4 +257,97 @@ export function proposeDisjointApprovalUnion(preview: ConflictPreview): Approval
     ledger: JSON.parse(canonicalJson(preview.local.ledger)) as ConflictPreview['local']['ledger'],
     localOnlyEventIds: analysis.localOnlyEventIds,
     remoteOnlyEventIds: analysis.remoteOnlyEventIds };
+}
+
+function availableApprovalUnion(preview: ConflictPreview): Extract<ApprovalUnionProposal, { status: 'candidate' }> {
+  const proposal = proposeDisjointApprovalUnion(preview);
+  if (proposal.status !== 'candidate') throw new ConflictJoinError('CANDIDATE_REFUSED');
+  return proposal;
+}
+
+async function approvalUnionDigest(proposal: Extract<ApprovalUnionProposal, { status: 'candidate' }>): Promise<string> {
+  const content = canonicalJson({ case: proposal.case, ledger: proposal.ledger });
+  return sha256Hex(new TextEncoder().encode(content));
+}
+
+// The digest binds the full case and review ledger, including approved amounts and sources.
+// A caller must still render those details for human review before supplying the command.
+export async function digestDisjointApprovalCandidate(preview: ConflictPreview): Promise<string> {
+  return approvalUnionDigest(availableApprovalUnion(preview));
+}
+
+function validJoinCommand(command: ApprovalJoinReviewCommand): boolean {
+  return exactKeys(command, ['caseId', 'pendingOperationId', 'pendingRevisionId', 'pendingManifestDigest',
+    'localRevisionId', 'remoteRevisionId', 'baseRevisionId', 'localHead', 'remoteHead',
+    'localOnlyEventIds', 'remoteOnlyEventIds', 'candidateDigest', 'eventId', 'reviewId',
+    'recordedAt']) &&
+    [command.caseId, command.pendingOperationId, command.pendingRevisionId, command.localRevisionId,
+      command.remoteRevisionId, command.baseRevisionId, command.localHead,
+      command.remoteHead, command.eventId, command.reviewId].every(validId) &&
+    /^[0-9a-f]{64}$/.test(command.pendingManifestDigest) &&
+    /^[0-9a-f]{64}$/.test(command.candidateDigest) && validInstant(command.recordedAt) &&
+    Array.isArray(command.localOnlyEventIds) && Array.isArray(command.remoteOnlyEventIds) &&
+    command.localOnlyEventIds.length <= 200_000 &&
+    command.remoteOnlyEventIds.length <= 200_000 &&
+    [...command.localOnlyEventIds, ...command.remoteOnlyEventIds].every(validId);
+}
+
+function sameIds(actual: readonly string[], expected: readonly string[]): boolean {
+  return actual.length === expected.length && actual.every((id, index) => id === expected[index]);
+}
+
+// This prepares an in-memory result only. The caller must establish an actual human review
+// and use a separate live-state checked atomic storage and publication transaction.
+export async function prepareReviewedApprovalJoin(preview: ConflictPreview,
+  command: ApprovalJoinReviewCommand, validateCase: CaseValidator): Promise<PreparedApprovalJoin> {
+  if (!validJoinCommand(command)) throw new ConflictJoinError('INVALID_JOIN_COMMAND');
+  const proposal = availableApprovalUnion(preview);
+  if (preview.ancestor.status !== 'available' ||
+      command.caseId !== preview.caseId ||
+      command.pendingOperationId !== preview.pendingOperationId ||
+      command.pendingRevisionId !== preview.pendingRevisionId ||
+      command.pendingManifestDigest !== preview.pendingManifestDigest ||
+      command.localRevisionId !== preview.local.revisionId ||
+      command.remoteRevisionId !== preview.remote.revisionId ||
+      command.baseRevisionId !== preview.ancestor.branch.revisionId ||
+      !sameIds(command.localOnlyEventIds, proposal.localOnlyEventIds) ||
+      !sameIds(command.remoteOnlyEventIds, proposal.remoteOnlyEventIds) ||
+      command.candidateDigest !== await approvalUnionDigest(proposal)) {
+    throw new ConflictJoinError('REVIEW_MISMATCH');
+  }
+  const localHeads = maximalHeads(preview.local.case.events);
+  const remoteHeads = maximalHeads(preview.remote.case.events);
+  const unionHeads = maximalHeads(proposal.case.events);
+  const selected = [command.localHead, command.remoteHead].sort();
+  if (localHeads.length !== 1 || remoteHeads.length !== 1 || unionHeads.length !== 2 ||
+      localHeads[0] !== command.localHead || remoteHeads[0] !== command.remoteHead ||
+      !Array.isArray(preview.local.heads) || !Array.isArray(preview.remote.heads) ||
+      !sameIds(preview.local.heads, localHeads) || !sameIds(preview.remote.heads, remoteHeads) ||
+      !sameIds(unionHeads, selected)) {
+    throw new ConflictJoinError('AMBIGUOUS_HEADS');
+  }
+  const existingEvents = new Set(proposal.case.events.map((event) => event.eventId));
+  const existingReviews = new Set(proposal.case.events.map((event) => {
+    const payload = event.fact ?? event.correction ?? event.coverage ??
+      event.retraction ?? event.decision ?? event.resolution;
+    return payload?.reviewId;
+  }));
+  if (existingEvents.has(command.eventId) || existingReviews.has(command.reviewId)) {
+    throw new ConflictJoinError('DUPLICATE_ID');
+  }
+  const joinEvent: CaseEvent = { eventId: command.eventId, parents: selected,
+    recordedAt: command.recordedAt, kind: 'resolve_branches',
+    resolution: { reviewId: command.reviewId } };
+  const joined: CaseV1 = { ...proposal.case, events: [...proposal.case.events, joinEvent] };
+  try {
+    await validateCase(structuredClone(preview.ancestor.branch.case));
+    await validateCase(structuredClone(preview.local.case));
+    await validateCase(structuredClone(preview.remote.case));
+    await validateCase(structuredClone(joined));
+  } catch { throw new ConflictJoinError('INVALID_JOINED_CASE'); }
+  if (!sameIds(maximalHeads(joined.events), [command.eventId])) {
+    throw new ConflictJoinError('INVALID_JOINED_CASE');
+  }
+  return { case: joined, ledger: proposal.ledger,
+    joinEventId: command.eventId, parentHeads: selected };
 }
