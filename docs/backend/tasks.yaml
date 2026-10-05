@@ -692,6 +692,7 @@
         "Headless and Chrome explicit join-review command binds the complete candidate digest, pending identity, branch revisions and heads; builds one nonmonetary join event in memory without writing the outbox",
         "Chrome atomic reviewed conflict replacement: exact pending bytes and case digest checked again in IndexedDB, old pending operation replaced, both parent histories retained after reload, remote revision used as server CAS precondition, and failure leaves prior state intact",
         "Chrome/FastAPI/PostgreSQL synthetic joined-case publication: two independently approved branches, one CAS loser, reviewed local replacement, server CAS receipt, retained joined history, plaintext boundary, and cross-tenant refusal",
+        "Chrome/FastAPI/PostgreSQL second remote-head advance after local join: stale CAS returns typed conflict while exact joined case and pending request survive and authenticated remote preview opens",
         "Native and Python resolve_branches event parity: one joined head over independent approvals, strict two-parent/review-ID validation, and unresolved correction contradiction",
         "Headless import preflight refuses reuse of a branch-join review ID",
         "Synthetic plaintext sentinel and approved bank amount through Chrome recovery and conflicting branches; check browser API bodies, HTTP ciphertext, loopback logs, and disposable database text/bytea/JSON columns",
@@ -700,7 +701,7 @@
         "RC-47"
       ],
       "command": "cd client && npm run typecheck && npm test && SCRYER_BROWSER_BIN=<local Chrome> npm run test:browser; from repository root, SCRYER_TEST_PG_SOCKET=<private local PostgreSQL socket> SCRYER_BROWSER_BIN=<local Chrome> node --test tests/sync/test_client_integration.mjs",
-      "expected": "Synthetic offline chain and browser/API/PostgreSQL joined-case publication pass; the narrow branch-join path is locally verified; second remote-advance conflict, JWT/WASM-backed journey, human review UI, and full conflict resolution remain open",
+      "expected": "Synthetic offline chain, browser/API/PostgreSQL joined-case publication, and second remote-advance conflict preservation pass; JWT/WASM-backed journey, human review UI, and full conflict resolution remain open",
       "risk": "CRITICAL",
       "done": "Multi-device and failure matrix pass locally."
     },

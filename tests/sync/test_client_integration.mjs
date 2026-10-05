@@ -396,7 +396,7 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
   assert.equal(logHasSentinel(), false);
 });
 
-test('Chrome publishes a reviewed disjoint-approval join through local API and PostgreSQL', async (t) => {
+test('Chrome publishes a reviewed join and preserves a later stale join through local API and PostgreSQL', async (t) => {
   const { page } = await openBrowserHarness(t);
   const { api, scanSentinel, logHasSentinel } = await startApi(t,
     new URL(page.url()).origin);
@@ -444,6 +444,20 @@ test('Chrome publishes a reviewed disjoint-approval join through local API and P
         amountMinor, proposalId: null, effectiveDate: '2026-10-03',
         source: { kind: 'manual', entryId: `entry-${factId}` },
         reviewId: `review-${factId}` } });
+    const storedCiphertext = async () => new Promise((resolve, reject) => {
+      const opened = indexedDB.open(dbName);
+      opened.onerror = () => reject(opened.error);
+      opened.onsuccess = () => {
+        const db = opened.result;
+        const tx = db.transaction('cases', 'readonly');
+        const request = tx.objectStore('cases').get([accountId, shell.caseId]);
+        let record;
+        request.onsuccess = () => { record = request.result; };
+        tx.oncomplete = () => { db.close(); resolve(JSON.stringify(record)); };
+        tx.onerror = () => { db.close(); reject(tx.error); };
+        tx.onabort = () => { db.close(); reject(tx.error); };
+      };
+    });
     const baseEvent = approved('event-base', 'fact-base', '100', []);
     const baseCase = { ...shell, events: [baseEvent] };
     const ledger = { schemaVersion: '1', reviews: [] };
@@ -492,11 +506,78 @@ test('Chrome publishes a reviewed disjoint-approval join through local API and P
       { baseUrl: api, accessToken: 'one' });
     const pendingAfterPublish = await repoB.prepareSync(shell.caseId);
     const joined = await repoB.loadCase(shell.caseId);
-    repoA.close(); repoB.close();
+    const joinedHeadResponse = await fetch(`${api}/v1/cases/${shell.caseId}`, {
+      headers: { Authorization: 'Bearer one' },
+    });
+    const joinedServerEtag = joinedHeadResponse.headers.get('etag');
+    await joinedHeadResponse.body?.cancel();
+
+    // A second pair of approvals starts from the already published join.
+    const sessionC = await unlockRecovery(created.recoveryEnvelope,
+      created.recoverySecret, accountId);
+    const repoC = await openLocalRepository({ dbName: `${dbName}-device-c`, session: sessionC,
+      recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
+      validateCase });
+    const branchD = { ...joined.case, events: [...joined.case.events,
+      approved('event-d', 'fact-d', '400', ['event-join'])] };
+    const branchE = { ...joined.case, events: [...joined.case.events,
+      approved('event-e', 'fact-e', '500', ['event-join'])] };
+    await repoB.commitReviewed({ case: branchD, ledger, revisionId: 'rev-d',
+      operationId: 'op-d', expectedLocalRevision: 'rev-joined',
+      serverRevision: 'rev-joined' });
+    await repoC.commitReviewed({ case: branchE, ledger, revisionId: 'rev-e',
+      operationId: 'op-e', expectedLocalRevision: null,
+      serverRevision: 'rev-joined' });
+    const secondWinner = await syncCase(repoC, shell.caseId,
+      { baseUrl: api, accessToken: 'one' });
+    const secondLoser = await syncCase(repoB, shell.caseId,
+      { baseUrl: api, accessToken: 'one' });
+    if (secondLoser.status !== 'conflict') throw new Error('expected second CAS conflict');
+    const secondPreview = await previewSyncConflict(repoB, shell.caseId, secondLoser);
+    const secondDigest = await digestDisjointApprovalCandidate(secondPreview);
+    const secondCommand = { caseId: secondPreview.caseId,
+      pendingOperationId: secondPreview.pendingOperationId,
+      pendingRevisionId: secondPreview.pendingRevisionId,
+      pendingManifestDigest: secondPreview.pendingManifestDigest,
+      pendingStepsDigest: secondPreview.pendingStepsDigest,
+      localCiphertextDigest: secondPreview.localCiphertextDigest,
+      localRevisionId: secondPreview.local.revisionId,
+      remoteRevisionId: secondPreview.remote.revisionId,
+      baseRevisionId: secondPreview.ancestor.branch.revisionId,
+      localHead: 'event-d', remoteHead: 'event-e',
+      localOnlyEventIds: ['event-d'], remoteOnlyEventIds: ['event-e'],
+      candidateDigest: secondDigest, eventId: 'event-join-2',
+      reviewId: 'review-join-2', recordedAt: '2026-10-05T13:00:00Z' };
+    await commitReviewedApprovalJoin(repoB, secondLoser, secondCommand,
+      'rev-joined-2', 'op-joined-2', validateCase);
+    const queuedJoin = await repoB.prepareSync(shell.caseId);
+    const queuedCase = await repoB.loadCase(shell.caseId);
+    const queuedCiphertext = await storedCiphertext();
+
+    // The remote head moves again before this reviewed join is published.
+    const branchF = { ...branchE, events: [...branchE.events,
+      approved('event-f', 'fact-f', '600', ['event-e'])] };
+    await repoC.commitReviewed({ case: branchF, ledger, revisionId: 'rev-f',
+      operationId: 'op-f', expectedLocalRevision: 'rev-e', serverRevision: 'rev-e' });
+    const remoteAdvance = await syncCase(repoC, shell.caseId,
+      { baseUrl: api, accessToken: 'one' });
+    const staleJoin = await syncCase(repoB, shell.caseId,
+      { baseUrl: api, accessToken: 'one' });
+    const queuedAfterConflict = await repoB.prepareSync(shell.caseId);
+    const localAfterConflict = await repoB.loadCase(shell.caseId);
+    const ciphertextAfterConflict = await storedCiphertext();
+    const advancedPreview = await previewSyncConflict(repoB, shell.caseId, staleJoin);
+    repoA.close(); repoB.close(); repoC.close();
     return { basePublished, winner, loserStatus: loser.status,
       previewHeads: [preview.local.heads, preview.remote.heads],
       committedLocally, pendingBeforePublish, joinedBeforePublish,
-      published, pendingAfterPublish, joined,
+      published, pendingAfterPublish, joined, joinedServerEtag,
+      secondWinner, secondLoserStatus: secondLoser.status,
+      queuedJoin, queuedCase, remoteAdvance, staleJoinStatus: staleJoin.status,
+      pendingPreserved: JSON.stringify(queuedAfterConflict) === JSON.stringify(queuedJoin),
+      casePreserved: JSON.stringify(localAfterConflict) === JSON.stringify(queuedCase),
+      ciphertextPreserved: ciphertextAfterConflict === queuedCiphertext,
+      advancedPreviewHeads: [advancedPreview.local.heads, advancedPreview.remote.heads],
       localSourceRetained: joined.case.proposals[0].rawValue === sentinel };
   }, { accountId: one.accountId, dbName, api, sentinel });
   assert.equal(journey.basePublished.status, 'committed');
@@ -511,14 +592,26 @@ test('Chrome publishes a reviewed disjoint-approval join through local API and P
     ['event-a', 'event-b', 'event-base', 'event-join']);
   assert.equal(journey.published.status, 'committed');
   assert.equal(journey.published.revisionId, 'rev-joined');
+  assert.equal(journey.joinedServerEtag, '"rev-joined"');
   assert.equal(journey.pendingAfterPublish.length, 0);
   assert.equal(journey.localSourceRetained, true);
   assert.deepEqual(journey.joined.case.events.at(-1).parents, ['event-a', 'event-b']);
+  assert.equal(journey.secondWinner.status, 'committed');
+  assert.equal(journey.secondLoserStatus, 'conflict');
+  assert.equal(journey.queuedJoin.length, 1);
+  assert.equal(journey.queuedJoin[0].operationId, 'op-joined-2');
+  assert.equal(journey.queuedJoin[0].expectedServerRevision, 'rev-e');
+  assert.equal(journey.remoteAdvance.status, 'committed');
+  assert.equal(journey.staleJoinStatus, 'conflict');
+  assert.equal(journey.pendingPreserved, true);
+  assert.equal(journey.casePreserved, true);
+  assert.equal(journey.ciphertextPreserved, true);
+  assert.deepEqual(journey.advancedPreviewHeads, [['event-join-2'], ['event-f']]);
   const head = await fetch(`${api}/v1/cases/case-joined-api`, {
     headers: { Authorization: 'Bearer one' },
   }).catch((error) => { throw new Error('joined journey head fetch failed', { cause: error }); });
   assert.equal(head.status, 200);
-  assert.equal(head.headers.get('etag'), '"rev-joined"');
+  assert.equal(head.headers.get('etag'), '"rev-f"');
   assert.equal((await head.text()).includes(sentinel), false);
   const otherHead = await fetch(`${api}/v1/cases/case-joined-api`, {
     headers: { Authorization: 'Bearer two' },
@@ -526,7 +619,7 @@ test('Chrome publishes a reviewed disjoint-approval join through local API and P
   assert.equal(otherHead.status, 404);
   const counts = scanSentinel(sentinel);
   assert.equal(counts.matches, 0);
-  assert.ok(counts.revisions >= 3);
+  assert.ok(counts.revisions >= 5);
   assert.ok(wireBodies.length > 0);
   assert.ok(wireBodies.every((found) => !found));
   assert.equal(logHasSentinel(), false);
@@ -538,4 +631,9 @@ test('Chrome publishes a reviewed disjoint-approval join through local API and P
     input: JSON.stringify({ schemaVersion: '1', operation: 'validate', case: journey.joined.case }),
     encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
   assert.equal(native.status, 0, native.stderr);
+  const secondNative = spawnSync(`${root}/engine/build/scryer-native`, [], {
+    input: JSON.stringify({ schemaVersion: '1', operation: 'validate',
+      case: journey.queuedCase.case }),
+    encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
+  assert.equal(secondNative.status, 0, secondNative.stderr);
 });

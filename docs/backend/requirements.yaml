@@ -1021,10 +1021,10 @@
         "tests/client/test_review.mjs — import review ID cannot collide with a branch-join review ID",
         "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — exact review-command bindings and joined native-valid candidate without a local write",
         "tests/browser/test_conflict_commit.mjs — atomic encrypted local replacement retains both branch events and refuses stale/quota/multi-pending cases",
-        "tests/sync/test_client_integration.mjs — competing encrypted browser branch preserved after server CAS loss, then joined and published under a reviewed remote-revision precondition"
+        "tests/sync/test_client_integration.mjs — competing encrypted browser branch preserved after server CAS loss, joined and published under a reviewed remote-revision precondition, then a second stale joined request preserved through another server-head advance"
       ],
       "evidence": [
-        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, encrypted historical-base candidate inspection, narrow disjoint-approval candidate, M8-6c join parser, M8-6d bound review command, M8-6e atomic local replacement, and M8-6f synthetic joined-case server publication pass; repeated remote-advance conflict and production identity/WASM paths remain open"
+        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, encrypted historical-base candidate inspection, narrow disjoint-approval candidate, M8-6c join parser, M8-6d bound review command, M8-6e atomic local replacement, M8-6f synthetic joined-case publication, and M8-6g second stale-head preservation pass; production identity/WASM paths and arbitrary conflict resolution remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1186,10 +1186,10 @@
         "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — explicit review command binds candidate and produces one validated joined head in memory",
         "tests/browser/test_conflict_commit.mjs — one reviewed joined case and new remote-CAS outbox survive reload while old pending operation disappears atomically",
         "tests/client/test_sync_transport.mjs — tagged historical base lookup and fail-closed malformed response",
-        "tests/sync/test_client_integration.mjs — Chrome, FastAPI, PostgreSQL, two identities, response loss, conflict, deletion, and reviewed joined-case publication"
+        "tests/sync/test_client_integration.mjs — Chrome, FastAPI, PostgreSQL, two identities, response loss, conflict, deletion, reviewed joined-case publication, and second remote-head advance preservation"
       ],
       "evidence": [
-        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; a narrow disjoint manual-approval candidate passes native validation; M8-6c adds the causal join parser, M8-6d binds an explicit review command, M8-6e atomically replaces one pending local branch, and M8-6f publishes the joined ciphertext through synthetic Chrome/API/PostgreSQL; real JWT/WASM-backed and human-reviewed user journeys remain open"
+        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; a narrow disjoint manual-approval candidate passes native validation; M8-6c adds the causal join parser, M8-6d binds an explicit review command, M8-6e atomically replaces one pending local branch, M8-6f publishes the joined ciphertext through synthetic Chrome/API/PostgreSQL, and M8-6g preserves a queued second join when the remote head advances again; real JWT/WASM-backed and human-reviewed user journeys remain open"
       ],
       "status": "IN_PROGRESS"
     },
