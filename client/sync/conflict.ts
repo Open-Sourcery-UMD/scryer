@@ -21,6 +21,7 @@ export type ConflictBranch = { revisionId: string; case: CaseV1;
   ledger: ImportLedger; heads: string[] };
 export type ConflictPreview = { caseId: string; pendingOperationId: string;
   pendingRevisionId: string; pendingManifestDigest: string;
+  pendingStepsDigest: string; localCiphertextDigest: string;
   pendingExpectedServerRevision: string | null;
   local: ConflictBranch; remote: ConflictBranch;
   ancestor: { status: 'not_requested' | 'unavailable' } |
@@ -97,17 +98,21 @@ export async function previewSyncConflict(repo: LocalRepository, caseId: string,
   let first;
   let local;
   let localDigest;
+  let pendingStepsDigest;
   try {
     first = (await repo.prepareSync(caseId))[0];
     if (!await matchesPending(first, conflict) || first?.caseId !== caseId) {
       throw new ConflictPreviewError('STALE_CONFLICT_PREVIEW');
     }
     localDigest = await repo.caseDigest(caseId);
+    pendingStepsDigest = await syncBodyDigest(JSON.stringify(first!.steps));
     local = await repo.loadCase(caseId);
   } catch {
     throw new ConflictPreviewError('STALE_CONFLICT_PREVIEW');
   }
-  if (!local || !localDigest) throw new ConflictPreviewError('STALE_CONFLICT_PREVIEW');
+  if (!local || !localDigest || !pendingStepsDigest) {
+    throw new ConflictPreviewError('STALE_CONFLICT_PREVIEW');
+  }
   const remotePackage = packageFromConflict(conflict.remote.ciphertextBody,
     repo.session.accountId, caseId, conflict.remote.revisionId);
   let remote;
@@ -149,12 +154,14 @@ export async function previewSyncConflict(repo: LocalRepository, caseId: string,
     currentDigest = await repo.caseDigest(caseId);
   } catch { throw new ConflictPreviewError('STALE_CONFLICT_PREVIEW'); }
   if (!await matchesPending(currentPending[0], conflict) ||
-      currentRevision !== local.revisionId || currentDigest !== localDigest) {
+      currentRevision !== local.revisionId || currentDigest !== localDigest ||
+      await syncBodyDigest(JSON.stringify(currentPending[0]!.steps)) !== pendingStepsDigest) {
     throw new ConflictPreviewError('STALE_CONFLICT_PREVIEW');
   }
   return { caseId, pendingOperationId: first!.operationId,
     pendingRevisionId: first!.revisionId,
     pendingManifestDigest: conflict.pendingManifestDigest,
+    pendingStepsDigest, localCiphertextDigest: localDigest,
     pendingExpectedServerRevision: conflict.pendingExpectedServerRevision,
     local: { revisionId: local.revisionId, case: local.case,
       ledger: local.ledger, heads: maximalHeads(local.case.events) },

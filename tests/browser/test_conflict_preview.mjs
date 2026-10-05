@@ -76,6 +76,8 @@ test('real browser previews both authenticated encrypted conflict branches witho
       caseId: preview.caseId, pendingOperationId: preview.pendingOperationId,
       pendingRevisionId: preview.pendingRevisionId,
       pendingManifestDigest: preview.pendingManifestDigest,
+      pendingStepsDigest: preview.pendingStepsDigest,
+      localCiphertextDigest: preview.localCiphertextDigest,
       localRevisionId: preview.local.revisionId, remoteRevisionId: preview.remote.revisionId,
       baseRevisionId: preview.ancestor.branch.revisionId,
       localHead: 'event-local', remoteHead: 'event-remote',

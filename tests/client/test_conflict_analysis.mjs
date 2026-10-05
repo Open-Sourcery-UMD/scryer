@@ -56,6 +56,7 @@ function branch(events, additions = {}) {
 function preview(local, remote) {
   return { caseId: 'case-analysis', pendingOperationId: 'op-analysis',
     pendingRevisionId: 'rev-local', pendingManifestDigest: '0'.repeat(64),
+    pendingStepsDigest: '1'.repeat(64), localCiphertextDigest: '2'.repeat(64),
     pendingExpectedServerRevision: 'rev-base', local, remote };
 }
 
@@ -252,7 +253,10 @@ test('explicit review command binds a disjoint approval candidate and produces o
   const digest = await conflictAnalysis.digestDisjointApprovalCandidate(input);
   const command = { caseId: input.caseId, pendingOperationId: input.pendingOperationId,
     pendingRevisionId: input.pendingRevisionId,
-    pendingManifestDigest: input.pendingManifestDigest, localRevisionId: local.revisionId,
+    pendingManifestDigest: input.pendingManifestDigest,
+    pendingStepsDigest: input.pendingStepsDigest,
+    localCiphertextDigest: input.localCiphertextDigest,
+    localRevisionId: local.revisionId,
     remoteRevisionId: remote.revisionId, baseRevisionId: baseBranch.revisionId,
     localHead: 'event-local', remoteHead: 'event-remote',
     localOnlyEventIds: ['event-local'], remoteOnlyEventIds: ['event-remote'],
@@ -282,6 +286,8 @@ test('explicit review command binds a disjoint approval candidate and produces o
   await reject(input, { ...command, baseRevisionId: 'rev-wrong' }, 'REVIEW_MISMATCH');
   await reject(input, { ...command, pendingOperationId: 'op-wrong' }, 'REVIEW_MISMATCH');
   await reject(input, { ...command, pendingManifestDigest: 'f'.repeat(64) }, 'REVIEW_MISMATCH');
+  await reject(input, { ...command, pendingStepsDigest: 'f'.repeat(64) }, 'REVIEW_MISMATCH');
+  await reject(input, { ...command, localCiphertextDigest: 'f'.repeat(64) }, 'REVIEW_MISMATCH');
   await reject(input, { ...command, localOnlyEventIds: [] }, 'REVIEW_MISMATCH');
   await reject(input, { ...command, localHead: 'event-base' }, 'AMBIGUOUS_HEADS');
   await reject(input, { ...command, reviewId: 'review-fact-local' }, 'DUPLICATE_ID');

@@ -26,7 +26,8 @@ export type ApprovalUnionProposal =
       'SOURCE_IDENTITY_COLLISION' | 'NO_BRANCH_DIVERGENCE' };
 export type ApprovalJoinReviewCommand = {
   caseId: string; pendingOperationId: string; pendingRevisionId: string;
-  pendingManifestDigest: string;
+  pendingManifestDigest: string; pendingStepsDigest: string;
+  localCiphertextDigest: string;
   localRevisionId: string; remoteRevisionId: string; baseRevisionId: string;
   localHead: string; remoteHead: string;
   localOnlyEventIds: string[]; remoteOnlyEventIds: string[];
@@ -278,6 +279,7 @@ export async function digestDisjointApprovalCandidate(preview: ConflictPreview):
 
 function validJoinCommand(command: ApprovalJoinReviewCommand): boolean {
   return exactKeys(command, ['caseId', 'pendingOperationId', 'pendingRevisionId', 'pendingManifestDigest',
+    'pendingStepsDigest', 'localCiphertextDigest',
     'localRevisionId', 'remoteRevisionId', 'baseRevisionId', 'localHead', 'remoteHead',
     'localOnlyEventIds', 'remoteOnlyEventIds', 'candidateDigest', 'eventId', 'reviewId',
     'recordedAt']) &&
@@ -285,6 +287,8 @@ function validJoinCommand(command: ApprovalJoinReviewCommand): boolean {
       command.remoteRevisionId, command.baseRevisionId, command.localHead,
       command.remoteHead, command.eventId, command.reviewId].every(validId) &&
     /^[0-9a-f]{64}$/.test(command.pendingManifestDigest) &&
+    /^[0-9a-f]{64}$/.test(command.pendingStepsDigest) &&
+    /^[0-9a-f]{64}$/.test(command.localCiphertextDigest) &&
     /^[0-9a-f]{64}$/.test(command.candidateDigest) && validInstant(command.recordedAt) &&
     Array.isArray(command.localOnlyEventIds) && Array.isArray(command.remoteOnlyEventIds) &&
     command.localOnlyEventIds.length <= 200_000 &&
@@ -307,6 +311,8 @@ export async function prepareReviewedApprovalJoin(preview: ConflictPreview,
       command.pendingOperationId !== preview.pendingOperationId ||
       command.pendingRevisionId !== preview.pendingRevisionId ||
       command.pendingManifestDigest !== preview.pendingManifestDigest ||
+      command.pendingStepsDigest !== preview.pendingStepsDigest ||
+      command.localCiphertextDigest !== preview.localCiphertextDigest ||
       command.localRevisionId !== preview.local.revisionId ||
       command.remoteRevisionId !== preview.remote.revisionId ||
       command.baseRevisionId !== preview.ancestor.branch.revisionId ||

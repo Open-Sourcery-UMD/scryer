@@ -1019,10 +1019,11 @@
         "tests/reference/test_model.py and tests/engine/test_cli.py — explicit causal join of independent approval branches preserves both without overwriting",
         "tests/client/test_review.mjs — import review ID cannot collide with a branch-join review ID",
         "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — exact review-command bindings and joined native-valid candidate without a local write",
+        "tests/browser/test_conflict_commit.mjs — atomic encrypted local replacement retains both branch events and refuses stale/quota/multi-pending cases",
         "tests/sync/test_client_integration.mjs — competing encrypted browser branch preserved after server CAS loss"
       ],
       "evidence": [
-        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, encrypted historical-base candidate inspection, narrow read-only disjoint-approval candidate, M8-6c nonmonetary join parser, and M8-6d in-memory explicit review command pass; reviewed atomic remote conflict resolution remains open"
+        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, encrypted historical-base candidate inspection, narrow read-only disjoint-approval candidate, M8-6c join parser, M8-6d bound review command, and M8-6e atomic local replacement pass; joined-case server publication remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1182,11 +1183,12 @@
         "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — candidate union of disjoint manual approvals requires review and does not mutate the pending branch",
         "tests/engine/test_cli.py — independently branched approvals have one joined current head without changing their amounts",
         "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — explicit review command binds candidate and produces one validated joined head in memory",
+        "tests/browser/test_conflict_commit.mjs — one reviewed joined case and new remote-CAS outbox survive reload while old pending operation disappears atomically",
         "tests/client/test_sync_transport.mjs — tagged historical base lookup and fail-closed malformed response",
         "tests/sync/test_client_integration.mjs — Chrome, FastAPI, PostgreSQL, two identities, response loss, conflict, deletion"
       ],
       "evidence": [
-        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; a narrow read-only candidate for disjoint manual approvals passes native validation; M8-6c adds the nonmonetary causal join parser and M8-6d binds an explicit in-memory review command to the candidate; synthetic Chrome/API/PostgreSQL integration previews both the returned conflict head and a retained encrypted ancestor candidate; atomic reviewed publish and real JWT/WASM-backed user journey remain open"
+        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; a narrow disjoint manual-approval candidate passes native validation; M8-6c adds the causal join parser, M8-6d binds an explicit review command, and M8-6e atomically replaces one pending local branch; synthetic Chrome/API/PostgreSQL integration previews both the returned conflict head and a retained encrypted ancestor candidate; joined-case server publication and real JWT/WASM-backed user journey remain open"
       ],
       "status": "IN_PROGRESS"
     },

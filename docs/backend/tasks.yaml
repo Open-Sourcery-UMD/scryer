@@ -690,6 +690,7 @@
         "Headless and Chrome read-only candidate-base retention analysis for exact event payloads, metadata prefixes, and review-ledger prefixes",
         "Headless and Chrome read-only union candidate for disjoint manual approvals; refuse conflicting IDs, sources, metadata, corrections, and match decisions; require review before any write",
         "Headless and Chrome explicit join-review command binds the complete candidate digest, pending identity, branch revisions and heads; builds one nonmonetary join event in memory without writing the outbox",
+        "Chrome atomic reviewed conflict replacement: exact pending bytes and case digest checked again in IndexedDB, old pending operation replaced, both parent histories retained after reload, remote revision used as server CAS precondition, and failure leaves prior state intact",
         "Native and Python resolve_branches event parity: one joined head over independent approvals, strict two-parent/review-ID validation, and unresolved correction contradiction",
         "Headless import preflight refuses reuse of a branch-join review ID",
         "Synthetic plaintext sentinel and approved bank amount through Chrome recovery and conflicting branches; check browser API bodies, HTTP ciphertext, loopback logs, and disposable database text/bytea/JSON columns",
@@ -698,7 +699,7 @@
         "RC-47"
       ],
       "command": "cd client && npm run typecheck && npm test && SCRYER_BROWSER_BIN=<local Chrome> npm run test:browser; from repository root, SCRYER_TEST_PG_SOCKET=<private local PostgreSQL socket> SCRYER_BROWSER_BIN=<local Chrome> node --test tests/sync/test_client_integration.mjs",
-      "expected": "Synthetic offline chain and browser/API/PostgreSQL path pass; branch-join parser and in-memory explicit review command are locally verified; atomic reviewed writer, JWT/WASM-backed journey, and full conflict publication remain open",
+      "expected": "Synthetic offline chain and browser/API/PostgreSQL path pass; narrow branch-join parser, explicit review command, and atomic local replacement are locally verified; server publication of a joined case, JWT/WASM-backed journey, and full conflict resolution remain open",
       "risk": "CRITICAL",
       "done": "Multi-device and failure matrix pass locally."
     },

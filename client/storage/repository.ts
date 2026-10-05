@@ -16,6 +16,12 @@ export type PreparedSync = { operationId: string; caseId: string; revisionId: st
 export type ReviewedCommit = { case: CaseV1; ledger: ImportLedger; revisionId: string;
   operationId: string; expectedLocalRevision: string | null; serverRevision: string | null;
   keyGeneration?: number };
+export type ConflictResolutionCommit = { case: CaseV1; ledger: ImportLedger;
+  revisionId: string; operationId: string; expectedLocalRevision: string;
+  expectedLocalDigest: string; expectedPendingOperationId: string;
+  expectedPendingRevisionId: string; expectedPendingServerRevision: string;
+  expectedPendingManifestDigest: string; expectedPendingStepsDigest: string;
+  serverRevision: string };
 
 type AccountRecord = { accountId: string; recoveryEnvelope: RecoveryEnvelopeV1;
   rootProof: string; deviceId?: string };
@@ -736,6 +742,140 @@ export class LocalRepository {
         };
       };
     });
+  }
+
+  async commitConflictResolution(input: ConflictResolutionCommit): Promise<{
+    revisionId: string; packageId: string; digest: string }> {
+    const db = this.db();
+    let copied: ConflictResolutionCommit;
+    try { copied = structuredClone(input); }
+    catch { throw new StorageError('INVALID_CONFLICT_COMMIT'); }
+    if (!exactKeys(copied, ['case', 'ledger', 'revisionId', 'operationId',
+      'expectedLocalRevision', 'expectedLocalDigest', 'expectedPendingOperationId',
+      'expectedPendingRevisionId', 'expectedPendingServerRevision',
+      'expectedPendingManifestDigest', 'expectedPendingStepsDigest', 'serverRevision']) ||
+        !validId(copied.case?.caseId) || !validId(copied.revisionId) ||
+        !validId(copied.operationId) || !validId(copied.expectedLocalRevision) ||
+        !validId(copied.expectedPendingOperationId) ||
+        !validId(copied.expectedPendingRevisionId) ||
+        !validId(copied.expectedPendingServerRevision) || !validId(copied.serverRevision) ||
+        ![copied.expectedLocalDigest, copied.expectedPendingManifestDigest,
+          copied.expectedPendingStepsDigest].every((value) => HEX_256.test(value)) ||
+        copied.revisionId === copied.expectedLocalRevision ||
+        copied.revisionId === copied.serverRevision ||
+        copied.operationId === copied.expectedPendingOperationId ||
+        copied.expectedPendingRevisionId !== copied.expectedLocalRevision) {
+      throw new StorageError('INVALID_CONFLICT_COMMIT');
+    }
+    const caseId = copied.case.caseId;
+    const payload = { schemaVersion: '1', case: copied.case, ledger: copied.ledger };
+    const plaintext = checkedStringify(payload);
+    const bytes = utf8Bytes(plaintext);
+    const size = bytes.length;
+    bytes.fill(0);
+    if (size < 1 || size > MAX_CASE_BYTES) throw new StorageError('CASE_TOO_LARGE');
+    await validateStored(parseStored(plaintext), caseId, this.#validateCase);
+    const current = await this.loadCase(caseId);
+    if (!current || current.revisionId !== copied.expectedLocalRevision ||
+        await this.caseDigest(caseId) !== copied.expectedLocalDigest) {
+      throw new StorageError('STALE_LOCAL_REVISION');
+    }
+    const pending = await this.prepareSync(caseId);
+    if (pending.length !== 1 || pending[0]?.operationId !== copied.expectedPendingOperationId ||
+        pending[0].revisionId !== copied.expectedPendingRevisionId ||
+        pending[0].expectedServerRevision !== copied.expectedPendingServerRevision ||
+        pending[0].steps.at(-1)?.kind !== 'manifest' ||
+        await digestText(pending[0].steps.at(-1)!.body) !== copied.expectedPendingManifestDigest ||
+        await digestText(checkedStringify(pending[0].steps)) !== copied.expectedPendingStepsDigest) {
+      throw new StorageError('STALE_CONFLICT');
+    }
+    const expectedSteps = checkedStringify(pending[0].steps);
+    const generation = current.keyGeneration;
+    const count = Math.ceil(size / MAX_CHUNK_BYTES);
+    if (count < 1 || count > MAX_CHUNKS) throw new StorageError('CASE_TOO_LARGE');
+    const reservedDeviceId = this.session.deviceId;
+    await this.reserveEncryptionsForDevice(caseId, generation, reservedDeviceId, count);
+    const pkg = await sealCase(this.session, caseId, copied.revisionId, plaintext, generation);
+    if (pkg.deviceId !== reservedDeviceId) throw new StorageError('STALE_ACCOUNT_ROOT');
+    const digest = await digestText(checkedStringify(pkg));
+    const steps = await prepareSteps(pkg, copied.operationId, digest);
+    const accountId = this.session.accountId;
+    const expectedRootProof = await this.rootProof();
+    const caseKey = [accountId, caseId];
+    const operationKey = [accountId, copied.operationId];
+    const oldOperationKey = [accountId, copied.expectedPendingOperationId];
+    return transactionResult(db, ['accounts', 'cases', 'anchors', 'outbox'],
+      'readwrite', (tx, finish, fail) => {
+        const accounts = tx.objectStore('accounts');
+        const cases = tx.objectStore('cases');
+        const anchors = tx.objectStore('anchors');
+        const outbox = tx.objectStore('outbox');
+        const accountRequest = accounts.get(accountId);
+        accountRequest.onsuccess = () => {
+          const account = accountRequest.result as AccountRecord | undefined;
+          if (!account || account.rootProof !== expectedRootProof ||
+              account.deviceId !== reservedDeviceId) {
+            fail(new StorageError('STALE_ACCOUNT_ROOT')); return;
+          }
+          const caseRequest = cases.get(caseKey);
+          caseRequest.onsuccess = () => {
+            const prior = caseRequest.result as CaseRecord | undefined;
+            if (!prior || prior.revisionId !== copied.expectedLocalRevision ||
+                prior.digest !== copied.expectedLocalDigest ||
+                prior.keyGeneration !== generation ||
+                !Number.isSafeInteger(prior.localSequence) || prior.localSequence < 1) {
+              fail(new StorageError('STALE_LOCAL_REVISION')); return;
+            }
+            const anchorRequest = anchors.get(caseKey);
+            anchorRequest.onsuccess = () => {
+              const priorAnchor = anchorRequest.result as AnchorRecord | undefined;
+              if (!priorAnchor || priorAnchor.revisionId !== prior.revisionId ||
+                  priorAnchor.digest !== prior.digest) {
+                fail(new StorageError('CORRUPT_RECORD')); return;
+              }
+              const pendingRequest = outbox.index('byCase').getAll([accountId, caseId]);
+              pendingRequest.onsuccess = () => {
+                const live = pendingRequest.result as OutboxRecord[];
+                const old = live[0];
+                if (live.length !== 1 || !old || old.accountId !== accountId ||
+                    old.caseId !== caseId ||
+                    old.operationId !== copied.expectedPendingOperationId ||
+                    old.revisionId !== copied.expectedPendingRevisionId ||
+                    old.expectedServerRevision !== copied.expectedPendingServerRevision ||
+                    old.localSequence !== prior.localSequence ||
+                    checkedStringify(old.steps) !== expectedSteps) {
+                  fail(new StorageError('STALE_CONFLICT')); return;
+                }
+                const newOperationRequest = outbox.get(operationKey);
+                newOperationRequest.onsuccess = () => {
+                  if (newOperationRequest.result !== undefined) {
+                    fail(new StorageError('OPERATION_CONFLICT')); return;
+                  }
+                  const localSequence = prior.localSequence + 1;
+                  if (!Number.isSafeInteger(localSequence)) {
+                    fail(new StorageError('CORRUPT_RECORD')); return;
+                  }
+                  const nextCase: CaseRecord = { accountId, caseId,
+                    revisionId: copied.revisionId, keyGeneration: generation,
+                    localSequence, package: pkg, digest };
+                  const nextAnchor: AnchorRecord = { accountId, caseId,
+                    revisionId: copied.revisionId, digest };
+                  const nextOutbox: OutboxRecord = { accountId, caseId,
+                    operationId: copied.operationId, revisionId: copied.revisionId,
+                    expectedServerRevision: copied.serverRevision, localSequence, steps };
+                  try {
+                    cases.put(nextCase);
+                    anchors.put(nextAnchor);
+                    outbox.delete(oldOperationKey);
+                    outbox.put(nextOutbox);
+                  } catch (error) { fail(storageFault(error)); return; }
+                  finish({ revisionId: copied.revisionId, packageId: pkg.packageId, digest });
+                };
+              };
+            };
+          };
+        };
+      });
   }
 
   async loadCase(caseId: string): Promise<LoadedCase | null> {
