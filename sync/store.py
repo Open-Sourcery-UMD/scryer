@@ -8,6 +8,7 @@ transaction successfully before returning a receipt to the browser.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 import hashlib
 import json
 import re
@@ -39,6 +40,13 @@ class Head:
     revision_id: str
     package_digest: str
     ciphertext: bytes
+
+
+@dataclass(frozen=True)
+class CaseSummary:
+    case_id: str
+    head_revision_id: str
+    updated_at: datetime
 
 
 def _id(value: str) -> str:
@@ -235,7 +243,7 @@ def commit_manifest(conn: Connection, account_id: str, idempotency_key: str,
                  (account_id, manifest.case_id, manifest.revision_id, expected,
                   package, manifest.package_digest,
                   sum(chunk.cipher_bytes + 28 for chunk in chunks)))
-    conn.execute("UPDATE scryer.cases SET head_revision=%s, updated_at=now() "
+    conn.execute("UPDATE scryer.cases SET head_revision=%s, updated_at=clock_timestamp() "
                  "WHERE account_id=%s AND case_id=%s",
                  (manifest.revision_id, account_id, manifest.case_id))
     conn.execute("DELETE FROM scryer.staged_chunks WHERE account_id=%s AND case_id=%s "
@@ -268,6 +276,53 @@ def get_head(conn: Connection, account_id: str, case_id: str) -> Head | None:
     if row is None or hashlib.sha256(row[1]).hexdigest() != row[0]:
         raise StoreError("CORRUPT_RECORD", 500)
     return Head(case_id, case[0], row[0], row[1])
+
+
+def get_revision(conn: Connection, account_id: str, case_id: str,
+                 revision_id: str) -> Head | None:
+    _transaction(conn)
+    account_id, case_id, revision_id = _id(account_id), _id(case_id), _id(revision_id)
+    _lock_account(conn, account_id)
+    active = conn.execute("SELECT 1 FROM scryer.cases WHERE account_id=%s "
+                          "AND case_id=%s AND deleted_at IS NULL",
+                          (account_id, case_id)).fetchone()
+    if active is None:
+        return None
+    row = conn.execute("SELECT package_digest, ciphertext FROM scryer.case_revisions "
+                       "WHERE account_id=%s AND case_id=%s AND revision_id=%s",
+                       (account_id, case_id, revision_id)).fetchone()
+    if row is None:
+        return None
+    if hashlib.sha256(row[1]).hexdigest() != row[0]:
+        raise StoreError("CORRUPT_RECORD", 500)
+    return Head(case_id, revision_id, row[0], row[1])
+
+
+def list_cases(conn: Connection, account_id: str, limit: int,
+               after: tuple[datetime, str] | None = None) -> tuple[list[CaseSummary], bool]:
+    _transaction(conn)
+    account_id = _id(account_id)
+    if type(limit) is not int or not 1 <= limit <= 200:
+        raise StoreError("INVALID_LIMIT", 400)
+    _lock_account(conn, account_id)
+    query = ("SELECT c.case_id, c.head_revision, c.updated_at, "
+             "EXISTS (SELECT 1 FROM scryer.case_revisions r WHERE "
+             "r.account_id=c.account_id AND r.case_id=c.case_id AND "
+             "r.revision_id=c.head_revision) FROM scryer.cases c "
+             "WHERE c.account_id=%s AND c.deleted_at IS NULL ")
+    parameters = [account_id]
+    if after is not None:
+        timestamp, case_id = after
+        _id(case_id)
+        query += "AND (c.updated_at, c.case_id) < (%s, %s) "
+        parameters.extend((timestamp, case_id))
+    query += "ORDER BY c.updated_at DESC, c.case_id DESC LIMIT %s"
+    parameters.append(limit + 1)
+    rows = conn.execute(query, parameters).fetchall()
+    page = rows[:limit]
+    if any(not head or not exists for _case_id, head, _updated, exists in page):
+        raise StoreError("CORRUPT_RECORD", 500)
+    return ([CaseSummary(*row[:3]) for row in page], len(rows) > limit)
 
 
 def delete_case(conn: Connection, account_id: str, case_id: str,

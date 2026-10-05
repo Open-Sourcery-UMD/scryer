@@ -967,13 +967,15 @@
         "tests/sync/test_store.py — atomic ciphertext publication, CAS, idempotency, quota, deletion, and tenant isolation",
         "tests/sync/test_api.py — HTTP behavior with unit-only verifier and real PostgreSQL",
         "tests/client/test_sync_transport.mjs — exact saved-byte requests, account/receipt validation, retry and conflict outcomes",
-        "tests/sync/test_client_integration.mjs — Chrome/FastAPI/PostgreSQL ciphertext journey with synthetic verifier"
+        "tests/sync/test_client_integration.mjs — Chrome/FastAPI/PostgreSQL ciphertext journey with synthetic verifier",
+        "tests/sync/test_api.py — tenant-scoped keyset listing, historical ciphertext read, deletion and corruption refusal",
+        "tests/sync/test_pagination.py — cursor expiry, exact timestamp, tenant binding, and tamper refusal"
       ],
       "evidence": [
         "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass",
         "M7-2 six direct app-role RLS tests and four migration tests pass on fresh private PostgreSQL 15.11",
         "M7-3 thirteen PostgreSQL store tests pass; OIDC/HTTP sync remain open",
-        "M7-4a 38 sync tests pass on PostgreSQL 15.11 and 16.15; real Keycloak PKCE passes separately; M8 browser/API/PostgreSQL synthetic journey passes; JWT-to-API integration remains blocked"
+        "M7-4a HTTP boundary and M7-5 ciphertext read paths pass 41 sync tests on PostgreSQL 15.11 and 16.15; real Keycloak PKCE passes separately; M8 browser/API/PostgreSQL synthetic journey passes; JWT-to-API integration remains blocked"
       ],
       "status": "IN_PROGRESS"
     },

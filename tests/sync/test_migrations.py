@@ -37,12 +37,14 @@ class MigrationTests(unittest.TestCase):
     def test_fresh_apply_is_recorded_and_repeated_apply_is_noop(self):
         with self.connect() as conn:
             self.assertEqual(apply_migrations(conn, MIGRATIONS),
-                             ["0001_sync.sql", "0002_account_identity.sql"])
+                             ["0001_sync.sql", "0002_account_identity.sql",
+                              "0003_case_listing.sql"])
             self.assertEqual(apply_migrations(conn, MIGRATIONS), [])
             rows = conn.execute("SELECT filename, checksum FROM "
                                 "scryer_private.schema_migrations").fetchall()
             self.assertEqual([row[0] for row in rows],
-                             ["0001_sync.sql", "0002_account_identity.sql"])
+                             ["0001_sync.sql", "0002_account_identity.sql",
+                              "0003_case_listing.sql"])
             self.assertEqual(len(rows[0][1]), 64)
 
     def test_changed_applied_migration_is_rejected(self):
@@ -62,7 +64,8 @@ class MigrationTests(unittest.TestCase):
                 apply_migrations(conn, Path(temp))
             self.assertIsNone(conn.execute("SELECT to_regnamespace('scryer')").fetchone()[0])
             self.assertEqual(apply_migrations(conn, MIGRATIONS),
-                             ["0001_sync.sql", "0002_account_identity.sql"])
+                             ["0001_sync.sql", "0002_account_identity.sql",
+                              "0003_case_listing.sql"])
 
     def test_existing_duplicate_identity_blocks_forward_migration_without_partial_apply(self):
         with self.connect() as conn, tempfile.TemporaryDirectory() as temp:

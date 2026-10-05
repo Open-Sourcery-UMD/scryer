@@ -21,9 +21,11 @@ from starlette.concurrency import run_in_threadpool
 
 from .auth import TokenVerifier, VerifiedIdentity, derive_account_id
 from .db_context import begin_tenant_transaction
+from .pagination import CaseCursorCodec, CursorError
 from .protocol import (CHUNK_BODY_BYTES, MANIFEST_BODY_BYTES, ID, ProtocolError,
                        parse_chunk, parse_manifest)
-from .store import StoreError, commit_manifest, delete_case, get_head, stage_chunk
+from .store import (StoreError, commit_manifest, delete_case, get_head,
+                    get_revision, list_cases, stage_chunk)
 
 
 HTTP_BODY_BYTES = 12 * 1024 * 1024
@@ -92,6 +94,16 @@ class AccountStatus(StrictWireModel):
     capabilities: list[str]
 
 
+class CaseListItem(StrictWireModel):
+    caseId: str
+    headRevisionId: str
+
+
+class CaseListResponse(StrictWireModel):
+    cases: list[CaseListItem]
+    nextCursor: str | None
+
+
 class ChunkReceipt(StrictWireModel):
     kind: Literal["chunk"]
     caseId: str
@@ -126,7 +138,7 @@ class ErrorEnvelope(StrictWireModel):
 
 
 ERROR_RESPONSES = {status: {"model": ErrorEnvelope} for status in
-                   (400, 401, 403, 404, 409, 412, 413, 415, 428, 503)}
+                   (400, 401, 403, 404, 409, 412, 413, 415, 428, 500, 503)}
 IDEMPOTENCY_HEADER = {"name": "Idempotency-Key", "in": "header", "required": True,
                       "schema": {"type": "string", "minLength": 1, "maxLength": 160}}
 
@@ -161,6 +173,7 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
     if any(not origin.startswith(("https://", "http://127.0.0.1:", "http://localhost:"))
            for origin in allowed_origins):
         raise ValueError("INVALID_CORS_ORIGIN")
+    cursor_codec = CaseCursorCodec(account_key)
     app = FastAPI(title="Scryer Ciphertext Sync API", version="1.0.0",
                   docs_url=None, redoc_url=None)
     app.add_middleware(CORSMiddleware, allow_origins=list(allowed_origins),
@@ -306,6 +319,9 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
                         "conname='accounts_provider_identity_unique' AND "
                         "conrelid='scryer.accounts'::regclass").fetchone():
                         return error_response(request, "STORAGE_UNAVAILABLE", 503)
+                    if conn.execute("SELECT to_regclass('scryer.cases_live_updated_keyset')") \
+                            .fetchone()[0] is None:
+                        return error_response(request, "STORAGE_UNAVAILABLE", 503)
         except psycopg.Error:
             return error_response(request, "STORAGE_UNAVAILABLE", 503)
         return {"status": "ready"}
@@ -317,6 +333,40 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
                       {"accountId": account_id, "status": "active", "usedBytes": used,
                        "quotaBytes": 256 * 1024 * 1024,
                        "capabilities": ["ciphertext-sync-v1"]})
+
+    @app.get("/v1/cases", response_model=CaseListResponse,
+             responses=ERROR_RESPONSES,
+             openapi_extra={"parameters": [
+                 {"name": "limit", "in": "query", "required": False,
+                  "schema": {"type": "integer", "minimum": 1, "maximum": 200,
+                             "default": 50}},
+                 {"name": "cursor", "in": "query", "required": False,
+                  "schema": {"type": "string", "maxLength": 512}}
+             ]})
+    def cases(request: Request):
+        verified = identity(request)
+        params = list(request.query_params.multi_items())
+        if any(key not in ("limit", "cursor") for key, _value in params) or \
+                sum(key == "limit" for key, _value in params) > 1 or \
+                sum(key == "cursor" for key, _value in params) > 1:
+            raise ApiError("INVALID_QUERY", 400)
+        raw_limit = request.query_params.get("limit", "50")
+        if not re.fullmatch(r"[1-9][0-9]{0,2}", raw_limit) or int(raw_limit) > 200:
+            raise ApiError("INVALID_LIMIT", 400)
+        limit = int(raw_limit)
+        account_id = derive_account_id(verified.issuer, verified.subject, account_key)
+        raw_cursor = request.query_params.get("cursor")
+        try:
+            after = cursor_codec.decode(raw_cursor, account_id) if raw_cursor is not None else None
+        except CursorError:
+            raise ApiError("INVALID_CURSOR", 400) from None
+        page, has_more = tenant(verified, lambda conn, account_id, _used:
+                                list_cases(conn, account_id, limit, after))
+        next_cursor = cursor_codec.encode(account_id, page[-1].updated_at,
+                                          page[-1].case_id) if has_more else None
+        return {"cases": [{"caseId": item.case_id,
+                           "headRevisionId": item.head_revision_id} for item in page],
+                "nextCursor": next_cursor}
 
     @app.post("/v1/cases/{case_id}/chunks", status_code=202,
               response_model=ChunkReceipt, responses=ERROR_RESPONSES,
@@ -365,6 +415,19 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
         case_id = validated_case_id(case_id)
         found = tenant(verified, lambda conn, account_id, _used:
                        get_head(conn, account_id, case_id))
+        if found is None:
+            raise ApiError("CASE_NOT_FOUND", 404)
+        return Response(content=found.ciphertext, media_type="application/json",
+                        headers={"ETag": f'"{found.revision_id}"'})
+
+    @app.get("/v1/cases/{case_id}/revisions/{revision_id}", response_class=Response,
+             responses={200: {"model": CipherPackage}, **ERROR_RESPONSES})
+    def historical_revision(request: Request, case_id: str, revision_id: str):
+        verified = identity(request)
+        case_id = validated_case_id(case_id)
+        revision_id = validated_case_id(revision_id)
+        found = tenant(verified, lambda conn, account_id, _used:
+                       get_revision(conn, account_id, case_id, revision_id))
         if found is None:
             raise ApiError("CASE_NOT_FOUND", 404)
         return Response(content=found.ciphertext, media_type="application/json",

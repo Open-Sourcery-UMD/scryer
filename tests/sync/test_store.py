@@ -154,6 +154,24 @@ class StoreTests(unittest.TestCase):
         with self.admin() as admin:
             self.assertEqual(admin.execute("SELECT count(*) FROM scryer.case_revisions").fetchone()[0], 1)
 
+    def test_case_sort_timestamp_reflects_publication_after_transaction_start(self):
+        early_chunk, early_manifest, _ = prepared(case_id="case-early")
+        late_chunk, late_manifest, _ = prepared(case_id="case-late")
+        self.stage(early_chunk, "sort:early:chunk")
+        self.stage(late_chunk, "sort:late:chunk")
+        with app_connect(SOCKET, self.dbname) as stale:
+            with stale.transaction():
+                begin_tenant_transaction(stale, "acct-a", self.key)
+                stale.execute("SELECT now()")
+                self.commit(early_manifest, "*", "sort:early:manifest")
+                stale.execute("SELECT pg_sleep(0.01)")
+                commit_manifest(stale, "acct-a", "sort:late:manifest", late_manifest, "*")
+        with self.admin() as admin:
+            rows = admin.execute("SELECT case_id, updated_at FROM scryer.cases "
+                                 "WHERE account_id='acct-a'").fetchall()
+        updated = dict(rows)
+        self.assertGreater(updated["case-late"], updated["case-early"])
+
     def test_stale_and_absent_head_preconditions_preserve_head(self):
         chunk, manifest, _ = prepared()
         self.stage(chunk)

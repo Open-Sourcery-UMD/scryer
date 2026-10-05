@@ -39,7 +39,7 @@ class FixtureVerifier:
             return VerifiedIdentity(ISSUER, "subject-one", "other-api")
         if token == "invalid-subject":
             return VerifiedIdentity(ISSUER, "", AUDIENCE)
-        if token not in ("one", "two"):
+        if token not in ("one", "two", "three"):
             raise ValueError("INVALID_TOKEN")
         return VerifiedIdentity(ISSUER, f"subject-{token}", AUDIENCE)
 
@@ -112,7 +112,18 @@ class ApiTests(unittest.TestCase):
         self.assertNotEqual(self.account_id("one"), self.account_id("two"))
         paths = self.client.get("/openapi.json").json()["paths"]
         self.assertIn("/v1/account", paths)
+        self.assertIn("/v1/cases", paths)
         self.assertIn("/v1/cases/{case_id}/revisions", paths)
+        self.assertIn("/v1/cases/{case_id}/revisions/{revision_id}", paths)
+        self.assertIn("200", paths["/v1/cases"]["get"]["responses"])
+        self.assertIn("CaseListResponse", str(paths["/v1/cases"]["get"]["responses"]["200"]))
+        list_parameters = {parameter["name"]: parameter for parameter in
+                           paths["/v1/cases"]["get"]["parameters"]}
+        self.assertEqual(set(list_parameters), {"limit", "cursor"})
+        self.assertEqual(list_parameters["limit"]["schema"]["default"], 50)
+        self.assertEqual(list_parameters["limit"]["schema"]["minimum"], 1)
+        self.assertEqual(list_parameters["limit"]["schema"]["maximum"], 200)
+        self.assertFalse(list_parameters["cursor"]["required"])
         chunk_operation = paths["/v1/cases/{case_id}/chunks"]["post"]
         self.assertIn("application/json", chunk_operation["requestBody"]["content"])
         self.assertIn("202", chunk_operation["responses"])
@@ -245,6 +256,15 @@ class ApiTests(unittest.TestCase):
             account_key=self.account_key, issuer=ISSUER, audience=AUDIENCE)
         with TestClient(wrong_key_app) as client:
             self.assertEqual(client.get("/health/ready").status_code, 503)
+        with psycopg.connect(host=SOCKET, dbname=self.dbname, user=ADMIN) as admin:
+            admin.execute("DROP INDEX scryer.cases_live_updated_keyset")
+        try:
+            self.assertEqual(self.client.get("/health/ready").status_code, 503)
+        finally:
+            with psycopg.connect(host=SOCKET, dbname=self.dbname, user=ADMIN) as admin:
+                admin.execute("CREATE INDEX cases_live_updated_keyset ON scryer.cases "
+                              "(account_id, updated_at DESC, case_id DESC) "
+                              "WHERE deleted_at IS NULL")
 
     def test_delete_body_and_extreme_content_length_are_typed_errors(self):
         nonempty = self.request("DELETE", "/v1/cases/case-never",
@@ -284,6 +304,100 @@ class ApiTests(unittest.TestCase):
                 finally:
                     admin.rollback()
                 self.assertEqual(blocked_write.result(timeout=5).status_code, 202)
+
+    def test_case_listing_uses_tenant_bound_cursor_and_historical_reads(self):
+        account = self.account_id("three")
+
+        def mine(method, path, **kwargs):
+            return self.request(method, path, token="three", **kwargs)
+
+        mine("GET", "/v1/account")
+        self.request("GET", "/v1/account", token="two")
+        original_packages = {}
+        for case_id in ("case-list-a", "case-list-b", "case-list-c"):
+            chunk, manifest, package = prepared(case_id=case_id, account_id=account)
+            original_packages[case_id] = package
+            self.assertEqual(mine("POST", f"/v1/cases/{case_id}/chunks",
+                content=chunk, headers={"Content-Type": "application/json",
+                                        "Idempotency-Key": f"list:{case_id}:chunk"}).status_code, 202)
+            self.assertEqual(mine("POST", f"/v1/cases/{case_id}/revisions",
+                content=manifest, headers={"Content-Type": "application/json",
+                    "Idempotency-Key": f"list:{case_id}:manifest",
+                    "If-None-Match": "*"}).status_code, 201)
+        with psycopg.connect(host=SOCKET, dbname=self.dbname, user=ADMIN) as admin:
+            admin.execute("UPDATE scryer.cases SET updated_at='2026-10-05 12:00:00+00' "
+                          "WHERE account_id=%s", (account,))
+        page_one = mine("GET", "/v1/cases?limit=2")
+        self.assertEqual(page_one.status_code, 200, page_one.text)
+        self.assertEqual(len(page_one.json()["cases"]), 2)
+        cursor = page_one.json()["nextCursor"]
+        self.assertIsInstance(cursor, str)
+        page_two = mine("GET", f"/v1/cases?limit=2&cursor={cursor}")
+        self.assertEqual(page_two.status_code, 200, page_two.text)
+        self.assertEqual(len(page_two.json()["cases"]), 1)
+        self.assertIsNone(page_two.json()["nextCursor"])
+        listed = page_one.json()["cases"] + page_two.json()["cases"]
+        self.assertEqual([item["caseId"] for item in listed],
+                         ["case-list-c", "case-list-b", "case-list-a"])
+        self.assertEqual({item["caseId"] for item in listed}, set(original_packages))
+        self.assertTrue(all(item["headRevisionId"] == "rev-one" for item in listed))
+        with psycopg.connect(host=SOCKET, dbname=self.dbname, user=ADMIN) as admin:
+            admin.execute("UPDATE scryer.cases SET head_revision='rev-missing' "
+                          "WHERE account_id=%s AND case_id='case-list-b'", (account,))
+        try:
+            self.assertEqual(mine("GET", "/v1/cases?limit=2").status_code, 500)
+        finally:
+            with psycopg.connect(host=SOCKET, dbname=self.dbname, user=ADMIN) as admin:
+                admin.execute("UPDATE scryer.cases SET head_revision='rev-one' "
+                              "WHERE account_id=%s AND case_id='case-list-b'", (account,))
+        self.assertEqual(self.request("GET", f"/v1/cases?limit=2&cursor={cursor}",
+            token="two").status_code, 400)
+        tampered = cursor[:-1] + ("A" if cursor[-1] != "A" else "B")
+        self.assertEqual(mine("GET", f"/v1/cases?limit=2&cursor={tampered}")
+                         .status_code, 400)
+        for query in ("limit=0", "limit=201", "limit=02", "limit=2&limit=2",
+                      "unexpected=1"):
+            self.assertEqual(mine("GET", f"/v1/cases?{query}").status_code, 400)
+
+        second_chunk, second_manifest, second_package = prepared(
+            case_id="case-list-a", revision_id="rev-two", account_id=account)
+        self.assertEqual(mine("POST", "/v1/cases/case-list-a/chunks",
+            content=second_chunk, headers={"Content-Type": "application/json",
+                "Idempotency-Key": "list:second:chunk"}).status_code, 202)
+        self.assertEqual(mine("POST", "/v1/cases/case-list-a/revisions",
+            content=second_manifest, headers={"Content-Type": "application/json",
+                "Idempotency-Key": "list:second:manifest",
+                "If-Match": '"rev-one"'}).status_code, 200)
+        old = mine("GET", "/v1/cases/case-list-a/revisions/rev-one")
+        self.assertEqual(old.status_code, 200, old.text)
+        self.assertEqual(old.content, original_packages["case-list-a"])
+        self.assertEqual(old.headers["etag"], '"rev-one"')
+        current = mine("GET", "/v1/cases/case-list-a/revisions/rev-two")
+        self.assertEqual(current.content, second_package)
+        with psycopg.connect(host=SOCKET, dbname=self.dbname, user=ADMIN) as admin:
+            admin.execute("UPDATE scryer.case_revisions SET ciphertext=%s WHERE "
+                          "account_id=%s AND case_id=%s AND revision_id=%s",
+                          (b"x", account, "case-list-a", "rev-one"))
+        try:
+            self.assertEqual(mine("GET", "/v1/cases/case-list-a/revisions/rev-one")
+                             .status_code, 500)
+        finally:
+            with psycopg.connect(host=SOCKET, dbname=self.dbname, user=ADMIN) as admin:
+                admin.execute("UPDATE scryer.case_revisions SET ciphertext=%s WHERE "
+                              "account_id=%s AND case_id=%s AND revision_id=%s",
+                              (original_packages["case-list-a"], account,
+                               "case-list-a", "rev-one"))
+        self.assertEqual(self.request("GET", "/v1/cases/case-list-a/revisions/rev-one",
+            token="two").status_code, 404)
+        self.assertEqual(mine("GET", "/v1/cases/case-list-a/revisions/rev-missing")
+                         .status_code, 404)
+        self.assertEqual(mine("DELETE", "/v1/cases/case-list-a",
+            headers={"Idempotency-Key": "list:delete", "If-Match": '"rev-two"'}).status_code, 200)
+        self.assertEqual(mine("GET", "/v1/cases/case-list-a/revisions/rev-one")
+                         .status_code, 404)
+        after_delete = mine("GET", "/v1/cases")
+        self.assertEqual({item["caseId"] for item in after_delete.json()["cases"]},
+                         {"case-list-b", "case-list-c"})
 
 
 if __name__ == "__main__":
