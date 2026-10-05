@@ -94,6 +94,61 @@ def query(raw, head="event-coverage", limit=1000, window=30, bank="bank-a"):
 
 
 class MatchingTests(unittest.TestCase):
+    def test_cancelled_refund_and_missing_refund_date_are_explicit(self):
+        undated = raw_case()
+        undated["events"][5]["fact"]["effectiveDate"] = None
+        missing_date = query(undated)
+        self.assertEqual(missing_date.status, "INSUFFICIENT_COVERAGE")
+        self.assertIn("MISSING_REFUND_DATE", missing_date.reason_codes)
+
+        cancelled = raw_case()
+        cancelled["events"].append({
+            "eventId": "event-refund-cancel",
+            "parents": ["event-refund-issued", "event-coverage"],
+            "recordedAt": "2026-10-10T10:00:00Z", "kind": "correct_fact",
+            "correction": {
+                "factId": "issued-refund", "replacementAmountMinor": None,
+                "cancelled": True,
+                "source": {"kind": "artifact", "artifactId": "refund-a",
+                           "location": "page:1-cancelled"},
+                "reviewId": "review-refund-cancel",
+            },
+        })
+        result = query(cancelled, head="event-refund-cancel")
+        self.assertEqual(result.status, "REFUND_CANCELLED")
+        self.assertEqual(result.remaining_minor, 0)
+
+    def test_concurrent_refund_corrections_stay_contradictory(self):
+        raw = raw_case()
+        for suffix, amount in (("a", "80000"), ("b", "70000")):
+            raw["events"].append({
+                "eventId": f"event-refund-correction-{suffix}",
+                "parents": ["event-refund-issued", "event-coverage"],
+                "recordedAt": "2026-10-10T10:00:00Z", "kind": "correct_fact",
+                "correction": {
+                    "factId": "issued-refund", "replacementAmountMinor": amount,
+                    "cancelled": False,
+                    "source": {"kind": "artifact", "artifactId": "refund-a",
+                               "location": f"page:1-revised-{suffix}"},
+                    "reviewId": f"review-refund-correction-{suffix}",
+                },
+            })
+        result = suggest_refund_deposits(parsed(raw),
+            ("event-refund-correction-a", "event-refund-correction-b"),
+            "issued-refund", "bank-a")
+        self.assertEqual(result.status, "CONTRADICTORY_EVIDENCE")
+        self.assertIn("UNRESOLVED_CORRECTION_CONFLICT", result.reason_codes)
+
+    def test_explicit_rejection_supersedes_prior_confirmation(self):
+        raw = raw_case()
+        add_decision(raw, "decision-confirm")
+        later = add_decision(raw, "decision-reject-later", amount="0",
+                             decision="reject", previous="decision-confirm")
+        later["recordedAt"] = "2026-10-10T10:00:00Z"
+        result = query(raw, head="decision-reject-later")
+        self.assertEqual(result.status, "NO_CANDIDATE_IN_APPROVED_FACTS")
+        self.assertEqual(result.confirmed_allocations, ())
+
     def test_one_equal_bank_credit_is_suggestion_not_confirmation(self):
         result = query(raw_case())
         self.assertEqual(result.status, "SUGGESTED")

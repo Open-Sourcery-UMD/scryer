@@ -61,6 +61,128 @@ int main() {
     expect_error("INVALID_MATCH_WINDOW", [&] {
         (void)scryer::suggest_refund_deposits(matching, coverage_head, "issued-refund", "bank-a", 1000, 91);
     });
+    expect_error("INVALID_CANDIDATE_LIMIT", [&] {
+        (void)scryer::suggest_refund_deposits(matching, coverage_head, "issued-refund", "bank-a", 10001);
+    });
+    expect_error("INVALID_MATCH_WINDOW", [&] {
+        (void)scryer::suggest_refund_deposits(matching, coverage_head, "issued-refund", "bank-a", 1000, -1);
+    });
+    expect_error("MISSING_ACCOUNT", [&] {
+        (void)scryer::suggest_refund_deposits(matching, coverage_head, "issued-refund", "bank-missing");
+    });
+    expect_error("ACCOUNT_KIND_MISMATCH", [&] {
+        (void)scryer::suggest_refund_deposits(matching, coverage_head, "issued-refund", "school-a");
+    });
+    expect_error("MISSING_FACT_IN_SNAPSHOT", [&] {
+        (void)scryer::suggest_refund_deposits(matching, coverage_head, "refund-missing", "bank-a");
+    });
+    expect_error("MATCH_ROLE_MISMATCH", [&] {
+        (void)scryer::suggest_refund_deposits(matching, coverage_head, "grant", "bank-a");
+    });
+
+    auto cancelled_raw = fixture("matching-case");
+    cancelled_raw["events"].push_back({
+        {"eventId", "event-refund-cancel"},
+        {"parents", scryer::Json::array({"event-refund-issued", "event-coverage"})},
+        {"recordedAt", "2026-10-10T10:00:00Z"}, {"kind", "correct_fact"},
+        {"correction", {{"factId", "issued-refund"}, {"replacementAmountMinor", nullptr},
+                        {"cancelled", true},
+                        {"source", {{"kind", "artifact"}, {"artifactId", "refund-a"},
+                                    {"location", "page:1-cancelled"}}},
+                        {"reviewId", "review-refund-cancel"}}}
+    });
+    const auto cancelled = scryer::parse_case(cancelled_raw);
+    const std::vector<std::string> cancelled_head{"event-refund-cancel"};
+    const auto cancelled_result = scryer::suggest_refund_deposits(
+        cancelled, cancelled_head, "issued-refund", "bank-a"
+    );
+    require(cancelled_result.status == "REFUND_CANCELLED" && cancelled_result.remaining_minor == 0);
+
+    auto undated_raw = fixture("matching-case");
+    undated_raw["events"][5]["fact"]["effectiveDate"] = nullptr;
+    const auto undated = scryer::parse_case(undated_raw);
+    const auto undated_result = scryer::suggest_refund_deposits(
+        undated, coverage_head, "issued-refund", "bank-a"
+    );
+    require(undated_result.status == "INSUFFICIENT_COVERAGE");
+    require(std::find(undated_result.reason_codes.begin(), undated_result.reason_codes.end(),
+                      "MISSING_REFUND_DATE") != undated_result.reason_codes.end());
+
+    auto manual_raw = fixture("matching-case");
+    manual_raw["events"][6]["fact"]["source"] = {
+        {"kind", "manual"}, {"entryId", "entry-bank-credit"}
+    };
+    const auto manual = scryer::parse_case(manual_raw);
+    const auto manual_result = scryer::suggest_refund_deposits(
+        manual, coverage_head, "issued-refund", "bank-a"
+    );
+    require(manual_result.status == "SUGGESTED");
+    require(std::find(manual_result.reason_codes.begin(), manual_result.reason_codes.end(),
+                      "MANUAL_BANK_OBSERVATION") != manual_result.reason_codes.end());
+
+    auto competing_decisions_raw = fixture("matching-case");
+    auto parallel_rejection = competing_decisions_raw["events"][8];
+    parallel_rejection["eventId"] = "event-parallel-rejection";
+    parallel_rejection["decision"]["action"] = "reject";
+    parallel_rejection["decision"]["allocatedMinor"] = "0";
+    parallel_rejection["decision"]["reviewId"] = "review-parallel-rejection";
+    competing_decisions_raw["events"].push_back(parallel_rejection);
+    const auto competing_decisions = scryer::parse_case(competing_decisions_raw);
+    const std::vector<std::string> competing_decision_heads{
+        "event-confirm", "event-parallel-rejection"
+    };
+    const auto competing_result = scryer::suggest_refund_deposits(
+        competing_decisions, competing_decision_heads,
+        "issued-refund", "bank-a"
+    );
+    require(competing_result.status == "CONTRADICTORY_EVIDENCE");
+    require(std::find(competing_result.reason_codes.begin(), competing_result.reason_codes.end(),
+                      "CONFLICTING_MATCH_DECISIONS") != competing_result.reason_codes.end());
+
+    auto superseded_raw = fixture("matching-case");
+    auto reviewed_rejection = superseded_raw["events"][8];
+    reviewed_rejection["eventId"] = "event-reviewed-rejection";
+    reviewed_rejection["parents"] = scryer::Json::array({
+        "event-refund-issued", "event-bank-credit", "event-confirm"
+    });
+    reviewed_rejection["recordedAt"] = "2026-10-10T10:00:00Z";
+    reviewed_rejection["decision"]["action"] = "reject";
+    reviewed_rejection["decision"]["allocatedMinor"] = "0";
+    reviewed_rejection["decision"]["reviewId"] = "review-reviewed-rejection";
+    superseded_raw["events"].push_back(reviewed_rejection);
+    const auto superseded = scryer::parse_case(superseded_raw);
+    const std::vector<std::string> superseded_head{"event-reviewed-rejection"};
+    const auto superseded_result = scryer::suggest_refund_deposits(
+        superseded, superseded_head, "issued-refund", "bank-a"
+    );
+    require(superseded_result.status == "NO_CANDIDATE_IN_APPROVED_FACTS");
+
+    auto competing_corrections_raw = fixture("matching-case");
+    for (const auto& suffix : {"a", "b"}) {
+        const std::string ending = suffix;
+        competing_corrections_raw["events"].push_back({
+            {"eventId", "event-refund-correction-" + ending},
+            {"parents", scryer::Json::array({"event-refund-issued", "event-coverage"})},
+            {"recordedAt", "2026-10-10T10:00:00Z"}, {"kind", "correct_fact"},
+            {"correction", {{"factId", "issued-refund"},
+                            {"replacementAmountMinor", ending == "a" ? "80000" : "70000"},
+                            {"cancelled", false},
+                            {"source", {{"kind", "artifact"}, {"artifactId", "refund-a"},
+                                        {"location", "page:1-revised-" + ending}}},
+                            {"reviewId", "review-refund-correction-" + ending}}}
+        });
+    }
+    const auto competing_corrections = scryer::parse_case(competing_corrections_raw);
+    const std::vector<std::string> competing_correction_heads{
+        "event-refund-correction-a", "event-refund-correction-b"
+    };
+    const auto correction_result = scryer::suggest_refund_deposits(
+        competing_corrections, competing_correction_heads,
+        "issued-refund", "bank-a"
+    );
+    require(correction_result.status == "CONTRADICTORY_EVIDENCE");
+    require(std::find(correction_result.reason_codes.begin(), correction_result.reason_codes.end(),
+                      "UNRESOLVED_CORRECTION_CONFLICT") != correction_result.reason_codes.end());
 
     const auto split = scryer::parse_case(fixture("split-case"));
     const auto ambiguous = scryer::suggest_refund_deposits(split, coverage_head, "issued-refund", "bank-a");
