@@ -742,12 +742,13 @@
         "10,000 generated cases",
         "M9-1 10,000 deterministic projection cases in seven event-history families compared field-for-field with the independent Python reference",
         "M9-2 deterministic bounded mutation smoke under address/undefined sanitizers for JSON, case, and versioned request boundaries; 30 seconds each with accepted/rejected counts",
+        "M9-3 instrumented native CLI and unit tests produce a source-only line/branch report; the executable coverage gate fails below the 90%/85% targets",
         "declared fuzz budgets",
         "component coverage gates",
         "negative controls"
       ],
       "command": "Freeze verification scripts as each component lands",
-      "expected": "M9-1 generated differential and M9-2 sanitized mutation smoke tiers pass locally; coverage-guided fuzz runtime, ten-minute budgets, coverage, browser parity, broader performance, and security/release gates remain open",
+      "expected": "M9-1 generated differential and M9-2 sanitized mutation smoke tiers pass locally; M9-3 native coverage is measured and the target gate fails honestly; coverage-guided fuzz runtime, ten-minute budgets, coverage improvements, browser parity, broader performance, and security/release gates remain open",
       "risk": "HIGH",
       "done": "Full evidence package and whole-branch review are current at candidate revision."
     },

@@ -483,7 +483,7 @@
         "M9"
       ],
       "tests": ["tests/engine/test_cli.py", "tests/engine/test_json_boundary.cpp", "tests/engine/mutation_smoke.cpp — 30-second address/undefined sanitizer mutation runs for JSON, case, and request boundaries"],
-      "evidence": ["M3 address/undefined sanitizer CLI suite and bounded JSON inputs pass; M9-2 deterministic 30-second mutation smoke passed all three targets with 906789 total iterations and zero sanitizer findings; coverage-guided libFuzzer runtime is absent locally, and ten-minute milestone/coverage gates remain open"],
+      "evidence": ["M3 address/undefined sanitizer CLI suite and bounded JSON inputs pass; M9-2 deterministic 30-second mutation smoke passed all three targets with 906789 total iterations and zero sanitizer findings; M9-3 reproducible native source coverage gate correctly fails at 82.90% lines and 73.38% branches against 90%/85%; coverage-guided libFuzzer runtime is absent locally and ten-minute milestone/coverage work remains open"],
       "status": "IN_PROGRESS"
     },
     {

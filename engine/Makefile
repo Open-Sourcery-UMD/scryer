@@ -1,7 +1,7 @@
 CXX ?= clang++
 CXXFLAGS ?= -std=c++20 -O2 -Wall -Wextra -Werror -pedantic
 
-.PHONY: test-money test-json test-case test-projection test-receipt test-coverage test-matching test-lifecycle case-probe projection-probe receipt-probe evidence-probe cli cli-sanitize mutation-sanitize
+.PHONY: test-money test-json test-case test-projection test-receipt test-coverage test-matching test-lifecycle case-probe projection-probe receipt-probe evidence-probe cli cli-sanitize cli-coverage unit-coverage mutation-sanitize
 
 test-money:
 	@mkdir -p build
@@ -74,6 +74,22 @@ cli:
 cli-sanitize:
 	@mkdir -p build
 	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Iinclude -Ivendor src/cli.cpp src/api.cpp src/receipt.cpp src/projection.cpp src/coverage.cpp src/matching.cpp src/lifecycle.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/scryer-native-sanitized
+
+cli-coverage:
+	@mkdir -p build
+	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fprofile-instr-generate -fcoverage-mapping -Iinclude -Ivendor src/cli.cpp src/api.cpp src/receipt.cpp src/projection.cpp src/coverage.cpp src/matching.cpp src/lifecycle.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/scryer-native-coverage
+
+unit-coverage:
+	@mkdir -p build/coverage
+	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fprofile-instr-generate -fcoverage-mapping -Iinclude -Ivendor ../tests/engine/test_money.cpp src/money.cpp -o build/coverage/test_money
+	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fprofile-instr-generate -fcoverage-mapping -Iinclude -Ivendor ../tests/engine/test_json_boundary.cpp src/json_boundary.cpp -o build/coverage/test_json_boundary
+	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fprofile-instr-generate -fcoverage-mapping -Iinclude -Ivendor ../tests/engine/test_case.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/coverage/test_case
+	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fprofile-instr-generate -fcoverage-mapping -Iinclude -Ivendor ../tests/engine/test_projection.cpp src/projection.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/coverage/test_projection
+	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fprofile-instr-generate -fcoverage-mapping -Iinclude -Ivendor ../tests/engine/test_receipt.cpp src/receipt.cpp src/projection.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/coverage/test_receipt
+	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fprofile-instr-generate -fcoverage-mapping -Iinclude -Ivendor ../tests/engine/test_coverage.cpp src/coverage.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/coverage/test_coverage
+	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fprofile-instr-generate -fcoverage-mapping -Iinclude -Ivendor ../tests/engine/test_matching.cpp src/matching.cpp src/coverage.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/coverage/test_matching
+	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fprofile-instr-generate -fcoverage-mapping -Iinclude -Ivendor ../tests/engine/test_lifecycle.cpp src/lifecycle.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/coverage/test_lifecycle
+	@for target in test_money test_json_boundary test_case test_projection test_receipt test_coverage test_matching test_lifecycle; do ./build/coverage/$$target || exit $$?; done
 
 mutation-sanitize:
 	@mkdir -p build
