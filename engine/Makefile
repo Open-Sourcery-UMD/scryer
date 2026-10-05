@@ -1,7 +1,7 @@
 CXX ?= clang++
 CXXFLAGS ?= -std=c++20 -O2 -Wall -Wextra -Werror -pedantic
 
-.PHONY: test-money test-json test-case test-projection test-receipt test-coverage test-matching test-lifecycle case-probe projection-probe receipt-probe evidence-probe cli cli-sanitize
+.PHONY: test-money test-json test-case test-projection test-receipt test-coverage test-matching test-lifecycle case-probe projection-probe receipt-probe evidence-probe cli cli-sanitize mutation-sanitize
 
 test-money:
 	@mkdir -p build
@@ -74,3 +74,7 @@ cli:
 cli-sanitize:
 	@mkdir -p build
 	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Iinclude -Ivendor src/cli.cpp src/api.cpp src/receipt.cpp src/projection.cpp src/coverage.cpp src/matching.cpp src/lifecycle.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/scryer-native-sanitized
+
+mutation-sanitize:
+	@mkdir -p build
+	$(CXX) -std=c++20 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Iinclude -Ivendor ../tests/engine/mutation_smoke.cpp src/api.cpp src/receipt.cpp src/projection.cpp src/coverage.cpp src/matching.cpp src/lifecycle.cpp src/case.cpp src/json_boundary.cpp src/money.cpp -o build/scryer-mutation-sanitized
