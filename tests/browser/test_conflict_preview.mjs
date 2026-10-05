@@ -15,7 +15,8 @@ test('real browser previews both authenticated encrypted conflict branches witho
     const { sealCase } = await import('/crypto/envelope.js');
     const { openLocalRepository } = await import('/storage/repository.js');
     const { previewSyncConflict } = await import('/sync/conflict.js');
-    const { analyzeConflictPreview, analyzeAncestorCandidate } =
+    const { analyzeConflictPreview, analyzeAncestorCandidate,
+      proposeDisjointApprovalUnion } =
       await import('/sync/analysis.js');
     const created = await createAccountKeys('acct-conflict-preview');
     const validateCase = async (value) => {
@@ -68,6 +69,7 @@ test('real browser previews both authenticated encrypted conflict branches witho
     const preview = await previewSyncConflict(repo, 'case-conflict-preview', conflict);
     const analysis = analyzeConflictPreview(preview);
     const baseAnalysis = analyzeAncestorCandidate(preview);
+    const unionProposal = proposeDisjointApprovalUnion(preview);
     const afterLocal = JSON.stringify(await repo.loadCase('case-conflict-preview'));
     const afterPending = JSON.stringify(await repo.prepareSync('case-conflict-preview'));
     const codeOf = async (candidate) => {
@@ -149,7 +151,7 @@ test('real browser previews both authenticated encrypted conflict branches witho
     const initialReadRace = await codeOf(freshConflict);
     repo.loadCase = load;
     repo.close();
-    return { preview, analysis, baseAnalysis,
+    return { preview, analysis, baseAnalysis, unionProposal,
       unchanged: beforeLocal === afterLocal && beforePending === afterPending,
       refusalUnchanged: beforePending === pendingAfterRefusals &&
         beforeLocal === localAfterRefusals,
@@ -159,7 +161,8 @@ test('real browser previews both authenticated encrypted conflict branches witho
   const built = spawnSync('make', ['-C', engineDir, 'cli'], { encoding: 'utf8' });
   assert.equal(built.status, 0, built.stderr);
   for (const branch of [result.preview.ancestor.branch, result.preview.local,
-    result.preview.remote]) {
+    result.preview.remote, result.unionProposal.status === 'candidate' ?
+      result.unionProposal : null].filter(Boolean)) {
     const validated = spawnSync(nativeCli, [], { input: JSON.stringify({ schemaVersion: '1',
       operation: 'validate', case: branch.case }), encoding: 'utf8',
       maxBuffer: 8 * 1024 * 1024 });
@@ -187,6 +190,10 @@ test('real browser previews both authenticated encrypted conflict branches witho
     changedCaseFields: [], changedLedgerPrefix: false, baseContentRetained: true };
   assert.deepEqual(result.baseAnalysis, { status: 'available', baseRevisionId: 'rev-base',
     local: retained, remote: retained });
+  assert.equal(result.unionProposal.status, 'candidate');
+  assert.equal(result.unionProposal.requiresReview, true);
+  assert.deepEqual(result.unionProposal.case.events.map((item) => item.eventId),
+    ['event-base', 'event-local', 'event-remote']);
   assert.equal(result.unchanged, true);
   assert.equal(result.refusalUnchanged, true);
   for (const [name, code] of Object.entries(result.refused)) {

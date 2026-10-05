@@ -1012,10 +1012,11 @@
         "tests/client/test_conflict_analysis.mjs — deterministic read-only branch IDs, collisions, and concurrent decisions",
         "tests/client/test_sync_transport.mjs — historical base retrieval, unavailable base, and malformed historical response",
         "tests/client/test_conflict_analysis.mjs — candidate-base event and metadata retention without merge permission",
+        "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — read-only disjoint manual-approval union candidate and conservative refusal",
         "tests/sync/test_client_integration.mjs — competing encrypted browser branch preserved after server CAS loss"
       ],
       "evidence": [
-        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, and encrypted historical-base candidate inspection pass; reviewed remote conflict resolution remains open"
+        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, encrypted historical-base candidate inspection, and narrow read-only disjoint-approval candidate pass; reviewed atomic remote conflict resolution remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1172,11 +1173,12 @@
         "tests/browser/test_conflict_preview.mjs — two validated encrypted branches and unchanged pending operation",
         "tests/client/test_conflict_analysis.mjs — branch divergence and unresolved decision hazards",
         "tests/client/test_conflict_analysis.mjs — conservative candidate-base content retention on both branches",
+        "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — candidate union of disjoint manual approvals requires review and does not mutate the pending branch",
         "tests/client/test_sync_transport.mjs — tagged historical base lookup and fail-closed malformed response",
         "tests/sync/test_client_integration.mjs — Chrome, FastAPI, PostgreSQL, two identities, response loss, conflict, deletion"
       ],
       "evidence": [
-        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; synthetic Chrome/API/PostgreSQL integration previews both the returned conflict head and a retained encrypted ancestor candidate; reviewed merge and real JWT/WASM-backed user journey remain open"
+        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; a narrow read-only candidate for disjoint manual approvals passes native validation but requires explicit review and atomic publication; synthetic Chrome/API/PostgreSQL integration previews both the returned conflict head and a retained encrypted ancestor candidate; reviewed publish and real JWT/WASM-backed user journey remain open"
       ],
       "status": "IN_PROGRESS"
     },

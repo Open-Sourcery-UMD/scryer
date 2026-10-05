@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 
@@ -159,7 +160,7 @@ test('candidate base content is retained by both divergent branches without leak
     changedCaseFields: [], changedLedgerPrefix: false, baseContentRetained: true };
   assert.deepEqual(result, { status: 'available', baseRevisionId: 'rev-base',
     local: retained, remote: retained });
-  assert.equal(JSON.stringify(input), before);
+  assert.ok(JSON.stringify(input) === before, 'base analysis mutated the preview');
   assert.equal(JSON.stringify(result).includes('77771'), false);
   assert.equal(JSON.stringify(result).includes(baseArtifact.sha256), false);
 });
@@ -201,4 +202,114 @@ test('candidate base analysis distinguishes absent bases and refuses mismatched 
   assert.throws(() => conflictAnalysis.analyzeAncestorCandidate({ ...current,
     ancestor: { status: 'available', branch: branch([base]) } }),
   { code: 'INVALID_CONFLICT_PREVIEW' });
+});
+
+test('disjoint approval union candidate retains both branches for review without mutation', () => {
+  const baseEvent = approved('event-base', 'fact-base', '100', []);
+  const baseBranch = validBranch([baseEvent]);
+  baseBranch.revisionId = 'rev-base';
+  const local = validBranch([approved('event-local', 'fact-local', '200'), baseEvent]);
+  local.revisionId = 'rev-local';
+  const remote = validBranch([baseEvent, approved('event-remote', 'fact-remote', '300')]);
+  remote.revisionId = 'rev-remote';
+  remote.case.events[0] = { kind: baseEvent.kind, fact: { ...baseEvent.fact },
+    recordedAt: baseEvent.recordedAt, parents: [], eventId: baseEvent.eventId };
+  remote.case = { events: remote.case.events, ...remote.case };
+  for (const branch of [baseBranch, local, remote]) nativeValidate(branch.case);
+  const input = { ...preview(local, remote), ancestor: { status: 'available',
+    branch: baseBranch } };
+  const before = JSON.stringify(input);
+  const proposed = conflictAnalysis.proposeDisjointApprovalUnion(input);
+  assert.equal(proposed.status, 'candidate');
+  assert.deepEqual(proposed.case.events.map((item) => item.eventId),
+    ['event-base', 'event-local', 'event-remote']);
+  assert.deepEqual(proposed.localOnlyEventIds, ['event-local']);
+  assert.deepEqual(proposed.remoteOnlyEventIds, ['event-remote']);
+  assert.deepEqual(proposed.ledger, local.ledger);
+  nativeValidate(proposed.case);
+  assert.ok(JSON.stringify(input) === before, 'proposal mutated the preview');
+  const swapped = conflictAnalysis.proposeDisjointApprovalUnion({ ...input,
+    local: remote, remote: local });
+  assert.equal(swapped.status, 'candidate');
+  assert.ok(JSON.stringify(swapped.case) === JSON.stringify(proposed.case),
+    'candidate changed when branch and member order changed');
+});
+
+test('disjoint approval union refuses unverifiable or semantically hazardous branches', () => {
+  const baseEvent = approved('event-base', 'fact-base', '100', []);
+  const baseBranch = validBranch([baseEvent]);
+  baseBranch.revisionId = 'rev-base';
+  const localEvent = approved('event-local', 'fact-local', '200');
+  const remoteEvent = approved('event-remote', 'fact-remote', '300');
+  const local = validBranch([baseEvent, localEvent]);
+  const remote = validBranch([baseEvent, remoteEvent]);
+  const input = { ...preview(local, remote), ancestor: { status: 'available',
+    branch: baseBranch } };
+  const refuse = (candidate) => {
+    const result = conflictAnalysis.proposeDisjointApprovalUnion(candidate);
+    assert.equal(result.status, 'refused');
+    assert.equal(JSON.stringify(result).includes('200'), false);
+    assert.equal(JSON.stringify(result).includes('300'), false);
+    return result.reason;
+  };
+  assert.equal(refuse({ ...input, ancestor: { status: 'unavailable' } }),
+    'NO_BASE_CANDIDATE');
+  assert.equal(refuse({ ...input, pendingExpectedServerRevision: null,
+    ancestor: { status: 'not_requested' } }), 'NO_BASE_CANDIDATE');
+  assert.equal(refuse({ ...input, local: baseBranch }), 'NO_BRANCH_DIVERGENCE');
+  const independentLocal = validBranch([approved('event-local', 'fact-local', '200', [])]);
+  nativeValidate(independentLocal.case);
+  assert.equal(refuse({ ...input, local: independentLocal }), 'BASE_CONTENT_DIVERGED');
+  assert.equal(refuse({ ...input, remote: validBranch([baseEvent,
+    { ...remoteEvent, eventId: 'event-local', fact: {
+      ...remoteEvent.fact, amountMinor: '900' } }]) }), 'EVENT_CONFLICT');
+  assert.equal(refuse({ ...input, remote: validBranch([baseEvent, remoteEvent],
+    { artifacts: [artifact('artifact-remote', 'a'.repeat(64))] }) }),
+  'METADATA_DIVERGED');
+  const commonArtifact = artifact('artifact-remote', 'a'.repeat(64));
+  const withArtifact = (events) => validBranch(events, { artifacts: [commonArtifact] });
+  const reviewBase = withArtifact([baseEvent]);
+  reviewBase.revisionId = 'rev-base';
+  const reviewLocal = withArtifact([baseEvent, localEvent]);
+  const reviewRemote = withArtifact([baseEvent, remoteEvent]);
+  reviewRemote.ledger.reviews = [review('artifact-remote', commonArtifact.sha256,
+    'command-remote')];
+  for (const branch of [reviewBase, reviewLocal, reviewRemote]) nativeValidate(branch.case);
+  assert.equal(refuse({ ...input, ancestor: { status: 'available', branch: reviewBase },
+    local: reviewLocal, remote: reviewRemote }), 'METADATA_DIVERGED');
+  const correction = event('event-remote-correction', 'correct_fact', {
+    correction: { factId: 'fact-base', replacementAmountMinor: '300', cancelled: false,
+      source: { kind: 'manual', entryId: 'entry-correction' }, reviewId: 'review-correction' },
+  });
+  assert.equal(refuse({ ...input, remote: validBranch([baseEvent, correction]) }),
+    'NON_APPROVAL_CHANGE');
+  const golden = JSON.parse(readFileSync(new URL('../reference/fixtures/golden-case.json',
+    import.meta.url), 'utf8'));
+  const bank = golden.events.find((item) => item.eventId === 'event-bank-credit');
+  const localGolden = structuredClone(golden);
+  localGolden.events.push({ ...bank, eventId: 'event-local-bank',
+    parents: ['event-bank-credit'], recordedAt: '2026-10-09T10:00:00Z',
+    fact: { ...bank.fact, factId: 'local-bank', reviewId: 'review-local-bank',
+      proposalId: null, source: { kind: 'manual', entryId: 'local-bank-entry' } } });
+  const remoteGolden = structuredClone(golden);
+  remoteGolden.events.push({ eventId: 'event-remote-match',
+    parents: ['event-refund-issued', 'event-bank-credit'],
+    recordedAt: '2026-10-09T10:00:00Z', kind: 'decide_match',
+    decision: { refundFactId: 'issued-refund', bankFactId: 'bank-credit',
+      allocatedMinor: '0', action: 'reject', recipientEvidence: null,
+      reviewId: 'review-remote-match' } });
+  for (const caseData of [golden, localGolden, remoteGolden]) nativeValidate(caseData);
+  const goldenBranch = (caseData, revisionId) => ({ case: caseData, revisionId,
+    heads: [], ledger: { schemaVersion: '1', reviews: [] } });
+  assert.equal(refuse({ ...input, caseId: golden.caseId,
+    local: goldenBranch(localGolden, 'rev-local'),
+    remote: goldenBranch(remoteGolden, 'rev-remote'),
+    ancestor: { status: 'available', branch: goldenBranch(golden, 'rev-base') } }),
+  'NON_APPROVAL_CHANGE');
+  assert.equal(refuse({ ...input, remote: validBranch([baseEvent,
+    { ...remoteEvent, fact: { ...remoteEvent.fact,
+      reviewId: localEvent.fact.reviewId } }]) }), 'SOURCE_IDENTITY_COLLISION');
+  assert.equal(refuse({ ...input, remote: validBranch([baseEvent,
+    { ...remoteEvent, fact: { ...remoteEvent.fact,
+      source: localEvent.fact.source } }]) }), 'SOURCE_IDENTITY_COLLISION');
 });

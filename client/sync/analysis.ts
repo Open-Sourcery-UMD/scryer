@@ -14,6 +14,13 @@ export type AncestorCandidateAnalysis =
   | { status: 'not_requested' | 'unavailable' }
   | { status: 'available'; baseRevisionId: string;
       local: BaseRetention; remote: BaseRetention };
+export type ApprovalUnionProposal =
+  | { status: 'candidate'; requiresReview: true; case: CaseV1;
+      ledger: ConflictPreview['local']['ledger']; localOnlyEventIds: string[];
+      remoteOnlyEventIds: string[] }
+  | { status: 'refused'; reason: 'NO_BASE_CANDIDATE' | 'BASE_CONTENT_DIVERGED' |
+      'EVENT_CONFLICT' | 'METADATA_DIVERGED' | 'NON_APPROVAL_CHANGE' |
+      'SOURCE_IDENTITY_COLLISION' | 'NO_BRANCH_DIVERGENCE' };
 
 const CASE_FIELDS = ['institutions', 'accountRefs', 'terms', 'aidItems',
   'artifacts', 'proposals'] as const;
@@ -178,4 +185,58 @@ export function analyzeAncestorCandidate(preview: ConflictPreview): AncestorCand
   return { status: 'available', baseRevisionId: base.revisionId,
     local: baseRetention(base, preview.local, baseEvents, localEvents),
     remote: baseRetention(base, preview.remote, baseEvents, remoteEvents) };
+}
+
+function approvalIdentities(event: CaseEvent): string[] {
+  const fact = event.fact;
+  if (event.kind !== 'approve_fact' || !fact || !validId(fact.factId) ||
+      !validId(fact.reviewId) ||
+      (fact.proposalId !== null && !validId(fact.proposalId)) ||
+      !fact.source || typeof fact.source !== 'object' ||
+      !['manual', 'artifact'].includes((fact.source as { kind?: string }).kind ?? '')) {
+    throw new ConflictAnalysisError();
+  }
+  return [`fact:${fact.factId}`, `review:${fact.reviewId}`,
+    ...(fact.proposalId === null ? [] : [`proposal:${fact.proposalId}`]),
+    `source:${canonicalJson(fact.source)}`];
+}
+
+// A read-only browser candidate. Its historical base is content-compatible, not proven
+// ancestral; the caller must obtain explicit review and recheck state before any write.
+export function proposeDisjointApprovalUnion(preview: ConflictPreview): ApprovalUnionProposal {
+  const base = analyzeAncestorCandidate(preview);
+  if (base.status !== 'available') return { status: 'refused', reason: 'NO_BASE_CANDIDATE' };
+  if (!base.local.baseContentRetained || !base.remote.baseContentRetained) {
+    return { status: 'refused', reason: 'BASE_CONTENT_DIVERGED' };
+  }
+  const analysis = analyzeConflictPreview(preview);
+  if (analysis.issues.length > 0) return { status: 'refused', reason: 'EVENT_CONFLICT' };
+  if (analysis.differentCaseFields.length > 0 || analysis.differentLedger) {
+    return { status: 'refused', reason: 'METADATA_DIVERGED' };
+  }
+  if (analysis.localOnlyEventIds.length === 0 || analysis.remoteOnlyEventIds.length === 0) {
+    return { status: 'refused', reason: 'NO_BRANCH_DIVERGENCE' };
+  }
+  const local = new Map(preview.local.case.events.map((item) => [item.eventId, item]));
+  const remote = new Map(preview.remote.case.events.map((item) => [item.eventId, item]));
+  const additions = [
+    ...analysis.localOnlyEventIds.map((id) => local.get(id)!),
+    ...analysis.remoteOnlyEventIds.map((id) => remote.get(id)!),
+  ];
+  if (additions.some((item) => item.kind !== 'approve_fact')) {
+    return { status: 'refused', reason: 'NON_APPROVAL_CHANGE' };
+  }
+  const localIdentities = new Set(analysis.localOnlyEventIds.flatMap((id) =>
+    approvalIdentities(local.get(id)!)));
+  if (analysis.remoteOnlyEventIds.some((id) =>
+    approvalIdentities(remote.get(id)!).some((identity) => localIdentities.has(identity)))) {
+    return { status: 'refused', reason: 'SOURCE_IDENTITY_COLLISION' };
+  }
+  const combined = new Map([...local, ...remote]);
+  const events = [...combined.keys()].sort().map((id) => combined.get(id)!);
+  return { status: 'candidate', requiresReview: true,
+    case: JSON.parse(canonicalJson({ ...preview.local.case, events })) as CaseV1,
+    ledger: JSON.parse(canonicalJson(preview.local.ledger)) as ConflictPreview['local']['ledger'],
+    localOnlyEventIds: analysis.localOnlyEventIds,
+    remoteOnlyEventIds: analysis.remoteOnlyEventIds };
 }
