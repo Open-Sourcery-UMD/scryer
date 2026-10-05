@@ -5,12 +5,16 @@ import type { LocalRepository, PreparedSync, SyncStep } from '../storage/reposit
 type SyncRepository = Pick<LocalRepository, 'prepareSync' | 'ackSync'> &
   { session: { readonly accountId: string } };
 
+export type ConflictAncestor =
+  | { status: 'not_requested' | 'unavailable' }
+  | { status: 'available'; revisionId: string; etag: string; ciphertextBody: string };
+
 export type SyncResult =
   | { status: 'idle' }
   | { status: 'committed'; revisionId: string; count: number }
   | { status: 'conflict'; pendingOperationId: string; pendingRevisionId: string;
       pendingManifestDigest: string; pendingExpectedServerRevision: string | null; remote: {
-      revisionId: string; etag: string; ciphertextBody: string } }
+      revisionId: string; etag: string; ciphertextBody: string }; ancestor: ConflictAncestor }
   | { status: 'retryable' | 'permanent' | 'interrupted'; code: string; httpStatus?: number };
 
 export type SyncOptions = {
@@ -32,6 +36,9 @@ const TOKEN = /^[A-Za-z0-9._~-]{1,8192}$/;
 const MAX_RECEIPT_BYTES = 16 * 1024;
 const MAX_HEAD_BYTES = 12 * 1024 * 1024;
 const MAX_ATTEMPTS = 3;
+const HEAD_KEYS = ['schemaVersion', 'format', 'algorithm', 'accountId', 'caseId',
+  'revisionId', 'deviceId', 'keyGeneration', 'packageId', 'chunks'] as const;
+const HEAD_CHUNK_KEYS = ['index', 'nonce', 'ciphertext', 'tag'] as const;
 
 class SyncFault extends Error {
   readonly code: string;
@@ -231,8 +238,10 @@ function init(method: string, token: string, signal?: AbortSignal,
 }
 
 function validatedHead(value: unknown, accountId: string, caseId: string): CasePackageV1 {
-  const item = jsonObject(value, ['schemaVersion', 'format', 'algorithm', 'accountId', 'caseId',
-    'revisionId', 'deviceId', 'keyGeneration', 'packageId', 'chunks']);
+  const item = jsonObject(value, HEAD_KEYS);
+  if (Object.keys(item).join(',') !== HEAD_KEYS.join(',')) {
+    throw new SyncFault('INVALID_SYNC_RESPONSE');
+  }
   if (item.schemaVersion !== '1' || item.format !== 'scryer-case-v1' ||
       item.algorithm !== 'AES-256-GCM+HKDF-SHA-256' || item.accountId !== accountId ||
       item.caseId !== caseId || !validId(item.revisionId) ||
@@ -244,8 +253,9 @@ function validatedHead(value: unknown, accountId: string, caseId: string): CaseP
     base64UrlDecode(item.deviceId, 16, 16);
     base64UrlDecode(item.packageId, 16, 16);
     for (let index = 0; index < item.chunks.length; index++) {
-      const chunk = jsonObject(item.chunks[index], ['index', 'nonce', 'ciphertext', 'tag']);
-      if (chunk.index !== index) throw new SyncFault('INVALID_SYNC_RESPONSE');
+      const chunk = jsonObject(item.chunks[index], HEAD_CHUNK_KEYS);
+      if (Object.keys(chunk).join(',') !== HEAD_CHUNK_KEYS.join(',') ||
+          chunk.index !== index) throw new SyncFault('INVALID_SYNC_RESPONSE');
       base64UrlDecode(chunk.nonce, 12, 12);
       if (base64UrlDecode(chunk.ciphertext).length < 1) throw new SyncFault('INVALID_SYNC_RESPONSE');
       base64UrlDecode(chunk.tag, 16, 16);
@@ -343,17 +353,41 @@ export async function syncCase(repo: SyncRepository, caseId: string,
         options, MAX_HEAD_BYTES);
       if (isResult(head)) return head;
       if (head.response.status !== 200) return statusResult(head.response.status);
+      let remote: CasePackageV1;
+      let etag: string;
       try {
         const read = head.json!;
-        const remote = validatedHead(read.value, repo.session.accountId, caseId);
-        const etag = `"${remote.revisionId}"`;
+        remote = validatedHead(read.value, repo.session.accountId, caseId);
+        etag = `"${remote.revisionId}"`;
         if (head.response.headers.get('etag') !== etag) throw new SyncFault('INVALID_SYNC_RESPONSE');
-        return { status: 'conflict', pendingOperationId: item.operationId,
-          pendingRevisionId: item.revisionId,
-          pendingManifestDigest: await syncBodyDigest(prepared.manifestStep.body),
-          pendingExpectedServerRevision: item.expectedServerRevision,
-          remote: { revisionId: remote.revisionId, etag, ciphertextBody: read.text } };
       } catch { return { status: 'permanent', code: 'INVALID_SYNC_RESPONSE' }; }
+      let ancestor: ConflictAncestor = { status: 'not_requested' };
+      if (item.expectedServerRevision !== null) {
+        const historical = await request(`${path}/revisions/${item.expectedServerRevision}`,
+          init('GET', options.accessToken, options.signal), options, MAX_HEAD_BYTES);
+        if (isResult(historical)) return historical;
+        if (historical.response.status === 404) ancestor = { status: 'unavailable' };
+        else if (historical.response.status !== 200) return statusResult(historical.response.status);
+        else {
+          try {
+            const candidate = validatedHead(historical.json!.value,
+              repo.session.accountId, caseId);
+            const historicalEtag = `"${item.expectedServerRevision}"`;
+            if (candidate.revisionId !== item.expectedServerRevision ||
+                historical.response.headers.get('etag') !== historicalEtag) {
+              throw new SyncFault('INVALID_SYNC_RESPONSE');
+            }
+            ancestor = { status: 'available', revisionId: candidate.revisionId,
+              etag: historicalEtag, ciphertextBody: historical.json!.text };
+          } catch { return { status: 'permanent', code: 'INVALID_SYNC_RESPONSE' }; }
+        }
+      }
+      return { status: 'conflict', pendingOperationId: item.operationId,
+        pendingRevisionId: item.revisionId,
+        pendingManifestDigest: await syncBodyDigest(prepared.manifestStep.body),
+        pendingExpectedServerRevision: item.expectedServerRevision,
+        remote: { revisionId: remote.revisionId, etag,
+          ciphertextBody: head.json!.text }, ancestor };
     }
     if (response.response.status !== (creating ? 201 : 200)) {
       return statusResult(response.response.status);

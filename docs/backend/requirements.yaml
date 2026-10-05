@@ -1006,10 +1006,11 @@
         "tests/client/test_sync_transport.mjs — stale remote head returns a typed conflict without local acknowledgment",
         "tests/browser/test_conflict_preview.mjs — decrypt and semantically validate both branches without changing the outbox",
         "tests/client/test_conflict_analysis.mjs — deterministic read-only branch IDs, collisions, and concurrent decisions",
+        "tests/client/test_sync_transport.mjs — historical base retrieval, unavailable base, and malformed historical response",
         "tests/sync/test_client_integration.mjs — competing encrypted browser branch preserved after server CAS loss"
       ],
       "evidence": [
-        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, and read-only branch analysis pass; reviewed remote conflict resolution remains open"
+        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch analysis, and encrypted historical-base candidate inspection pass; reviewed remote conflict resolution remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1165,10 +1166,11 @@
         "tests/browser/test_sync_chain.mjs — local multi-edit queue ordering and persistence",
         "tests/browser/test_conflict_preview.mjs — two validated encrypted branches and unchanged pending operation",
         "tests/client/test_conflict_analysis.mjs — branch divergence and unresolved decision hazards",
+        "tests/client/test_sync_transport.mjs — tagged historical base lookup and fail-closed malformed response",
         "tests/sync/test_client_integration.mjs — Chrome, FastAPI, PostgreSQL, two identities, response loss, conflict, deletion"
       ],
       "evidence": [
-        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence analysis flags collisions and concurrent decisions; synthetic Chrome/API/PostgreSQL integration previews the returned conflict head; reviewed merge and real JWT/WASM-backed user journey remain open"
+        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence analysis flags collisions and concurrent decisions; synthetic Chrome/API/PostgreSQL integration previews both the returned conflict head and a retained encrypted ancestor candidate; reviewed merge and real JWT/WASM-backed user journey remain open"
       ],
       "status": "IN_PROGRESS"
     },

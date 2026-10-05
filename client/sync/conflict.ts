@@ -22,7 +22,9 @@ export type ConflictBranch = { revisionId: string; case: CaseV1;
 export type ConflictPreview = { caseId: string; pendingOperationId: string;
   pendingRevisionId: string; pendingManifestDigest: string;
   pendingExpectedServerRevision: string | null;
-  local: ConflictBranch; remote: ConflictBranch };
+  local: ConflictBranch; remote: ConflictBranch;
+  ancestor: { status: 'not_requested' | 'unavailable' } |
+    { status: 'available'; branch: ConflictBranch } };
 
 async function matchesPending(item: Awaited<ReturnType<LocalRepository['prepareSync']>>[number] | undefined,
   conflict: Extract<SyncResult, { status: 'conflict' }>): Promise<boolean> {
@@ -67,7 +69,7 @@ export async function previewSyncConflict(repo: LocalRepository, caseId: string,
   conflict: SyncResult): Promise<ConflictPreview> {
   if (!validId(caseId) || !conflict || conflict.status !== 'conflict' ||
       !exactKeys(conflict, ['status', 'pendingOperationId', 'pendingRevisionId',
-        'pendingManifestDigest', 'pendingExpectedServerRevision', 'remote']) ||
+        'pendingManifestDigest', 'pendingExpectedServerRevision', 'remote', 'ancestor']) ||
       !validId(conflict.pendingOperationId) || !validId(conflict.pendingRevisionId) ||
       !HEX_256.test(conflict.pendingManifestDigest) ||
       (conflict.pendingExpectedServerRevision !== null &&
@@ -76,6 +78,21 @@ export async function previewSyncConflict(repo: LocalRepository, caseId: string,
       !validId(conflict.remote.revisionId) ||
       conflict.remote.etag !== `"${conflict.remote.revisionId}"`) {
     throw new ConflictPreviewError('REMOTE_UNVERIFIED');
+  }
+  if (!conflict.ancestor ||
+      (conflict.ancestor.status === 'not_requested' &&
+        (!exactKeys(conflict.ancestor, ['status']) ||
+          conflict.pendingExpectedServerRevision !== null)) ||
+      (conflict.ancestor.status === 'unavailable' &&
+        (!exactKeys(conflict.ancestor, ['status']) ||
+          conflict.pendingExpectedServerRevision === null)) ||
+      (conflict.ancestor.status === 'available' &&
+        (!exactKeys(conflict.ancestor, ['status', 'revisionId', 'etag', 'ciphertextBody']) ||
+          conflict.pendingExpectedServerRevision === null ||
+          conflict.ancestor.revisionId !== conflict.pendingExpectedServerRevision ||
+          conflict.ancestor.etag !== `"${conflict.ancestor.revisionId}"`)) ||
+      !['not_requested', 'unavailable', 'available'].includes(conflict.ancestor.status)) {
+    throw new ConflictPreviewError('ANCESTOR_UNVERIFIED');
   }
   let first;
   let local;
@@ -101,6 +118,28 @@ export async function previewSyncConflict(repo: LocalRepository, caseId: string,
     }
     throw new ConflictPreviewError('REMOTE_UNVERIFIED');
   }
+  let ancestor: ConflictPreview['ancestor'];
+  if (conflict.ancestor.status === 'available') {
+    let ancestorPackage: unknown;
+    try {
+      ancestorPackage = packageFromConflict(conflict.ancestor.ciphertextBody,
+        repo.session.accountId, caseId, conflict.ancestor.revisionId);
+    } catch { throw new ConflictPreviewError('ANCESTOR_UNVERIFIED'); }
+    let loaded;
+    try {
+      loaded = await repo.inspectRemoteCase(ancestorPackage, caseId,
+        conflict.ancestor.revisionId);
+    } catch (error) {
+      if (error instanceof StorageError && error.code === 'STALE_ACCOUNT_ROOT') {
+        throw new ConflictPreviewError('STALE_CONFLICT_PREVIEW');
+      }
+      throw new ConflictPreviewError('ANCESTOR_UNVERIFIED');
+    }
+    ancestor = { status: 'available', branch: {
+      revisionId: loaded.revisionId, case: loaded.case, ledger: loaded.ledger,
+      heads: maximalHeads(loaded.case.events),
+    } };
+  } else ancestor = { status: conflict.ancestor.status };
   let currentPending;
   let currentRevision;
   let currentDigest;
@@ -120,5 +159,5 @@ export async function previewSyncConflict(repo: LocalRepository, caseId: string,
     local: { revisionId: local.revisionId, case: local.case,
       ledger: local.ledger, heads: maximalHeads(local.case.events) },
     remote: { revisionId: remote.revisionId, case: remote.case,
-      ledger: remote.ledger, heads: maximalHeads(remote.case.events) } };
+      ledger: remote.ledger, heads: maximalHeads(remote.case.events) }, ancestor };
 }

@@ -33,6 +33,16 @@ function operation(number, expectedServerRevision = null) {
     ] };
 }
 
+function encryptedPackage(revisionId) {
+  return { schemaVersion: '1', format: 'scryer-case-v1',
+    algorithm: 'AES-256-GCM+HKDF-SHA-256', accountId: 'acct-unit', caseId: 'case-unit',
+    revisionId, deviceId: Buffer.alloc(16, 9).toString('base64url'),
+    keyGeneration: 1, packageId: Buffer.alloc(16, 7).toString('base64url'),
+    chunks: [{ index: 0, nonce: Buffer.alloc(12, 8).toString('base64url'),
+      ciphertext: Buffer.from('synthetic').toString('base64url'),
+      tag: Buffer.alloc(16, 4).toString('base64url') }] };
+}
+
 function repository(operations = [operation(1)]) {
   const queue = structuredClone(operations);
   const acknowledgments = [];
@@ -154,13 +164,7 @@ test('wrong account and malformed manifest receipt preserve the outbox', async (
 
 test('stale precondition returns encrypted remote head without dropping the local branch', async () => {
   const repo = repository();
-  const remote = { schemaVersion: '1', format: 'scryer-case-v1',
-    algorithm: 'AES-256-GCM+HKDF-SHA-256', accountId: 'acct-unit', caseId: 'case-unit',
-    revisionId: 'rev-remote', deviceId: Buffer.alloc(16, 9).toString('base64url'),
-    keyGeneration: 1, packageId: Buffer.alloc(16, 7).toString('base64url'),
-    chunks: [{ index: 0, nonce: Buffer.alloc(12, 8).toString('base64url'),
-      ciphertext: Buffer.from('synthetic').toString('base64url'),
-      tag: Buffer.alloc(16, 4).toString('base64url') }] };
+  const remote = encryptedPackage('rev-remote');
   const fetchImpl = async (url, init) => {
     if (init.method === 'GET' && url.endsWith('/v1/cases/case-unit')) {
       return json(remote, 200, { ETag: '"rev-remote"' });
@@ -175,10 +179,63 @@ test('stale precondition returns encrypted remote head without dropping the loca
   assert.equal(result.pendingRevisionId, 'rev-1');
   assert.equal(result.pendingManifestDigest, sha(operation(1).steps[1].body));
   assert.equal(result.pendingExpectedServerRevision, null);
+  assert.deepEqual(result.ancestor, { status: 'not_requested' });
   assert.equal(result.remote.revisionId, 'rev-remote');
   assert.equal(result.remote.ciphertextBody, JSON.stringify(remote));
   assert.deepEqual(repo.acknowledgments, []);
   assert.equal(repo.queue.length, 1);
+});
+
+test('stale update retrieves its exact historical encrypted base and distinguishes missing or malformed bases', async () => {
+  const base = encryptedPackage('rev-base');
+  const remote = encryptedPackage('rev-remote');
+  const makeFetch = (baseResponse) => async (url, init) => {
+    if (init.method === 'GET' && url.endsWith('/v1/cases/case-unit/revisions/rev-base')) {
+      return baseResponse;
+    }
+    if (init.method === 'GET' && url.endsWith('/v1/cases/case-unit')) {
+      return json(remote, 200, { ETag: '"rev-remote"' });
+    }
+    return successFetch(repository([operation(1, 'rev-base')]), [], (kind, response) =>
+      kind === 'manifest' ? json({ error: { code: 'STALE_REVISION', requestId: 'req-1' } }, 412) :
+        response)(url, init);
+  };
+  const repo = repository([operation(1, 'rev-base')]);
+  const result = await syncCase(repo, 'case-unit', { baseUrl: 'https://api.example.test',
+    accessToken: 'unit-token', fetchImpl: makeFetch(json(base, 200, { ETag: '"rev-base"' })) });
+  assert.equal(result.status, 'conflict');
+  assert.equal(result.pendingExpectedServerRevision, 'rev-base');
+  assert.deepEqual(result.ancestor, { status: 'available', revisionId: 'rev-base',
+    etag: '"rev-base"', ciphertextBody: JSON.stringify(base) });
+  assert.deepEqual(repo.acknowledgments, []);
+  assert.equal(repo.queue.length, 1);
+
+  const missing = await syncCase(repository([operation(1, 'rev-base')]), 'case-unit', {
+    baseUrl: 'https://api.example.test', accessToken: 'unit-token',
+    fetchImpl: makeFetch(json({ error: { code: 'CASE_NOT_FOUND', requestId: 'req-2' } }, 404)),
+  });
+  assert.equal(missing.status, 'conflict');
+  assert.deepEqual(missing.ancestor, { status: 'unavailable' });
+
+  const malformed = await syncCase(repository([operation(1, 'rev-base')]), 'case-unit', {
+    baseUrl: 'https://api.example.test', accessToken: 'unit-token',
+    fetchImpl: makeFetch(json({ ...base, revisionId: 'rev-other' }, 200,
+      { ETag: '"rev-base"' })),
+  });
+  assert.deepEqual(malformed, { status: 'permanent', code: 'INVALID_SYNC_RESPONSE' });
+  const wrongEtag = await syncCase(repository([operation(1, 'rev-base')]), 'case-unit', {
+    baseUrl: 'https://api.example.test', accessToken: 'unit-token',
+    fetchImpl: makeFetch(json(base, 200, { ETag: '"rev-other"' })),
+  });
+  assert.deepEqual(wrongEtag, { status: 'permanent', code: 'INVALID_SYNC_RESPONSE' });
+  const reordered = { format: base.format, schemaVersion: base.schemaVersion,
+    algorithm: base.algorithm, accountId: base.accountId, caseId: base.caseId,
+    revisionId: base.revisionId, deviceId: base.deviceId,
+    keyGeneration: base.keyGeneration, packageId: base.packageId, chunks: base.chunks };
+  const reorderedBase = await syncCase(repository([operation(1, 'rev-base')]),
+    'case-unit', { baseUrl: 'https://api.example.test', accessToken: 'unit-token',
+      fetchImpl: makeFetch(json(reordered, 200, { ETag: '"rev-base"' })) });
+  assert.deepEqual(reorderedBase, { status: 'permanent', code: 'INVALID_SYNC_RESPONSE' });
 });
 
 test('only transport failures and 503 retry; 401 stops immediately', async () => {

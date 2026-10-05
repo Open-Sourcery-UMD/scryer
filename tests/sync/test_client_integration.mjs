@@ -239,6 +239,9 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
         pendingRevisionId: preview.pendingRevisionId,
         localRevisionId: preview.local.revisionId,
         remoteRevisionId: preview.remote.revisionId,
+        ancestorStatus: preview.ancestor.status,
+        ancestorRevisionId: preview.ancestor.status === 'available' ?
+          preview.ancestor.branch.revisionId : null,
         localHeads: preview.local.heads, remoteHeads: preview.remote.heads } };
   }, { accountId: one.accountId, dbName, api,
     envelope: serverEnvelope, secret: first.recoverySecret });
@@ -249,7 +252,8 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
   assert.equal(conflict.remaining.length, 1);
   assert.deepEqual(conflict.preview, { caseId: 'case-browser-api',
     pendingRevisionId: 'rev-divergent', localRevisionId: 'rev-divergent',
-    remoteRevisionId: 'rev-three', localHeads: [], remoteHeads: [] });
+    remoteRevisionId: 'rev-three', ancestorStatus: 'available',
+    ancestorRevisionId: 'rev-two', localHeads: [], remoteHeads: [] });
 
   const deleted = await fetch(`${api}/v1/cases/case-browser-api`, { method: 'DELETE',
     headers: { Authorization: 'Bearer one', 'Idempotency-Key': 'browser:delete',
