@@ -656,7 +656,7 @@
     {
       "id": "M8",
       "title": "Offline multi-device integration",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "dependsOn": [
         "M4",
         "M5",

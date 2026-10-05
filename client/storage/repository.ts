@@ -737,17 +737,57 @@ export class LocalRepository {
     });
   }
 
-  async ackSync(operationId: string): Promise<void> {
+  async ackSync(operationId: string, confirmedRevisionId: string): Promise<void> {
     const db = this.db();
     if (!validId(operationId)) throw new StorageError('INVALID_OPERATION_ID');
-    const key = [this.session.accountId, operationId];
+    if (!validId(confirmedRevisionId)) throw new StorageError('INVALID_REVISION_ID');
+    const accountId = this.session.accountId;
+    const key = [accountId, operationId];
     return transactionResult(db, ['outbox'], 'readwrite', (tx, finish, fail) => {
       const store = tx.objectStore('outbox');
       const request = store.get(key);
       request.onsuccess = () => {
         if (request.result === undefined) { fail(new StorageError('OUTBOX_MISSING')); return; }
-        store.delete(key);
-        finish(undefined);
+        const current = request.result as OutboxRecord;
+        if (current.accountId !== accountId || current.operationId !== operationId ||
+            !validId(current.caseId) || !validId(current.revisionId) ||
+            !Number.isSafeInteger(current.localSequence) || current.localSequence < 1) {
+          fail(new StorageError('CORRUPT_RECORD')); return;
+        }
+        if (current.revisionId !== confirmedRevisionId) {
+          fail(new StorageError('SYNC_REVISION_MISMATCH')); return;
+        }
+        const pendingRequest = store.index('byCase').getAll([accountId, current.caseId]);
+        pendingRequest.onsuccess = () => {
+          const pending = pendingRequest.result as OutboxRecord[];
+          const sequences = new Set<number>();
+          for (const item of pending) {
+            if (item.accountId !== accountId || item.caseId !== current.caseId ||
+                !validId(item.operationId) || !validId(item.revisionId) ||
+                !Number.isSafeInteger(item.localSequence) || item.localSequence < 1 ||
+                (item.expectedServerRevision !== null && !validId(item.expectedServerRevision)) ||
+                !Array.isArray(item.steps) || sequences.has(item.localSequence)) {
+              fail(new StorageError('CORRUPT_RECORD')); return;
+            }
+            sequences.add(item.localSequence);
+          }
+          if (!pending.some((item) => item.operationId === operationId &&
+              item.localSequence === current.localSequence)) {
+            fail(new StorageError('CORRUPT_RECORD')); return;
+          }
+          if (pending.some((item) => item.localSequence < current.localSequence)) {
+            fail(new StorageError('SYNC_OUT_OF_ORDER')); return;
+          }
+          const successor = pending.find((item) => item.localSequence === current.localSequence + 1);
+          if (!successor && pending.some((item) => item.localSequence > current.localSequence)) {
+            fail(new StorageError('CORRUPT_RECORD')); return;
+          }
+          try {
+            if (successor) store.put({ ...successor, expectedServerRevision: confirmedRevisionId });
+            store.delete(key);
+          } catch (error) { fail(storageFault(error)); return; }
+          finish(undefined);
+        };
       };
     });
   }

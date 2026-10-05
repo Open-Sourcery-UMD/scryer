@@ -989,10 +989,11 @@
       "tests": [
         "tests/browser/test_storage.mjs — two-tab local revision CAS, atomic outbox, byte-identical retry after reload",
         "tests/browser/test_rotation.mjs — journaled stale-head/account-wrapper checks and two-case atomic switch",
-        "tests/sync/test_store.py — two distinct updates racing one head preserve the losing ciphertext branch"
+        "tests/sync/test_store.py — two distinct updates racing one head preserve the losing ciphertext branch",
+        "tests/browser/test_sync_chain.mjs — ordered durable offline acknowledgments, wrong/out-of-order refusal, and transaction rollback"
       ],
       "evidence": [
-        "M6-3 local encrypted conflict/outbox behavior and M6-5 two-case rotation switch pass Chrome; M7-3 server CAS race passes PostgreSQL; remote multi-device review remains open"
+        "M6-3 local encrypted conflict/outbox behavior and M6-5 two-case rotation switch pass Chrome; M7-3 server CAS race passes PostgreSQL; M8-1 atomic outbox succession passes Chrome; remote multi-device review remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1140,9 +1141,13 @@
         "M9",
         "M10"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/browser/test_sync_chain.mjs — local multi-edit queue ordering and persistence"
+      ],
+      "evidence": [
+        "M8-1 local offline outbox succession passes Chrome; browser/API integration remains open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-70",

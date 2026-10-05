@@ -192,9 +192,9 @@ test('real browser encrypted repository has atomic revisions, durable outbox, an
       const acknowledged = await openLocalRepository({ dbName, session: availableSession,
         validateCase: async () => {} });
       const pendingBefore = await acknowledged.prepareSync('case-storage');
-      await acknowledged.ackSync('op-one');
+      await acknowledged.ackSync('op-one', 'rev-one');
       const pendingAfter = await acknowledged.prepareSync('case-storage');
-      const missingAck = await codeOf(() => acknowledged.ackSync('op-one'));
+      const missingAck = await codeOf(() => acknowledged.ackSync('op-one', 'rev-one'));
       const stillLoaded = await acknowledged.loadCase('case-storage');
       acknowledged.close();
       return { wrongKey, used, exhausted, refusedCommit, locked, unavailable, denied,
