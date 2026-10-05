@@ -35,14 +35,14 @@ This map follows the 48 named RC scenarios in the local backend brief. `REFERENC
 | RC-29 | PARTIAL | A fresh Chrome profile verifies an archive with the 32-byte recovery secret and restores its encrypted case and new outbox; a new-root secret rotation also unlocks two current cases on a second device. Frontend recovery UX and remote sync remain open. |
 | RC-30 | PARTIAL | Re-encrypting an equal case/revision generates fresh package IDs and nonces and both versions decrypt; IndexedDB budget exhaustion triggers a journaled generation-2 re-encryption that resumes after reopening. Multi-device coordination remains open. |
 | RC-31 | OPEN | Official-client/server plaintext sentinel test remains open. |
-| RC-32 | OPEN | Real identity and cross-tenant API tests remain open. |
-| RC-33 | OPEN | PostgreSQL RLS/application-role tests remain open. |
-| RC-34 | PARTIAL | Two Chrome tabs committing from the same local revision yield one encrypted case/outbox pair and one typed stale loser; server-side CAS remains open. |
-| RC-35 | PARTIAL | Chrome reload preserves exact prepared ciphertext request bodies and idempotency IDs across retries; a real lost server response and idempotent server replay remain open. |
-| RC-36 | OPEN | Idempotency-key conflict/concurrency tests remain open. |
-| RC-37 | OPEN | Concurrent quota/storage tests remain open. |
-| RC-38 | OPEN | Deletion/tombstone stale-client test remains open. |
-| RC-39 | OPEN | Interrupted cross-service deletion recovery test remains open. |
+| RC-32 | PARTIAL | The synthetic verifier API tests deny cross-tenant case and recovery-wrapper reads, and a separate real local Keycloak PKCE test covers two users. The API still lacks maintained JWT verification and a real-token end-to-end tenant test. |
+| RC-33 | PARTIAL | Direct non-owner PostgreSQL app-role tests verify forced RLS on tenant tables, signed transaction context, wrong-key denial, cross-tenant write refusal, replay refusal, and pool reuse. Verified-token-to-context integration remains open. |
+| RC-34 | PARTIAL | Two Chrome tabs yield one local encrypted case/outbox winner; PostgreSQL concurrent manifest updates from one head yield one CAS winner and preserve the staged loser. The complete path still uses synthetic API identity and browser semantic validation. |
+| RC-35 | PARTIAL | The browser/API/PostgreSQL journey interrupts after a server commit, reloads the durable outbox, and retries exact saved bytes to the idempotent server receipt. Real-token and WASM-backed production-client validation remain open. |
+| RC-36 | PARTIAL | PostgreSQL tests show same-key concurrent manifest retries publish once, while changed body or precondition reuse conflicts. Real-token API integration and operational retention rehearsal remain open. |
+| RC-37 | PARTIAL | Two concurrent PostgreSQL chunk stages near the account quota yield one staged result and one `QUOTA_EXCEEDED`; account storage accounting is checked. Public multi-process load and capacity remain unmeasured. |
+| RC-38 | PARTIAL | PostgreSQL deletion/update races linearize, old staged or committed retries cannot resurrect a tombstoned case, and a second Chrome device retains its pending branch after the API refuses sync to a deleted case. Backup replay and real-token stale-client denial remain open. |
+| RC-39 | PARTIAL | Local account deletion wipes live ciphertext, denies old synthetic tokens, and a lease-based worker retries provider failures and reconciles a crash after provider success; a disposable local Keycloak test verifies real provider user deletion. Scheduler/backlog monitoring, backup deletion replay, and real-token API denial remain open. |
 | RC-40 | PARTIAL | Chrome exports a canonical HMAC-authenticated archive, verifies optional encrypted originals, rejects wrong secrets/tamper, previews without mutation, and restores one or two cases atomically; frontend save/restore UX and production WASM validator remain open. |
 | RC-41 | PARTIAL | A populated v1 IndexedDB refuses automatic upgrade; Chrome requires an exact current encrypted backup, rolls an interrupted v2 upgrade back to v1, and verifies data after retry. Broader browser/version matrix remains open. |
 | RC-42 | OPEN | Fresh-stack backup/restore and deletion replay test remains open. |
