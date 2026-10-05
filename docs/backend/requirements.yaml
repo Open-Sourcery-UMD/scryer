@@ -482,8 +482,8 @@
         "M4",
         "M9"
       ],
-      "tests": ["tests/engine/test_cli.py", "tests/engine/test_json_boundary.cpp", "tests/engine/mutation_smoke.cpp — 30-second address/undefined sanitizer mutation runs for JSON, case, and request boundaries", "tests/engine/test_matching.cpp and tests/reference/test_matching.py — cancelled/undated refunds, concurrent corrections/decisions, superseding review, manual source, and parameter boundary cases", "tests/engine/test_case.cpp — strict version, identity, source/account, amount, correction, and duplicate-ID refusal", "tests/engine/test_cli.py — versioned API integer bounds, request shapes, queue lists, trace target, and unsupported operation"],
-      "evidence": ["M3 address/undefined sanitizer CLI suite and bounded JSON inputs pass; M9-2 deterministic 30-second mutation smoke passed all three targets with 906789 total iterations and zero sanitizer findings; M9-3 native source coverage gate failed at 82.90% lines and 73.38% branches; M9-4/M9-5 matching and case tests raised it to 85.67%/75.96%; M9-6 API boundary tests found and fixed unsigned candidateLimit zero handling, with 87.93% lines/77.93% branches; the 90%/85% gate still fails, libFuzzer runtime is absent locally, and ten-minute milestone/coverage work remains open"],
+      "tests": ["tests/engine/test_cli.py", "tests/engine/test_json_boundary.cpp", "tests/engine/mutation_smoke.cpp — 30-second address/undefined sanitizer mutation runs for JSON, case, and request boundaries", "tests/engine/test_matching.cpp and tests/reference/test_matching.py — cancelled/undated refunds, concurrent corrections/decisions, superseding review, manual source, and parameter boundary cases", "tests/engine/test_case.cpp — strict version, identity, source/account, amount, correction, and duplicate-ID refusal", "tests/engine/test_cli.py — versioned API integer bounds, request shapes, queue lists, trace target, and unsupported operation", "tests/engine/test_receipt.cpp — linked proposal provenance and malformed historical archive refusal"],
+      "evidence": ["M3 address/undefined sanitizer CLI suite and bounded JSON inputs pass; M9-2 deterministic 30-second mutation smoke passed all three targets with 906789 total iterations and zero sanitizer findings; M9-3 native source coverage gate failed at 82.90% lines and 73.38% branches; M9-4/M9-5 matching and case tests raised it to 85.67%/75.96%; M9-6 API boundary tests fixed unsigned candidateLimit zero handling at 87.93%/77.93%; M9-7 receipt provenance/archive tests raise coverage to 88.44% lines/78.99% branches; the 90%/85% gate still fails, libFuzzer runtime is absent locally, and ten-minute milestone/coverage work remains open"],
       "status": "IN_PROGRESS"
     },
     {
@@ -715,13 +715,14 @@
         "tests/browser/test_import_worker.mjs — synthetic real-browser RC-12/13/24/27/44 slices",
         "tests/engine/test_matching.cpp and tests/reference/test_matching.py — synthetic adverse matching/review boundaries",
         "tests/engine/test_case.cpp — synthetic invalid source, account, temporal, and exact-money case boundaries",
-        "tests/engine/test_cli.py — synthetic versioned API limits and discrepancy-queue contract boundaries"
+        "tests/engine/test_cli.py — synthetic versioned API limits and discrepancy-queue contract boundaries",
+        "tests/engine/test_receipt.cpp — reviewed linked proposal and historical archive tamper/refusal"
       ],
       "evidence": [
         "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit",
         "docs/backend/release-corpus.md maps all RC-01 through RC-48; many browser/server/crypto gates remain OPEN",
         "M5-4 six local Chrome tests pass; release corpus remains partial without WASM/storage/auth",
-        "M9-4 native/reference matching regressions cover cancellation, missing date, conflicting and superseded reviews, and refusal paths; M9-5 strict native parser regressions cover invalid IDs, roles, money, source/account links, and correction semantics; M9-6 synthetic API limits and queue cases pass; synthetic cases do not replace real-record pilot evidence"
+        "M9-4 native/reference matching regressions cover cancellation, missing date, conflicting and superseded reviews, and refusal paths; M9-5 strict native parser regressions cover invalid IDs, roles, money, source/account links, and correction semantics; M9-6 synthetic API limits/queue cases pass; M9-7 native receipt provenance/archive refusal passes; synthetic cases do not replace real-record pilot evidence"
       ],
       "status": "IN_PROGRESS"
     },

@@ -61,6 +61,42 @@ int main() {
     require(manual_receipt.at("digest") == "3f7da45c53b39da741fd92eff6a11d3711a75fa67f582891f565bd6b495a9294");
     require(scryer::reproduce_receipt(manual, manual_receipt) == manual_receipt);
 
+    auto linked_raw = fixture("golden-case");
+    linked_raw["proposals"][0]["sourceLocation"] = "row:1";
+    linked_raw["proposals"][0]["proposedAmountMinor"] = "510000";
+    linked_raw["events"][2]["fact"]["proposalId"] = "proposal-unreviewed";
+    const auto linked = scryer::parse_case(linked_raw);
+    const auto linked_receipt = scryer::make_receipt(linked, after, "2026-fall");
+    bool found_proposal = false;
+    for (const auto& step : linked_receipt.at("facts")) {
+        if (step.at("factId") == "base-charge") {
+            require(step.at("proposalId") == "proposal-unreviewed");
+            require(step.at("proposedAmountMinor") == "510000");
+            require(step.at("originalAmountMinor") == "500000");
+            require(step.at("currentAmountMinor") == "500000");
+            require(step.at("parserVersion") == "synthetic.1");
+            require(step.at("mappingVersion") == "school-map.1");
+            found_proposal = true;
+        }
+    }
+    require(found_proposal);
+    require(scryer::reproduce_receipt(linked, linked_receipt) == linked_receipt);
+    linked_raw["proposals"][0]["proposedAmountMinor"] = nullptr;
+    const auto unknown_proposal = scryer::parse_case(linked_raw);
+    const auto unknown_receipt = scryer::make_receipt(unknown_proposal, after, "2026-fall");
+    for (const auto& step : unknown_receipt.at("facts")) {
+        if (step.at("factId") == "base-charge") {
+            require(step.at("proposedAmountMinor").is_null());
+        }
+    }
+    require(scryer::reproduce_receipt(unknown_proposal, unknown_receipt) == unknown_receipt);
+    expect_error("UNSUPPORTED_ENGINE_VERSION", [&] {
+        (void)scryer::make_receipt(golden, after, "2026-fall", "future-9");
+    });
+    expect_error("INVALID_HISTORICAL_RECEIPT", [&] {
+        (void)scryer::reproduce_receipt(golden, nullptr);
+    });
+
     auto changed = receipt;
     changed["facts"][0]["contributionMinor"] = "-500001";
     redigest(changed);
@@ -78,6 +114,18 @@ int main() {
     changed = receipt;
     changed["digest"] = "0";
     expect_error("INVALID_HISTORICAL_RECEIPT", [&] { (void)scryer::reproduce_receipt(golden, changed); });
+    changed = receipt;
+    changed.erase("heads");
+    expect_error("INVALID_HISTORICAL_RECEIPT", [&] { (void)scryer::reproduce_receipt(golden, changed); });
+    changed = receipt;
+    changed["heads"] = scryer::Json::array({"event-unknown"});
+    expect_error("INVALID_HISTORICAL_RECEIPT", [&] { (void)scryer::reproduce_receipt(golden, changed); });
+    changed = receipt;
+    changed.erase("ruleVersion");
+    expect_error("UNSUPPORTED_RULE", [&] { (void)scryer::reproduce_receipt(golden, changed); });
+    changed = receipt;
+    changed["engineVersion"] = 9;
+    expect_error("UNSUPPORTED_ENGINE_VERSION", [&] { (void)scryer::reproduce_receipt(golden, changed); });
 
     const auto reversal = scryer::parse_case(fixture("reversal-case"));
     const auto archived = scryer::make_receipt(reversal, after, "2026-fall", "reference-0.1.0");

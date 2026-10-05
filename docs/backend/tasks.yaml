@@ -746,12 +746,13 @@
         "M9-4 native and independent Python matching edge cases pass; rerun the same native source coverage gate and retain its nonzero result until targets are met",
         "M9-5 strict native case-boundary rejection cases pass for version, IDs, accounts, artifacts, proposals, source evidence, roles, exact money, and correction semantics; remeasure the same coverage gate",
         "M9-6 versioned native request boundaries and discrepancy queue branches pass; unsigned candidateLimit zero now fails at the API with INVALID_REQUEST",
+        "M9-7 native receipt provenance and historical archive refusal tests pass for reviewed proposal values and malformed archived fields",
         "declared fuzz budgets",
         "component coverage gates",
         "negative controls"
       ],
       "command": "Freeze verification scripts as each component lands",
-      "expected": "M9-1 generated differential, M9-2 sanitizer mutation smoke, M9-4 matching, M9-5 case, and M9-6 API boundary suites pass locally; native coverage rises to 87.93% lines/77.93% branches but the 90%/85% gate still fails; coverage-guided fuzz runtime, ten-minute budgets, more coverage, browser parity, broader performance, and security/release gates remain open",
+      "expected": "M9-1 generated differential, M9-2 sanitizer mutation smoke, M9-4 matching, M9-5 case, M9-6 API, and M9-7 receipt suites pass locally; native coverage rises to 88.44% lines/78.99% branches but the 90%/85% gate still fails; coverage-guided fuzz runtime, ten-minute budgets, more coverage, browser parity, broader performance, and security/release gates remain open",
       "risk": "HIGH",
       "done": "Full evidence package and whole-branch review are current at candidate revision."
     },
