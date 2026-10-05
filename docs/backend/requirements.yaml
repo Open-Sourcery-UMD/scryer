@@ -482,8 +482,8 @@
         "M4",
         "M9"
       ],
-      "tests": ["tests/engine/test_cli.py", "tests/engine/test_json_boundary.cpp", "tests/engine/mutation_smoke.cpp — 30-second address/undefined sanitizer mutation runs for JSON, case, and request boundaries", "tests/engine/test_matching.cpp and tests/reference/test_matching.py — cancelled/undated refunds, concurrent corrections/decisions, superseding review, manual source, and parameter boundary cases"],
-      "evidence": ["M3 address/undefined sanitizer CLI suite and bounded JSON inputs pass; M9-2 deterministic 30-second mutation smoke passed all three targets with 906789 total iterations and zero sanitizer findings; M9-3 native source coverage gate failed at 82.90% lines and 73.38% branches; M9-4 matching regressions raise it to 84.03% lines and 74.50% branches, still failing 90%/85%; coverage-guided libFuzzer runtime is absent locally and ten-minute milestone/coverage work remains open"],
+      "tests": ["tests/engine/test_cli.py", "tests/engine/test_json_boundary.cpp", "tests/engine/mutation_smoke.cpp — 30-second address/undefined sanitizer mutation runs for JSON, case, and request boundaries", "tests/engine/test_matching.cpp and tests/reference/test_matching.py — cancelled/undated refunds, concurrent corrections/decisions, superseding review, manual source, and parameter boundary cases", "tests/engine/test_case.cpp — strict version, identity, source/account, amount, correction, and duplicate-ID refusal"],
+      "evidence": ["M3 address/undefined sanitizer CLI suite and bounded JSON inputs pass; M9-2 deterministic 30-second mutation smoke passed all three targets with 906789 total iterations and zero sanitizer findings; M9-3 native source coverage gate failed at 82.90% lines and 73.38% branches; M9-4 matching regressions raised it to 84.03%/74.50%, and M9-5 case-boundary tests raise it to 85.67% lines/75.96% branches; the 90%/85% gate still fails, libFuzzer runtime is absent locally, and ten-minute milestone/coverage work remains open"],
       "status": "IN_PROGRESS"
     },
     {
@@ -713,13 +713,14 @@
         "tests/reference/test_receipt.py — canonical digest, independent arithmetic/source checks, seeded generator",
         "tests/reference/test_corpus.py — 22 literal synthetic parity operations across seven case fixtures",
         "tests/browser/test_import_worker.mjs — synthetic real-browser RC-12/13/24/27/44 slices",
-        "tests/engine/test_matching.cpp and tests/reference/test_matching.py — synthetic adverse matching/review boundaries"
+        "tests/engine/test_matching.cpp and tests/reference/test_matching.py — synthetic adverse matching/review boundaries",
+        "tests/engine/test_case.cpp — synthetic invalid source, account, temporal, and exact-money case boundaries"
       ],
       "evidence": [
         "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit",
         "docs/backend/release-corpus.md maps all RC-01 through RC-48; many browser/server/crypto gates remain OPEN",
         "M5-4 six local Chrome tests pass; release corpus remains partial without WASM/storage/auth",
-        "M9-4 native/reference matching regressions cover cancellation, missing date, conflicting and superseded reviews, and refusal paths; these synthetic cases do not replace real-record pilot evidence"
+        "M9-4 native/reference matching regressions cover cancellation, missing date, conflicting and superseded reviews, and refusal paths; M9-5 strict native parser regressions cover invalid IDs, roles, money, source/account links, and correction semantics; synthetic cases do not replace real-record pilot evidence"
       ],
       "status": "IN_PROGRESS"
     },

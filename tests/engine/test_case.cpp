@@ -102,6 +102,69 @@ int main() {
     raw = fixture("golden-case");
     raw["events"][3]["parents"] = scryer::Json::array({"event-base-charge"});
     expect_error("INVALID_CORRECTION_CAUSALITY", [&] { (void)parse_case(raw); });
+
+    const auto reject_golden = [&](std::string_view code, auto&& change) {
+        auto candidate = fixture("golden-case");
+        change(candidate);
+        expect_error(code, [&] { (void)parse_case(candidate); });
+    };
+    reject_golden("UNSUPPORTED_VERSION", [](auto& value) { value["schemaVersion"] = "2"; });
+    reject_golden("INVALID_ID", [](auto& value) { value["caseId"] = "bad/id"; });
+    reject_golden("INVALID_HOLDER_KIND", [](auto& value) {
+        value["accountRefs"][0]["holderKind"] = "student";
+    });
+    reject_golden("ACCOUNT_KIND_MISMATCH", [](auto& value) {
+        value["accountRefs"][1]["institutionId"] = "institution-a";
+    });
+    reject_golden("INVALID_HOLDER_KIND", [](auto& value) {
+        value["accountRefs"][1]["holderKind"] = nullptr;
+    });
+    reject_golden("MISSING_INSTITUTION", [](auto& value) {
+        value["terms"][0]["institutionId"] = "institution-missing";
+    });
+    reject_golden("INVALID_TERM_INTERVAL", [](auto& value) {
+        value["terms"][0]["endDateExclusive"] = value["terms"][0]["startDate"];
+    });
+    reject_golden("INVALID_ARTIFACT_HASH", [](auto& value) {
+        value["artifacts"][0]["sha256"] = std::string(64, 'g');
+    });
+    reject_golden("MISSING_ACCOUNT", [](auto& value) {
+        value["artifacts"][1]["accountRefId"] = "account-missing";
+    });
+    reject_golden("INVALID_SCHEMA", [](auto& value) {
+        value["proposals"][0]["rawValue"] = std::string(65537, 'x');
+    });
+    reject_golden("DUPLICATE_EVENT_ID", [](auto& value) {
+        value["events"][1]["eventId"] = value["events"][0]["eventId"];
+    });
+    reject_golden("DUPLICATE_FACT_ID", [](auto& value) {
+        value["events"][1]["fact"]["factId"] = value["events"][0]["fact"]["factId"];
+    });
+    reject_golden("UNSUPPORTED_EVENT", [](auto& value) { value["events"][0]["kind"] = "nope"; });
+    reject_golden("UNSUPPORTED_ROLE", [](auto& value) {
+        value["events"][0]["fact"]["role"] = "unverified_credit";
+    });
+    reject_golden("INVALID_RECIPIENT_KIND", [](auto& value) {
+        value["events"][5]["fact"]["recipientKind"] = nullptr;
+    });
+    reject_golden("INVALID_TERM_BINDING", [](auto& value) {
+        value["events"][6]["fact"]["termId"] = "2026-fall";
+    });
+    reject_golden("SOURCE_ACCOUNT_MISMATCH", [](auto& value) {
+        value["events"][6]["fact"]["source"]["artifactId"] = "bill-a";
+    });
+    reject_golden("MISSING_AID_ITEM", [](auto& value) {
+        value["events"][0]["fact"]["aidItemId"] = "aid-item-missing";
+    });
+    reject_golden("INVALID_MONEY", [](auto& value) {
+        value["events"][0]["fact"]["amountMinor"] = "-1";
+    });
+    reject_golden("SOURCE_ACCOUNT_MISMATCH", [](auto& value) {
+        value["events"][3]["correction"]["source"]["artifactId"] = "bank-a";
+    });
+    reject_golden("INVALID_CORRECTION", [](auto& value) {
+        value["events"][3]["correction"]["cancelled"] = true;
+    });
     const std::vector<std::string> bad_heads{"event-grant", "event-grant"};
     expect_error("INVALID_HEADS", [&] { (void)snapshot(case_a, bad_heads); });
     const std::vector<std::string> unknown_head{"not-an-event"};
