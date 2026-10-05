@@ -1,8 +1,8 @@
 # ADR 0003 — Local identity and opaque sync
 
-Status: selected architecture, protocol details still require M7 implementation review.
+Status: selected architecture; the local Keycloak 26.7.3 browser PKCE flow is verified, while server-side JWT validation and the full sync API remain open.
 
-Use a locally self-hosted OIDC provider (Keycloak is the default candidate until a pinned version and loopback setup are verified). The browser uses authorization code with PKCE. The FastAPI service accepts only access tokens from configured issuer/audience/algorithm and trusted JWKS endpoint. Account state is checked after cryptographic verification. Logout and provider revocation have documented access-token lifetime limits; a disabled/deleted service account always denies new access.
+Use a locally self-hosted OIDC provider. Keycloak 26.7.3 is pinned for synthetic local tests; its loopback authorization-code/PKCE flow passed with two users, an API audience, provider userinfo, and wrong-verifier rejection. The FastAPI service must accept only access tokens from configured issuer/audience/algorithm and trusted JWKS endpoint. That cryptographic validation has not been implemented or tested because the maintained JWT verifier is not available under current dependency permissions. The current HTTP factory requires an injected verifier and has no production auth wiring. Account state is checked after a test-supplied verified identity; a disabled account denies the unit-token HTTP tests. Logout and provider revocation limits need real-token tests.
 
 `/v1` sync routes accept opaque encrypted envelopes only. Creation requires `If-None-Match: *`; update/delete require an exact `If-Match` head revision; missing precondition is `428`, stale precondition `412`, reused idempotency key with different bytes `409`, over-limit body `413`, bad token `401`, and documented throttling `429`. Cross-tenant paths must not reveal whether an object exists. An idempotency replay is checked against current account/case lifecycle before returning cached success. Persist the exact prepared client request before transmission.
 

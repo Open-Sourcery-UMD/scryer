@@ -1,6 +1,6 @@
 # Ciphertext sync protocol v1
 
-Status: the exact chunk/manifest parser, assembler, and PostgreSQL ciphertext store are implemented and locally tested. A synthetic Chrome outbox was accepted by the independent Python parser and reproduced the same encrypted package digest. HTTP routes, authentication, and the official transport client remain M7 work. This is a contract, not a claim that a service is running.
+Status: the exact chunk/manifest parser, assembler, and PostgreSQL ciphertext store are implemented and locally tested. A synthetic Chrome outbox was accepted by the independent Python parser and reproduced the same encrypted package digest. An initial HTTP factory has account, chunk, manifest, head, and case-delete routes tested with a unit-only token verifier and real PostgreSQL. The local Keycloak browser PKCE flow is tested separately. A maintained JWT verifier, real token-to-API integration, remaining routes, and official client transport remain M7 work. This is a contract, not a claim that a production service is running.
 
 ## Identity and transport
 
@@ -53,7 +53,7 @@ Server revision, local encrypted-store revision, and domain knowledge head are s
 
 ## Database boundary and migration state
 
-`migrations/0001_sync.sql` creates separate owner, security, and ordinary application roles; opaque ciphertext tables; and forced RLS on all tenant-owned tables. The ordinary role cannot read the private context key or deletion jobs. `sync/db_context.py` establishes a signed transaction-local account context only after the future API has verified the token and account state. A raw caller `SET` of account ID is insufficient to cross tenants. See ADR 0005 for the precise guarantee and limits. `sync/migrate.py` records migration SHA-256 checksums in a private table, refuses edits to applied files and unknown future versions, and applies schema changes transactionally. The migration itself has not been verified on PostgreSQL 16 or exercised through a running HTTP service.
+`migrations/0001_sync.sql` creates separate owner, security, and ordinary application roles; opaque ciphertext tables; and forced RLS on all tenant-owned tables. `0002_account_identity.sql` rejects duplicate `(issuer, subject)` mappings. The ordinary role cannot read the private context key or deletion jobs. `sync/db_context.py` establishes a signed transaction-local account context after the API boundary accepts a verified identity and checks current account state. A raw caller `SET` of account ID is insufficient to cross tenants. See ADR 0005 for the precise guarantee and limits. `sync/migrate.py` records migration SHA-256 checksums in a private table, refuses edits to applied files and unknown future versions, and applies schema changes transactionally. The 38-test sync suite passed on PostgreSQL 15.11 and 16.15; the HTTP tests use a unit-only identity verifier and do not prove real JWT validation.
 
 ## PostgreSQL store behavior
 

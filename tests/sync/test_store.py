@@ -12,6 +12,7 @@ import unittest
 
 import psycopg
 
+from _db_harness import APP, app_connect, ensure_test_app_role
 from sync.db_context import begin_tenant_transaction
 from sync.migrate import apply_migrations
 from sync.store import StoreError, stage_chunk, commit_manifest, get_head, delete_case
@@ -20,7 +21,6 @@ from sync.store import StoreError, stage_chunk, commit_manifest, get_head, delet
 MIGRATIONS = Path(__file__).resolve().parents[2] / "migrations"
 SOCKET = os.environ.get("SCRYER_TEST_PG_SOCKET")
 ADMIN = os.environ.get("SCRYER_TEST_PG_ADMIN", getpass.getuser())
-APP = "scryer_test_app"
 QUOTA = 256 * 1024 * 1024
 PACKAGE = "EBESExQVFhcYGRobHB0eHw"
 DEVICE = "AAECAwQFBgcICQoLDA0ODw"
@@ -34,23 +34,24 @@ def b64(value):
     return base64.urlsafe_b64encode(value).decode("ascii").rstrip("=")
 
 
-def prepared(case_id="case-one", revision_id="rev-one", content=b"encrypted", package_id=PACKAGE):
+def prepared(case_id="case-one", revision_id="rev-one", content=b"encrypted",
+             package_id=PACKAGE, account_id="acct-a"):
     chunk = {
-        "schemaVersion": "1", "kind": "chunk", "accountId": "acct-a",
+        "schemaVersion": "1", "kind": "chunk", "accountId": account_id,
         "caseId": case_id, "revisionId": revision_id, "packageId": package_id,
         "index": 0, "chunkCount": 1, "nonce": b64(bytes(12)),
         "ciphertext": b64(content), "tag": b64(bytes(16)),
     }
     package = {
         "schemaVersion": "1", "format": "scryer-case-v1",
-        "algorithm": "AES-256-GCM+HKDF-SHA-256", "accountId": "acct-a",
+        "algorithm": "AES-256-GCM+HKDF-SHA-256", "accountId": account_id,
         "caseId": case_id, "revisionId": revision_id, "deviceId": DEVICE,
         "keyGeneration": 1, "packageId": package_id,
         "chunks": [{key: chunk[key] for key in ("index", "nonce", "ciphertext", "tag")}],
     }
     manifest = {
         "schemaVersion": "1", "kind": "manifest", "format": "scryer-case-v1",
-        "algorithm": "AES-256-GCM+HKDF-SHA-256", "accountId": "acct-a",
+        "algorithm": "AES-256-GCM+HKDF-SHA-256", "accountId": account_id,
         "caseId": case_id, "revisionId": revision_id, "deviceId": DEVICE,
         "keyGeneration": 1, "packageId": package_id, "chunkCount": 1,
         "chunkDigests": [hashlib.sha256(wire(chunk)).hexdigest()],
@@ -78,10 +79,7 @@ class StoreTests(unittest.TestCase):
                           "('acct-b', 'https://issuer.invalid', 'subject-b')")
         with psycopg.connect(host=SOCKET, dbname="postgres", user=ADMIN,
                              autocommit=True) as admin:
-            admin.execute("DO $$ BEGIN IF NOT EXISTS "
-                          "(SELECT 1 FROM pg_roles WHERE rolname='scryer_test_app') THEN "
-                          "CREATE ROLE scryer_test_app LOGIN IN ROLE scryer_app; "
-                          "END IF; END $$")
+            ensure_test_app_role(admin)
 
     def tearDown(self):
         with psycopg.connect(host=SOCKET, dbname="postgres", user=ADMIN,
@@ -92,7 +90,7 @@ class StoreTests(unittest.TestCase):
         return psycopg.connect(host=SOCKET, dbname=self.dbname, user=ADMIN)
 
     def run_as(self, fn, account_id="acct-a"):
-        with psycopg.connect(host=SOCKET, dbname=self.dbname, user=APP) as app:
+        with app_connect(SOCKET, self.dbname) as app:
             with app.transaction():
                 begin_tenant_transaction(app, account_id, self.key)
                 return fn(app)

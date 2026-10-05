@@ -6,7 +6,7 @@
 
 **Architecture:** The server accepts exact prepared ciphertext chunk bodies, then atomically publishes a manifest only after every chunk digest and the assembled package digest match. PostgreSQL retains ciphertext and opaque IDs; a transaction-scoped signed tenant context protects every tenant table under a nonowner application role. Authentication will supply the account identity, never a body field.
 
-**Tech Stack:** Python 3.14, FastAPI 0.141.1, psycopg 3.3.5, PostgreSQL 15.11 for available local tests (release target 16 remains unverified), browser TypeScript and WebCrypto.
+**Tech Stack:** Python 3.14, FastAPI 0.141.1, psycopg 3.3.5, PostgreSQL 15.11 and cached 16.15 for local tests, cached Keycloak 26.7.3, browser TypeScript and WebCrypto.
 
 **Spec:** `docs/backend/contracts/storage-v1.md`, `docs/backend/contracts/crypto-v1.md`, `docs/backend/decisions/0003-identity-and-sync.md`, and sections 11–13 of the user-supplied backend brief.
 
@@ -17,7 +17,7 @@
 - Account identity comes from a verified token plus current server account state; a body account ID can only be checked for equality.
 - The browser's persisted outbox body and idempotency key are replayed byte-for-byte.
 - The application database role cannot own tenant tables, bypass RLS, or read its tenant-context MAC key.
-- No API success claim until token verification, database integration, and real local identity service are tested.
+- No complete authenticated-API claim until real token verification, database integration, and real local identity service are tested together.
 
 ## Review focus
 
@@ -67,9 +67,9 @@
 
 **Interfaces:** A validated OIDC access token yields `(issuer, subject, audience)` and a server-derived opaque account ID. `/v1` routes return typed JSON errors and never ingest plaintext. Generated OpenAPI from FastAPI is the authoritative HTTP schema.
 
-- [ ] Write API and token tests for forged/expired/wrong-audience/wrong-issuer/algorithm-confusion inputs, account disablement, body bounds, CORS, 401/409/412/413/428/429, and no sensitive response caching.
+- [ ] Complete API and token tests for forged/expired/wrong-audience/wrong-issuer/algorithm-confusion inputs, account disablement, body bounds, CORS, 401/409/412/413/428/429, and no sensitive response caching. Current HTTP/PostgreSQL tests cover a subset using a unit-only identity verifier; real JWT tests remain open.
 - [ ] Observe failures; implement with a pinned maintained verifier and trusted JWKS endpoint, then run tests with the real local provider.
-- [ ] Keep this task `BLOCKED_TOOLING` if the verifier or provider cannot be installed/run locally; do not substitute a mock token for the release gate.
+- [ ] Keep this task `BLOCKED_TOOLING` while the maintained verifier cannot be installed locally; the real Keycloak provider runs and its browser PKCE test passes, but a unit token is not a release gate.
 
 ### Task 5: Official client transport and local operations
 

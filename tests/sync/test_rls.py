@@ -8,6 +8,7 @@ import unittest
 
 import psycopg
 
+from _db_harness import APP, app_connect, ensure_test_app_role
 from sync.db_context import begin_tenant_transaction
 from sync.migrate import apply_migrations
 
@@ -15,7 +16,6 @@ from sync.migrate import apply_migrations
 MIGRATION = Path(__file__).resolve().parents[2] / "migrations" / "0001_sync.sql"
 SOCKET = os.environ.get("SCRYER_TEST_PG_SOCKET")
 ADMIN = os.environ.get("SCRYER_TEST_PG_ADMIN", getpass.getuser())
-APP = "scryer_test_app"
 
 
 class TenantBoundaryTests(unittest.TestCase):
@@ -42,10 +42,7 @@ class TenantBoundaryTests(unittest.TestCase):
                               "('acct-a', 'case-a'), ('acct-b', 'case-b')")
             with psycopg.connect(host=SOCKET, dbname="postgres", user=ADMIN,
                                  autocommit=True) as admin:
-                admin.execute("DO $$ BEGIN IF NOT EXISTS "
-                              "(SELECT 1 FROM pg_roles WHERE rolname='scryer_test_app') THEN "
-                              "CREATE ROLE scryer_test_app LOGIN IN ROLE scryer_app; "
-                              "END IF; END $$")
+                ensure_test_app_role(admin)
         except BaseException:
             with psycopg.connect(host=SOCKET, dbname="postgres", user=ADMIN,
                                  autocommit=True) as admin:
@@ -60,7 +57,7 @@ class TenantBoundaryTests(unittest.TestCase):
                 admin.execute(f'DROP DATABASE "{cls.dbname}" WITH (FORCE)')
 
     def app(self):
-        return psycopg.connect(host=SOCKET, dbname=self.dbname, user=APP)
+        return app_connect(SOCKET, self.dbname)
 
     def test_no_context_and_fake_set_cannot_read_tenant_rows(self):
         with self.app() as app:

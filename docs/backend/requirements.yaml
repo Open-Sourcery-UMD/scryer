@@ -890,9 +890,13 @@
         "M7",
         "M8"
       ],
-      "tests": [],
-      "evidence": [],
-      "status": "NOT_STARTED"
+      "tests": [
+        "tests/sync/test_oidc_local.mjs — real local Keycloak browser PKCE and two synthetic identities"
+      ],
+      "evidence": [
+        "M7-4a cached Keycloak 26.7.3 PKCE/audience/userinfo test passes; server JWT verification and public signup remain open"
+      ],
+      "status": "IN_PROGRESS"
     },
     {
       "id": "S-57",
@@ -960,12 +964,14 @@
         "tests/browser/test_sync_wire.mjs — Chrome outbox accepted by independent Python parser",
         "tests/sync/test_rls.py — real app-role direct-SQL isolation under forced RLS",
         "tests/sync/test_migrations.py — checksum, rollback, forward repair, and future-version rejection",
-        "tests/sync/test_store.py — atomic ciphertext publication, CAS, idempotency, quota, deletion, and tenant isolation"
+        "tests/sync/test_store.py — atomic ciphertext publication, CAS, idempotency, quota, deletion, and tenant isolation",
+        "tests/sync/test_api.py — HTTP behavior with unit-only verifier and real PostgreSQL"
       ],
       "evidence": [
         "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass",
         "M7-2 six direct app-role RLS tests and four migration tests pass on fresh private PostgreSQL 15.11",
-        "M7-3 thirteen PostgreSQL store tests pass; OIDC/HTTP sync remain open"
+        "M7-3 thirteen PostgreSQL store tests pass; OIDC/HTTP sync remain open",
+        "M7-4a 38 sync tests pass on PostgreSQL 15.11 and 16.15; real Keycloak PKCE passes separately; JWT-to-API integration remains blocked"
       ],
       "status": "IN_PROGRESS"
     },

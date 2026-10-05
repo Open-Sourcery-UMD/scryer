@@ -36,11 +36,13 @@ class MigrationTests(unittest.TestCase):
 
     def test_fresh_apply_is_recorded_and_repeated_apply_is_noop(self):
         with self.connect() as conn:
-            self.assertEqual(apply_migrations(conn, MIGRATIONS), ["0001_sync.sql"])
+            self.assertEqual(apply_migrations(conn, MIGRATIONS),
+                             ["0001_sync.sql", "0002_account_identity.sql"])
             self.assertEqual(apply_migrations(conn, MIGRATIONS), [])
             rows = conn.execute("SELECT filename, checksum FROM "
                                 "scryer_private.schema_migrations").fetchall()
-            self.assertEqual(rows[0][0], "0001_sync.sql")
+            self.assertEqual([row[0] for row in rows],
+                             ["0001_sync.sql", "0002_account_identity.sql"])
             self.assertEqual(len(rows[0][1]), 64)
 
     def test_changed_applied_migration_is_rejected(self):
@@ -59,7 +61,24 @@ class MigrationTests(unittest.TestCase):
             with self.assertRaises(psycopg.errors.DivisionByZero):
                 apply_migrations(conn, Path(temp))
             self.assertIsNone(conn.execute("SELECT to_regnamespace('scryer')").fetchone()[0])
-            self.assertEqual(apply_migrations(conn, MIGRATIONS), ["0001_sync.sql"])
+            self.assertEqual(apply_migrations(conn, MIGRATIONS),
+                             ["0001_sync.sql", "0002_account_identity.sql"])
+
+    def test_existing_duplicate_identity_blocks_forward_migration_without_partial_apply(self):
+        with self.connect() as conn, tempfile.TemporaryDirectory() as temp:
+            (Path(temp) / "0001_sync.sql").write_bytes((MIGRATIONS / "0001_sync.sql").read_bytes())
+            self.assertEqual(apply_migrations(conn, Path(temp)), ["0001_sync.sql"])
+            conn.execute("INSERT INTO scryer.accounts "
+                         "(account_id,identity_issuer,identity_subject) VALUES "
+                         "('one','https://issuer.invalid','same'), "
+                         "('two','https://issuer.invalid','same')")
+            conn.commit()
+            with self.assertRaises(psycopg.errors.UniqueViolation):
+                apply_migrations(conn, MIGRATIONS)
+            conn.rollback()
+            self.assertEqual(conn.execute("SELECT filename FROM "
+                                          "scryer_private.schema_migrations ORDER BY filename").fetchall(),
+                             [("0001_sync.sql",)])
 
     def test_unknown_applied_future_migration_is_rejected(self):
         with self.connect() as conn:

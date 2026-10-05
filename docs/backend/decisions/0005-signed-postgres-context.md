@@ -1,6 +1,6 @@
 # ADR 0005 — Signed, transaction-local PostgreSQL tenant context
 
-Status: selected for the local sync database; validated on PostgreSQL 15.11 only. The intended PostgreSQL 16 image, API token boundary, and full lifecycle path remain unverified.
+Status: selected for the local sync database; the 38-test sync suite passed on PostgreSQL 15.11 and cached PostgreSQL 16.15. The real API token boundary and full lifecycle path remain unverified.
 
 ## Problem
 
@@ -16,6 +16,6 @@ The migration/administrative identity owns the schema and can update the private
 
 `scripts/verify-sync-db.sh` creates a fresh, private Unix-socket PostgreSQL cluster when given a local binary path, then runs disposable-database tests. Six direct application-role tests observed: missing context denies rows; fake settings deny; a wrong key denies; changing a signed account to another denies; transaction replay denies; connection reuse without renewed context denies; own rows can be read and written while cross-tenant writes fail. Four migration tests observed fresh/repeat apply, changed-file rejection, failed-migration rollback with forward repair, and unknown future-version rejection. These are synthetic local tests, not a security audit.
 
-This protects tenant rows against a caller who can issue SQL as the app role but cannot read the context key. It does not protect against compromise of the API process or its key, a malicious migration/administrative role, a forged OIDC token accepted by a broken verifier, or all timing/error side channels. The service must validate the token before signing a context and must keep the key out of logs, browser responses, and SQL parameters exposed to untrusted callers. Key rotation, backup/restore, independent human review, and PostgreSQL 16 compatibility remain release gates.
+This protects tenant rows against a caller who can issue SQL as the app role but cannot read the context key. It does not protect against compromise of the API process or its key, a malicious migration/administrative role, a forged OIDC token accepted by a broken verifier, or all timing/error side channels. The service must validate the token before signing a context and must keep the key out of logs, browser responses, and SQL parameters exposed to untrusted callers. Key rotation, backup/restore, and independent human review remain release gates. PostgreSQL 16.15 synthetic test compatibility does not establish upgrade or production operations readiness.
 
 Per-tenant database login roles were rejected for v1 because creating, rotating, and revoking database credentials for every user would make the local stack more complex. An unsigned custom GUC was rejected because any app-role SQL caller can set it. A `SECURITY DEFINER` CRUD-only API remains an alternative but requires a larger stored-procedure surface and careful authorization of every operation.
