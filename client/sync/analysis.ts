@@ -8,6 +8,12 @@ export type ConflictIssue = { code: IssueCode; ids: string[] };
 export type ConflictAnalysis = { caseId: string; sharedEventIds: string[];
   localOnlyEventIds: string[]; remoteOnlyEventIds: string[];
   differentCaseFields: string[]; differentLedger: boolean; issues: ConflictIssue[] };
+export type BaseRetention = { missingBaseEventIds: string[]; changedBaseEventIds: string[];
+  changedCaseFields: string[]; changedLedgerPrefix: boolean; baseContentRetained: boolean };
+export type AncestorCandidateAnalysis =
+  | { status: 'not_requested' | 'unavailable' }
+  | { status: 'available'; baseRevisionId: string;
+      local: BaseRetention; remote: BaseRetention };
 
 const CASE_FIELDS = ['institutions', 'accountRefs', 'terms', 'aidItems',
   'artifacts', 'proposals'] as const;
@@ -116,4 +122,60 @@ export function analyzeConflictPreview(preview: ConflictPreview): ConflictAnalys
       a.ids.join('\u0000') > b.ids.join('\u0000') ? 1 : 0);
   return { caseId: preview.caseId, sharedEventIds, localOnlyEventIds,
     remoteOnlyEventIds, differentCaseFields, differentLedger, issues };
+}
+
+function isCanonicalPrefix(base: readonly unknown[], branch: readonly unknown[]): boolean {
+  if (base.length > branch.length) return false;
+  return base.every((item, index) => canonicalJson(item) === canonicalJson(branch[index]));
+}
+
+function baseRetention(base: ConflictPreview['local'], branch: ConflictPreview['local'],
+  baseEvents: Map<string, CaseEvent>, branchEvents: Map<string, CaseEvent>): BaseRetention {
+  const missingBaseEventIds: string[] = [];
+  const changedBaseEventIds: string[] = [];
+  for (const [id, baseEvent] of baseEvents) {
+    const current = branchEvents.get(id);
+    if (!current) missingBaseEventIds.push(id);
+    else if (canonicalJson(baseEvent) !== canonicalJson(current)) changedBaseEventIds.push(id);
+  }
+  const changedCaseFields = CASE_FIELDS.filter((field) =>
+    !isCanonicalPrefix(base.case[field], branch.case[field])).sort();
+  const changedLedgerPrefix = !isCanonicalPrefix(base.ledger.reviews, branch.ledger.reviews);
+  missingBaseEventIds.sort(); changedBaseEventIds.sort();
+  return { missingBaseEventIds, changedBaseEventIds, changedCaseFields,
+    changedLedgerPrefix, baseContentRetained: missingBaseEventIds.length === 0 &&
+      changedBaseEventIds.length === 0 && changedCaseFields.length === 0 &&
+      !changedLedgerPrefix };
+}
+
+export function analyzeAncestorCandidate(preview: ConflictPreview): AncestorCandidateAnalysis {
+  if (!preview || !validId(preview.caseId) || !preview.ancestor) {
+    throw new ConflictAnalysisError();
+  }
+  if (preview.ancestor.status === 'not_requested') {
+    if (preview.pendingExpectedServerRevision !== null) throw new ConflictAnalysisError();
+    return { status: 'not_requested' };
+  }
+  if (preview.ancestor.status === 'unavailable') {
+    if (!validId(preview.pendingExpectedServerRevision)) throw new ConflictAnalysisError();
+    return { status: 'unavailable' };
+  }
+  if (preview.ancestor.status !== 'available' ||
+      !validId(preview.pendingExpectedServerRevision) ||
+      preview.ancestor.branch.revisionId !== preview.pendingExpectedServerRevision ||
+      !validId(preview.local?.revisionId) || !validId(preview.remote?.revisionId)) {
+    throw new ConflictAnalysisError();
+  }
+  const base = preview.ancestor.branch;
+  const branches = [base, preview.local, preview.remote];
+  for (const branch of branches) {
+    if (!branch?.ledger || branch.ledger.schemaVersion !== '1' ||
+        !Array.isArray(branch.ledger.reviews)) throw new ConflictAnalysisError();
+  }
+  const baseEvents = eventIndex(base.case, preview.caseId);
+  const localEvents = eventIndex(preview.local.case, preview.caseId);
+  const remoteEvents = eventIndex(preview.remote.case, preview.caseId);
+  return { status: 'available', baseRevisionId: base.revisionId,
+    local: baseRetention(base, preview.local, baseEvents, localEvents),
+    remote: baseRetention(base, preview.remote, baseEvents, remoteEvents) };
 }

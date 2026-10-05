@@ -687,6 +687,7 @@
         "Chrome remote-branch decrypt/validation and unchanged outbox on preview",
         "Headless read-only branch analysis for event identity collisions, concurrent decisions, and non-event differences",
         "Local browser/API/PostgreSQL historical ciphertext base retrieval and authenticated browser inspection",
+        "Headless and Chrome read-only candidate-base retention analysis for exact event payloads, metadata prefixes, and review-ledger prefixes",
         "RC-31–RC-39",
         "RC-45",
         "RC-47"
