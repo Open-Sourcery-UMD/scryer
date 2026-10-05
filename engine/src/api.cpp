@@ -85,7 +85,8 @@ int bounded_int(const Json& value, int minimum, int maximum) {
     }
     if (value.is_number_unsigned()) {
         const auto number = value.get<std::uint64_t>();
-        if (number > static_cast<std::uint64_t>(maximum)) {
+        if ((minimum > 0 && number < static_cast<std::uint64_t>(minimum)) ||
+            number > static_cast<std::uint64_t>(maximum)) {
             throw ScryerError("INVALID_REQUEST");
         }
         return static_cast<int>(number);

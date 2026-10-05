@@ -41,6 +41,67 @@ def result(process, operation):
 
 
 class NativeCliTests(unittest.TestCase):
+    def test_versioned_request_limits_and_discrepancy_queue(self):
+        matching = fixture("matching")
+        valid = request("matching", case=matching, heads=["event-coverage"],
+                        refundFactId="issued-refund", bankAccountRefId="bank-a",
+                        candidateLimit=1, windowDays=0)
+        self.assertEqual(result(call(valid), "matching")["status"], "NO_CANDIDATE_IN_APPROVED_FACTS")
+
+        def rejected(query, code="INVALID_REQUEST"):
+            process = call(query)
+            self.assertEqual(process.returncode, 3)
+            self.assertEqual(process.stdout, "")
+            self.assertEqual(json.loads(process.stderr)["error"]["code"], code)
+
+        for key, values in (("candidateLimit", (0, 10001, 1.5, True, "1")),
+                            ("windowDays", (-1, 91, 1.5, True, "0"))):
+            for value in values:
+                with self.subTest(key=key, value=value):
+                    invalid = copy.deepcopy(valid)
+                    invalid[key] = value
+                    rejected(invalid)
+        golden = fixture("golden")
+        rejected(request("project", case=golden, heads="event-extra-charge",
+                         termId="2026-fall"))
+        rejected(request("project", case=golden, heads=[17], termId="2026-fall"))
+        rejected(request("project", case=golden, heads=["event-extra-charge"],
+                         termId="2026-fall", unexpected=True))
+        rejected(request("timeline", case=golden, termId="2026-fall",
+                         cutoffsUtc=["2026-09-02T10:02:00Z"] * 257))
+        rejected(request("batch", case=golden,
+                         requests=[{"operation": "validate"}] * 101))
+        rejected(request("discrepancy-queue", case=matching, heads=["event-coverage"],
+                         termId="2026-fall", aidItemIds=["loan-a"] * 101,
+                         matchTargets=[]))
+        rejected(request("discrepancy-queue", case=matching, heads=["event-coverage"],
+                         termId="2026-fall", aidItemIds=[],
+                         matchTargets=[{"refundFactId": "issued-refund",
+                                        "bankAccountRefId": "bank-a"}] * 101))
+        rejected(request("discrepancy-queue", case=matching, heads=["event-coverage"],
+                         termId="2026-fall", aidItemIds=[],
+                         matchTargets=[{"refundFactId": "issued-refund"}]))
+        rejected(request("trace", case=golden, heads=["event-extra-charge"],
+                         factId="fact-missing"), "MISSING_FACT_IN_SNAPSHOT")
+        rejected(request("unknown-operation", case=golden), "UNSUPPORTED_OPERATION")
+        rejected({"schemaVersion": "1"})
+
+        ambiguous_queue = result(call(request("discrepancy-queue", case=fixture("ambiguous"),
+            heads=["event-grant-correction", "event-grant-correction-b"],
+            termId="2026-fall", aidItemIds=[], matchTargets=[])), "discrepancy-queue")
+        self.assertEqual([item["category"] for item in ambiguous_queue], ["school_surplus"])
+        self.assertEqual(ambiguous_queue[0]["status"], "CONTRADICTORY_EVIDENCE")
+        aid_queue = result(call(request("discrepancy-queue", case=fixture("gross-net"),
+            heads=["event-fee"], termId="2026-fall", aidItemIds=["loan-a"],
+            matchTargets=[])), "discrepancy-queue")
+        self.assertEqual([item["category"] for item in aid_queue], ["aid_lifecycle"])
+        self.assertIn("ACCEPTANCE_NOT_OBSERVED", aid_queue[0]["findingCodes"])
+        reviewed_queue = result(call(request("discrepancy-queue", case=matching,
+            heads=["event-confirm"], termId="2026-fall", aidItemIds=[],
+            matchTargets=[{"refundFactId": "issued-refund", "bankAccountRefId": "bank-a"}])),
+            "discrepancy-queue")
+        self.assertEqual(reviewed_queue, [])
+
     def test_reviewed_branch_join_parity_and_unresolved_correction(self):
         golden = fixture("golden")
         bank = next(item for item in golden["events"] if item["eventId"] == "event-bank-credit")
