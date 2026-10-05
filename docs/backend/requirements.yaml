@@ -916,7 +916,8 @@
         "tests/client/test_crypto.mjs — WebCrypto interop, strict envelopes, tamper, chunk atomicity",
         "tests/browser/test_crypto.mjs — real Chrome fixed-vector open and independent browser-to-Node decrypt",
         "tests/browser/test_archive.mjs — independent Node/OpenSSL verification of Chrome archive HMAC",
-        "tests/browser/test_rotation.mjs — budget exhaustion, journaled generation transition, and new-root rotation"
+        "tests/browser/test_rotation.mjs — budget exhaustion, journaled generation transition, and new-root rotation",
+        "tests/sync/test_client_integration.mjs — synthetic source sentinel absent from browser API request bodies, HTTP ciphertext, local outbox, and disposable PostgreSQL"
       ],
       "evidence": [
         "M6 design selected locally in docs/backend/security/local-storage-design.md; independent review remains open",
@@ -924,7 +925,8 @@
         "M6-2 WebCrypto primitives pass headless and Chrome interop/tamper checks",
         "M6-3 encrypted IndexedDB persistence and durable encryption-use budgets pass Chrome failure tests",
         "M6-4 archive-wide HMAC membership check passes Chrome and independent Node/OpenSSL",
-        "M6-5 two-case rotation and interruption tests pass Chrome; browser regressions cover database recreation, direct-constructor binding, rotated-session binding, stale-tab restore refusal, and one package device ID across header/key derivation; independent human review remains open"
+        "M6-5 two-case rotation and interruption tests pass Chrome; browser regressions cover database recreation, direct-constructor binding, rotated-session binding, stale-tab restore refusal, and one package device ID across header/key derivation; independent human review remains open",
+        "M8-6a Chrome/FastAPI/PostgreSQL synthetic sentinel journey passes; public auth, WASM validation, deployed logs and backups remain open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -977,13 +979,15 @@
         "tests/sync/test_api.py — tenant-scoped keyset listing, historical ciphertext read, deletion and corruption refusal",
         "tests/sync/test_pagination.py — cursor expiry, exact timestamp, tenant binding, and tamper refusal",
         "tests/sync/test_recovery.py — exact encrypted recovery wrapper wire and strong preconditions",
-        "tests/sync/test_protocol.py, test_store.py, and test_api.py — exact device registry wire, active-device publication gate, tenant isolation, retirement, and limits"
+        "tests/sync/test_protocol.py, test_store.py, and test_api.py — exact device registry wire, active-device publication gate, tenant isolation, retirement, and limits",
+        "tests/sync/test_client_integration.mjs — synthetic plaintext boundary sentinel with recovered amount, all browser API request bodies, logs, and disposable database scan"
       ],
       "evidence": [
         "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass",
         "M7-2 six direct app-role RLS tests and four migration tests pass on fresh private PostgreSQL 15.11",
         "M7-3 thirteen PostgreSQL store tests pass; OIDC/HTTP sync remain open",
-        "M7 device registry, HTTP boundary, ciphertext reads, and initial wrapper API pass within 85 sync tests on PostgreSQL 15.11 and 16.15 with local Keycloak; 32 headless client tests, 33 Chrome tests, and one synthetic browser/API/PostgreSQL journey pass; JWT-to-API integration remains blocked"
+        "M7 device registry, HTTP boundary, ciphertext reads, and initial wrapper API pass within 85 sync tests on PostgreSQL 15.11 and 16.15 with local Keycloak; 32 headless client tests, 33 Chrome tests, and one synthetic browser/API/PostgreSQL journey pass; JWT-to-API integration remains blocked",
+        "M8-6a Chrome/FastAPI/PostgreSQL synthetic sentinel stays in decrypted case but absent from observed browser API bodies, HTTP ciphertext, collected API logs, and disposable PostgreSQL tables; production identity and WASM validation remain open"
       ],
       "status": "IN_PROGRESS"
     },

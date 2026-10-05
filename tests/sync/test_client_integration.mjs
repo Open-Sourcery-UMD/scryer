@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { once } from 'node:events';
 import { createServer } from 'node:net';
@@ -11,6 +11,7 @@ import { openBrowserHarness } from '../browser/harness.mjs';
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const python = fileURLToPath(new URL('../../.venv/bin/python', import.meta.url));
 const fixture = fileURLToPath(new URL('./_client_api_fixture.py', import.meta.url));
+const sentinel = 'SYNTHETIC_ONLY_BANK_LINE_7F9B24';
 
 async function unusedPort() {
   const server = createServer();
@@ -35,8 +36,13 @@ async function startApi(t, browserOrigin) {
   const child = spawn(python, [fixture], { cwd: root, env: environment,
     stdio: ['ignore', 'pipe', 'pipe'] });
   let output = '';
+  let logContainsSentinel = false;
   for (const stream of [child.stdout, child.stderr]) {
-    stream.on('data', (chunk) => { output = (output + chunk.toString()).slice(-8000); });
+    stream.on('data', (chunk) => {
+      const combined = output + chunk.toString();
+      logContainsSentinel ||= combined.includes(sentinel);
+      output = combined.slice(-8000);
+    });
   }
   t.after(async () => {
     if (child.exitCode === null && child.signalCode === null) {
@@ -52,11 +58,9 @@ async function startApi(t, browserOrigin) {
       }
     }
     const cleanup = spawn(python, [fixture, '--cleanup'], { cwd: root,
-      env: environment, stdio: ['ignore', 'pipe', 'pipe'] });
-    let cleanupError = '';
-    cleanup.stderr.on('data', (chunk) => { cleanupError += chunk.toString(); });
+      env: environment, stdio: 'ignore' });
     const [code] = await once(cleanup, 'exit');
-    assert.equal(code, 0, `disposable database cleanup failed: ${cleanupError}`);
+    assert.equal(code, 0, 'disposable database cleanup failed');
   });
   let ready = false;
   for (let attempt = 0; attempt < 80; attempt++) {
@@ -66,8 +70,21 @@ async function startApi(t, browserOrigin) {
     if (ready) break;
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
-  assert.ok(ready, `local synthetic API did not become ready: ${output}`);
-  return api;
+  assert.ok(ready, 'local synthetic API did not become ready');
+  const scanSentinel = (marker) => {
+    const result = spawnSync(python, [fixture, '--scan-sentinel'], {
+      cwd: root, env: { ...environment, SCRYER_TEST_SENTINEL: marker },
+      encoding: 'utf8', maxBuffer: 64 * 1024,
+    });
+    if (result.error) throw result.error;
+    assert.equal(result.status, 0, 'disposable database sentinel scan failed');
+    const counts = JSON.parse(result.stdout);
+    assert.ok(counts.scannedColumns > 0);
+    assert.ok(counts.byteColumns > 0);
+    assert.ok(counts.textColumns > 0);
+    return counts;
+  };
+  return { api, scanSentinel, logHasSentinel: () => logContainsSentinel };
 }
 
 async function account(api, token) {
@@ -80,12 +97,20 @@ async function account(api, token) {
 
 test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving conflicts', async (t) => {
   const { page } = await openBrowserHarness(t);
-  const api = await startApi(t, new URL(page.url()).origin);
+  const { api, scanSentinel, logHasSentinel } = await startApi(t,
+    new URL(page.url()).origin);
+  const browserWireBodies = [];
+  const sentinelBytes = Buffer.from(sentinel, 'utf8');
+  page.on('request', (request) => {
+    if (new URL(request.url()).origin !== api) return;
+    const body = request.postDataBuffer();
+    if (body !== null) browserWireBodies.push(body.includes(sentinelBytes));
+  });
   const one = await account(api, 'one');
   const two = await account(api, 'two');
   assert.notEqual(one.accountId, two.accountId);
   const dbName = `scryer-api-browser-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  const first = await page.evaluate(async ({ accountId, dbName, api }) => {
+  const first = await page.evaluate(async ({ accountId, dbName, api, sentinel }) => {
     const { createAccountKeys, verifyRecoverySecret } = await import('/crypto/keys.js');
     const { base64UrlEncode } = await import('/crypto/codec.js');
     const { openLocalRepository } = await import('/storage/repository.js');
@@ -114,13 +139,34 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
       recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
       validateCase: async () => {} });
     const caseData = { schemaVersion: '1', caseId: 'case-browser-api', currency: 'USD',
-      institutions: [], accountRefs: [], terms: [], aidItems: [], artifacts: [],
-      proposals: [], events: [] };
+      institutions: [], accountRefs: [{ accountRefId: 'account-bank', kind: 'bank',
+        institutionId: null, holderKind: 'student' }], terms: [], aidItems: [],
+      artifacts: [{ artifactId: 'artifact-synthetic', sha256: 'a'.repeat(64),
+        kind: 'bank_statement', observedAt: '2026-10-04T00:00:00Z',
+        accountRefId: 'account-bank' }],
+      proposals: [{ proposalId: 'proposal-synthetic', artifactId: 'artifact-synthetic',
+        sourceLocation: 'row:1', rawValue: sentinel, parserVersion: 'synthetic.1',
+        mappingVersion: 'synthetic.1', proposedAmountMinor: '849217' }],
+      events: [{ eventId: 'event-bank-observed', parents: [],
+        recordedAt: '2026-10-05T00:00:00Z', kind: 'approve_fact', fact: {
+          factId: 'fact-bank-observed', termId: null, accountRefId: 'account-bank',
+          aidItemId: null, currency: 'USD', role: 'bank_credit_observed',
+          recipientKind: null, amountMinor: '849217', proposalId: null,
+          effectiveDate: '2026-10-03',
+          source: { kind: 'manual', entryId: 'entry-bank-observed' },
+          reviewId: 'review-bank-observed' } }] };
     const ledger = { schemaVersion: '1', reviews: [] };
     await repo.commitReviewed({ case: caseData, ledger, revisionId: 'rev-one',
       operationId: 'op-one', expectedLocalRevision: null, serverRevision: null });
     await repo.commitReviewed({ case: caseData, ledger, revisionId: 'rev-two',
       operationId: 'op-two', expectedLocalRevision: 'rev-one', serverRevision: null });
+    const loadedLocal = (await repo.loadCase('case-browser-api')).case;
+    const localContainsSentinel = loadedLocal.proposals.some(
+      (proposal) => proposal.rawValue === sentinel);
+    const localHasApprovedAmount = loadedLocal.events.some((event) =>
+      event.eventId === 'event-bank-observed' && event.kind === 'approve_fact' &&
+      event.fact?.role === 'bank_credit_observed' &&
+      event.fact?.amountMinor === '849217');
     const before = await repo.prepareSync('case-browser-api');
     const controller = new AbortController();
     let lost = false;
@@ -138,13 +184,22 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
     const after = await repo.prepareSync('case-browser-api');
     const snapshot = await repo.encryptedSnapshot();
     repo.close();
-    return { before, result, after, packageJson: JSON.stringify(snapshot.cases[0].package),
+    return { before, result, after, localContainsSentinel, localHasApprovedAmount,
+      packageJson: JSON.stringify(snapshot.cases[0].package),
       recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
       wrapperBody, wrapperEtag: wrapperUpload.headers.get('etag') };
-  }, { accountId: one.accountId, dbName, api });
+  }, { accountId: one.accountId, dbName, api, sentinel });
+  assert.equal(first.localContainsSentinel, true);
+  assert.equal(first.localHasApprovedAmount, true);
+  const browserBodiesAfterFirst = browserWireBodies.length;
+  assert.ok(browserBodiesAfterFirst >= 2,
+    'browser request observer missed initial API bodies');
+  assert.equal(JSON.stringify(first.before).includes(sentinel), false);
+  assert.equal(first.packageJson.includes(sentinel), false);
   assert.equal(first.before.length, 2);
   assert.equal(first.result.status, 'interrupted');
-  assert.deepEqual(first.after, first.before);
+  assert.ok(JSON.stringify(first.after) === JSON.stringify(first.before),
+    'interrupted sync changed the saved outbox');
   assert.equal(first.wrapperEtag, '"1"');
   const wrapperGet = await fetch(`${api}/v1/account/recovery-envelope`, {
     headers: { Authorization: 'Bearer one' },
@@ -152,7 +207,8 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
   assert.equal(wrapperGet.status, 200);
   assert.equal(wrapperGet.headers.get('etag'), '"1"');
   const retrievedWrapper = await wrapperGet.text();
-  assert.equal(retrievedWrapper, first.wrapperBody);
+  assert.ok(retrievedWrapper === first.wrapperBody,
+    'retrieved recovery wrapper differs from uploaded bytes');
   const serverEnvelope = JSON.parse(retrievedWrapper);
   const otherWrapper = await fetch(`${api}/v1/account/recovery-envelope`, {
     headers: { Authorization: 'Bearer two' },
@@ -163,21 +219,35 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
   });
   assert.equal(committedBeforeAck.status, 200);
   assert.equal(committedBeforeAck.headers.get('etag'), '"rev-one"');
+  assert.equal((await committedBeforeAck.text()).includes(sentinel), false);
+  const firstScan = scanSentinel(sentinel);
+  assert.equal(firstScan.matches, 0);
+  assert.ok(firstScan.revisions >= 1);
   const crossTenant = await fetch(`${api}/v1/cases/case-browser-api`, {
     headers: { Authorization: 'Bearer two' },
   });
   assert.equal(crossTenant.status, 404);
 
   await page.reload();
-  const resumed = await page.evaluate(async ({ accountId, dbName, api, envelope, secret }) => {
+  const resumed = await page.evaluate(async ({ accountId, dbName, api, envelope,
+    secret, sentinel }) => {
     const { unlockRecovery } = await import('/crypto/keys.js');
     const { openLocalRepository } = await import('/storage/repository.js');
     const { syncCase } = await import('/sync/transport.js');
     const session = await unlockRecovery(envelope, secret, accountId);
     const repo = await openLocalRepository({ dbName, session, validateCase: async () => {} });
+    const recoveredCase = (await repo.loadCase('case-browser-api')).case;
+    const recoveredSource = recoveredCase.proposals.some(
+      (proposal) => proposal.rawValue === sentinel);
+    const recoveredAmount = recoveredCase.events.some((event) =>
+      event.eventId === 'event-bank-observed' && event.kind === 'approve_fact' &&
+      event.fact?.role === 'bank_credit_observed' &&
+      event.fact?.amountMinor === '849217');
     const pendingBefore = await repo.prepareSync('case-browser-api');
     const sent = [];
+    const wireBodies = [];
     const fetchImpl = async (url, init) => {
+      if (typeof init.body === 'string') wireBodies.push(init.body.includes(sentinel));
       if (url.endsWith('/revisions')) sent.push({ body: init.body,
         key: init.headers['Idempotency-Key'],
         precondition: init.headers['If-None-Match'] ?? init.headers['If-Match'] });
@@ -187,26 +257,50 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
       accessToken: 'one', fetchImpl });
     const pendingAfter = await repo.prepareSync('case-browser-api');
     repo.close();
-    return { pendingBefore, sent, result, pendingAfter };
+    return { pendingBefore, sent, wireBodies, result, pendingAfter,
+      recoveredSource, recoveredAmount };
   }, { accountId: one.accountId, dbName, api,
-    envelope: serverEnvelope, secret: first.recoverySecret });
-  assert.deepEqual(resumed.pendingBefore, first.before);
-  assert.deepEqual(resumed.result, { status: 'committed', revisionId: 'rev-two', count: 2 });
-  assert.deepEqual(resumed.pendingAfter, []);
-  assert.deepEqual(resumed.sent, [
-    { body: first.before[0].steps.at(-1).body, key: first.before[0].steps.at(-1).idempotencyKey,
-      precondition: '*' },
-    { body: first.before[1].steps.at(-1).body, key: first.before[1].steps.at(-1).idempotencyKey,
-      precondition: '"rev-one"' },
-  ]);
+    envelope: serverEnvelope, secret: first.recoverySecret, sentinel });
+  assert.equal(resumed.recoveredSource, true);
+  assert.equal(resumed.recoveredAmount, true);
+  const browserBodiesAfterResume = browserWireBodies.length;
+  assert.ok(browserBodiesAfterResume > browserBodiesAfterFirst,
+    'browser request observer missed resumed API bodies');
+  assert.ok(JSON.stringify(resumed.pendingBefore) === JSON.stringify(first.before),
+    'recovery changed the saved outbox');
+  assert.equal(resumed.result.status, 'committed');
+  assert.equal(resumed.result.revisionId, 'rev-two');
+  assert.equal(resumed.result.count, 2);
+  assert.equal(resumed.pendingAfter.length, 0);
+  assert.equal(resumed.sent.length, 2);
+  for (let index = 0; index < resumed.sent.length; index++) {
+    const expected = first.before[index].steps.at(-1);
+    assert.ok(resumed.sent[index].body === expected.body,
+      `resumed manifest ${index} changed its saved bytes`);
+    assert.equal(resumed.sent[index].key, expected.idempotencyKey);
+    assert.equal(resumed.sent[index].precondition,
+      index === 0 ? '*' : '"rev-one"');
+  }
+  assert.equal(JSON.stringify(resumed.sent).includes(sentinel), false);
+  assert.ok(resumed.wireBodies.length >= 2);
+  assert.ok(resumed.wireBodies.every((found) => !found));
   const head = await fetch(`${api}/v1/cases/case-browser-api`, {
     headers: { Authorization: 'Bearer one' },
   });
   assert.equal(head.status, 200);
   assert.equal(head.headers.get('etag'), '"rev-two"');
-  assert.equal(await head.text(), first.packageJson);
+  const headBody = await head.text();
+  assert.ok(headBody === first.packageJson,
+    'HTTP head ciphertext differs from the saved encrypted package');
+  assert.equal(headBody.includes(sentinel), false);
+  const historical = await fetch(`${api}/v1/cases/case-browser-api/revisions/rev-one`, {
+    headers: { Authorization: 'Bearer one' },
+  });
+  assert.equal(historical.status, 200);
+  assert.equal((await historical.text()).includes(sentinel), false);
   await page.reload();
-  const conflict = await page.evaluate(async ({ accountId, dbName, api, envelope, secret }) => {
+  const conflict = await page.evaluate(async ({ accountId, dbName, api, envelope,
+    secret, marker }) => {
     const { unlockRecovery } = await import('/crypto/keys.js');
     const { openLocalRepository } = await import('/storage/repository.js');
     const { syncCase } = await import('/sync/transport.js');
@@ -235,6 +329,14 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
     const remaining = await repoB.prepareSync('case-browser-api');
     repoA.close(); repoB.close();
     return { wrongAccount, winner, loser, remaining,
+      plaintextRecovered: preview && [preview.local, preview.remote,
+        preview.ancestor.status === 'available' ? preview.ancestor.branch : null]
+        .every((branch) => branch?.case.proposals[0]?.rawValue === marker &&
+          branch.case.events.some((event) =>
+            event.eventId === 'event-bank-observed' &&
+            event.kind === 'approve_fact' &&
+            event.fact?.role === 'bank_credit_observed' &&
+            event.fact?.amountMinor === '849217')),
       preview: preview && { caseId: preview.caseId,
         pendingRevisionId: preview.pendingRevisionId,
         localRevisionId: preview.local.revisionId,
@@ -244,16 +346,27 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
           preview.ancestor.branch.revisionId : null,
         localHeads: preview.local.heads, remoteHeads: preview.remote.heads } };
   }, { accountId: one.accountId, dbName, api,
-    envelope: serverEnvelope, secret: first.recoverySecret });
+    envelope: serverEnvelope, secret: first.recoverySecret, marker: sentinel });
   assert.equal(conflict.wrongAccount.status, 'permanent');
-  assert.deepEqual(conflict.winner, { status: 'committed', revisionId: 'rev-three', count: 1 });
+  assert.equal(conflict.winner.status, 'committed');
+  assert.equal(conflict.winner.revisionId, 'rev-three');
+  assert.equal(conflict.winner.count, 1);
   assert.equal(conflict.loser.status, 'conflict');
   assert.equal(conflict.loser.remote.revisionId, 'rev-three');
+  assert.equal(JSON.stringify(conflict.loser).includes(sentinel), false);
+  assert.equal(conflict.plaintextRecovered, true);
+  assert.ok(browserWireBodies.length > browserBodiesAfterResume,
+    'browser request observer missed conflict API bodies');
   assert.equal(conflict.remaining.length, 1);
   assert.deepEqual(conflict.preview, { caseId: 'case-browser-api',
     pendingRevisionId: 'rev-divergent', localRevisionId: 'rev-divergent',
     remoteRevisionId: 'rev-three', ancestorStatus: 'available',
-    ancestorRevisionId: 'rev-two', localHeads: [], remoteHeads: [] });
+    ancestorRevisionId: 'rev-two', localHeads: ['event-bank-observed'],
+    remoteHeads: ['event-bank-observed'] });
+  const conflictScan = scanSentinel(sentinel);
+  assert.equal(conflictScan.matches, 0);
+  assert.ok(conflictScan.revisions >= 3);
+  assert.ok(conflictScan.staged >= 1);
 
   const deleted = await fetch(`${api}/v1/cases/case-browser-api`, { method: 'DELETE',
     headers: { Authorization: 'Bearer one', 'Idempotency-Key': 'browser:delete',
@@ -276,4 +389,9 @@ test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving
   assert.equal(afterDelete.result.status, 'permanent');
   assert.equal(afterDelete.result.httpStatus, 409);
   assert.equal(afterDelete.pending.length, 1);
+  assert.ok(browserWireBodies.length >= 4,
+    'browser request observer saw too few API bodies');
+  assert.ok(browserWireBodies.every((found) => !found),
+    'synthetic source text appeared in a browser API request body');
+  assert.equal(logHasSentinel(), false);
 });

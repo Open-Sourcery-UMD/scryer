@@ -8,6 +8,7 @@ database when its local server exits.
 from __future__ import annotations
 
 import getpass
+import json
 import os
 from pathlib import Path
 import re
@@ -15,6 +16,7 @@ import secrets
 import sys
 
 import psycopg
+from psycopg import sql
 import uvicorn
 
 
@@ -55,10 +57,43 @@ def drop_database(socket: str, admin_user: str, database_name: str) -> None:
         admin.execute(f'DROP DATABASE IF EXISTS "{database_name}" WITH (FORCE)')
 
 
+def scan_sentinel(socket: str, admin_user: str, database_name: str) -> None:
+    marker = os.environ.get("SCRYER_TEST_SENTINEL", "")
+    if not marker.startswith("SYNTHETIC_ONLY_") or len(marker) > 128:
+        raise ValueError("INVALID_SYNTHETIC_SENTINEL")
+    with psycopg.connect(host=socket, dbname=database_name, user=admin_user) as admin:
+        columns = admin.execute(
+            "SELECT table_schema,table_name,column_name,data_type "
+            "FROM information_schema.columns "
+            "WHERE table_schema IN ('scryer','scryer_private') AND data_type IN "
+            "('text','character varying','bytea','json','jsonb') "
+            "ORDER BY table_schema,table_name,column_name").fetchall()
+        byte_columns = sum(data_type == "bytea" for _, _, _, data_type in columns)
+        matches = 0
+        for schema_name, table_name, column_name, data_type in columns:
+            table = sql.Identifier(schema_name, table_name)
+            column = sql.Identifier(column_name)
+            if data_type == "bytea":
+                query = sql.SQL("SELECT count(*) FROM {} WHERE position(%s::bytea in {})>0")
+                value = marker.encode("utf-8")
+            else:
+                query = sql.SQL("SELECT count(*) FROM {} WHERE strpos({}::text,%s)>0")
+                value = marker
+            matches += admin.execute(query.format(table, column), (value,)).fetchone()[0]
+        revisions = admin.execute("SELECT count(*) FROM scryer.case_revisions").fetchone()[0]
+        staged = admin.execute("SELECT count(*) FROM scryer.staged_chunks").fetchone()[0]
+    print(json.dumps({"scannedColumns": len(columns), "byteColumns": byte_columns,
+                      "textColumns": len(columns) - byte_columns, "matches": matches,
+                      "revisions": revisions, "staged": staged}))
+
+
 def main() -> None:
     socket, admin_user, database_name = database_config()
     if len(sys.argv) == 2 and sys.argv[1] == "--cleanup":
         drop_database(socket, admin_user, database_name)
+        return
+    if len(sys.argv) == 2 and sys.argv[1] == "--scan-sentinel":
+        scan_sentinel(socket, admin_user, database_name)
         return
     if len(sys.argv) != 1:
         raise ValueError("INVALID_LOCAL_TEST_COMMAND")
