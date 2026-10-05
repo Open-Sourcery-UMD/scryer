@@ -228,7 +228,7 @@ test('real browser portable encrypted archive previews and restores atomically',
 
   await t.test('a two-case restore cannot partially commit when its second case fails', async () => {
     const result = await page.evaluate(async () => {
-      const { createAccountKeys } = await import('/crypto/keys.js');
+      const { createAccountKeys, unlockRecovery } = await import('/crypto/keys.js');
       const { openLocalRepository } = await import('/storage/repository.js');
       const { exportEncrypted, previewRestore, restoreEncrypted } = await import('/export/archive.js');
       const created = await createAccountKeys('acct-two-cases');
@@ -245,8 +245,10 @@ test('real browser portable encrypted archive previews and restores atomically',
       }
       const archive = await exportEncrypted(source, { recoverySecret: created.recoverySecret });
       source.close();
+      const restoredSession = await unlockRecovery(created.recoveryEnvelope,
+        created.recoverySecret, 'acct-two-cases');
       const destination = await openLocalRepository({ dbName: 'destination-two-cases',
-        session: created.session, recoveryEnvelope: created.recoveryEnvelope,
+        session: restoredSession, recoveryEnvelope: created.recoveryEnvelope,
         recoverySecret: created.recoverySecret, validateCase: async () => {} });
       const removedCase = JSON.parse(new TextDecoder().decode(archive));
       removedCase.cases.pop();
@@ -366,18 +368,33 @@ test('real browser portable encrypted archive previews and restores atomically',
           request.result.close(); resolve(version); };
         request.onerror = () => reject(request.error);
       });
-      const migrated = await migrateLocalDatabase({ dbName: legacyName,
-        session, validateCase: async () => {}, backup, recoverySecret: secret });
+      const otherSession = await unlockRecovery(parsed.recoveryEnvelope, secret, 'acct-archive');
+      const other = await openLocalRepository({ dbName: `${legacyName}-other`,
+        session: otherSession, recoveryEnvelope: parsed.recoveryEnvelope,
+        recoverySecret: secret, validateCase: async () => {} });
+      other.close();
+      const boundMigrationCode = await codeOf(() => migrateLocalDatabase({ dbName: legacyName,
+        session: otherSession, validateCase: async () => {}, backup, recoverySecret: secret }));
+      let timeout;
+      let migrated;
+      try {
+        migrated = await Promise.race([
+          migrateLocalDatabase({ dbName: legacyName, session, validateCase: async () => {},
+            backup, recoverySecret: secret }),
+          new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error('MIGRATION_BLOCKED')), 3000); }),
+        ]);
+      } finally { clearTimeout(timeout); }
       const reopened = await openLocalRepository({ dbName: legacyName, session,
         validateCase: async () => {} });
       const loaded = await reopened.loadCase('case-archive');
       const pending = await reopened.prepareSync('case-archive');
       reopened.close();
-      return { requiresBackup, staleBackupCode, wrong, interrupted, stillV1, migrated,
+      return { requiresBackup, boundMigrationCode, staleBackupCode, wrong, interrupted, stillV1, migrated,
         revisionId: loaded.revisionId, rawValue: loaded.case.events[0].fact.rawValue,
         pending: pending.map((item) => item.operationId) };
     }, { bytes: archiveBytes, secret: recoverySecret });
     assert.equal(result.requiresBackup, 'MIGRATION_REQUIRED');
+    assert.equal(result.boundMigrationCode, 'SESSION_BOUND_TO_STORAGE');
     assert.equal(result.staleBackupCode, 'STALE_MIGRATION_BACKUP');
     assert.equal(result.wrong, 'WRONG_KEY');
     assert.equal(result.interrupted, 'STORAGE_ABORTED');

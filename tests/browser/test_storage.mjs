@@ -72,11 +72,78 @@ test('real browser encrypted repository has atomic revisions, durable outbox, an
       const retryA = await repo.prepareSync('case-storage');
       const retryB = await repo.prepareSync('case-storage');
       repo.close();
-      return { loaded, retryA, retryB };
+      return { loaded, retryA, retryB, deviceId: session.deviceId };
     }, { dbName: databaseName, recoveryEnvelope: first.recoveryEnvelope, recoverySecret: first.recoverySecret });
     assert.equal(afterReload.loaded.case.events[0].fact.rawValue, 'SENSITIVE_AT_REST_SENTINEL');
     assert.deepEqual(afterReload.retryA, first.outbox);
     assert.deepEqual(afterReload.retryB, first.outbox);
+    assert.equal(afterReload.deviceId, first.deviceId);
+
+    const newInstallation = await page.evaluate(async ({ wrapper, secret, dbName }) => {
+      const { unlockRecovery } = await import('/crypto/keys.js');
+      const { openLocalRepository } = await import('/storage/repository.js');
+      const session = await unlockRecovery(wrapper, secret, 'acct-storage');
+      const repo = await openLocalRepository({ dbName, session,
+        recoveryEnvelope: wrapper, recoverySecret: secret, validateCase: async () => {} });
+      const deviceId = session.deviceId;
+      repo.close();
+      return deviceId;
+    }, { wrapper: first.recoveryEnvelope, secret: first.recoverySecret,
+      dbName: `${databaseName}-new-installation` });
+    assert.notEqual(newInstallation, first.deviceId);
+  });
+
+  await t.test('a direct repository binds the session to its database', async () => {
+    const result = await page.evaluate(async () => {
+      const { createAccountKeys } = await import('/crypto/keys.js');
+      const { openDatabase } = await import('/storage/idb.js');
+      const { LocalRepository, openLocalRepository } = await import('/storage/repository.js');
+      const created = await createAccountKeys('acct-direct-binding');
+      const direct = new LocalRepository(await openDatabase('direct-binding-one'),
+        created.session, async () => {});
+      const code = await (async () => {
+        try {
+          const other = await openLocalRepository({ dbName: 'direct-binding-two',
+            session: created.session, recoveryEnvelope: created.recoveryEnvelope,
+            recoverySecret: created.recoverySecret, validateCase: async () => {} });
+          other.close();
+          return null;
+        } catch (error) { return error.code; }
+      })();
+      direct.close();
+      return code;
+    });
+    assert.equal(result, 'SESSION_BOUND_TO_STORAGE');
+  });
+
+  await t.test('recreated database gets a new key-use identity', async () => {
+    const result = await page.evaluate(async () => {
+      const { createAccountKeys } = await import('/crypto/keys.js');
+      const { openLocalRepository } = await import('/storage/repository.js');
+      const name = `recreated-${crypto.randomUUID()}`;
+      const created = await createAccountKeys('acct-recreated');
+      const first = await openLocalRepository({ dbName: name, session: created.session,
+        recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
+        validateCase: async () => {} });
+      const oldId = created.session.deviceId;
+      await first.reserveEncryptions('case-recreated', 1, 3);
+      first.close();
+      await new Promise((resolve, reject) => {
+        const request = indexedDB.deleteDatabase(name);
+        request.onsuccess = resolve;
+        request.onerror = () => reject(request.error);
+        request.onblocked = () => reject(new Error('DELETE_BLOCKED'));
+      });
+      const second = await openLocalRepository({ dbName: name, session: created.session,
+        recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
+        validateCase: async () => {} });
+      const newId = created.session.deviceId;
+      const used = await second.reserveEncryptions('case-recreated', 1, 1);
+      second.close();
+      return { oldId, newId, used };
+    });
+    assert.notEqual(result.oldId, result.newId);
+    assert.equal(result.used, 1);
   });
 
   await t.test('two tabs racing the same revision leave exactly one case/outbox pair', async () => {
@@ -264,4 +331,32 @@ test('real browser encrypted repository has atomic revisions, durable outbox, an
     }, { dbName: databaseName, wrapper: recoveryEnvelope, recoverySecret });
     assert.deepEqual(result, { code: 'CORRUPT_RECORD' });
   });
+});
+
+test('one unlocked session cannot split its encryption budget across local databases', async (t) => {
+  const { page } = await openBrowserHarness(t);
+  const result = await page.evaluate(async (prefix) => {
+    const { createAccountKeys, unlockRecovery } = await import('/crypto/keys.js');
+    const { openLocalRepository } = await import('/storage/repository.js');
+    const created = await createAccountKeys('acct-installation-bound');
+    const first = await openLocalRepository({ dbName: `${prefix}-one`, session: created.session,
+      recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
+      validateCase: async () => {} });
+    const firstId = first.session.deviceId;
+    first.close();
+    let reusedCode = null;
+    try { await openLocalRepository({ dbName: `${prefix}-two`, session: created.session,
+      recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
+      validateCase: async () => {} }); }
+    catch (error) { reusedCode = error.code; }
+    const freshSession = await unlockRecovery(created.recoveryEnvelope,
+      created.recoverySecret, 'acct-installation-bound');
+    const second = await openLocalRepository({ dbName: `${prefix}-three`, session: freshSession,
+      recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
+      validateCase: async () => {} });
+    const secondId = second.session.deviceId;
+    second.close();
+    return { reusedCode, distinct: firstId !== secondId };
+  }, `scryer-bound-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  assert.deepEqual(result, { reusedCode: 'SESSION_BOUND_TO_STORAGE', distinct: true });
 });

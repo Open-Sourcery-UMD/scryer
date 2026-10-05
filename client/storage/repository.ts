@@ -17,7 +17,8 @@ export type ReviewedCommit = { case: CaseV1; ledger: ImportLedger; revisionId: s
   operationId: string; expectedLocalRevision: string | null; serverRevision: string | null;
   keyGeneration?: number };
 
-type AccountRecord = { accountId: string; recoveryEnvelope: RecoveryEnvelopeV1; rootProof: string };
+type AccountRecord = { accountId: string; recoveryEnvelope: RecoveryEnvelopeV1;
+  rootProof: string; deviceId?: string };
 export type CaseRecord = { accountId: string; caseId: string; revisionId: string;
   keyGeneration: number; localSequence: number; package: CasePackageV1; digest: string };
 type AnchorRecord = { accountId: string; caseId: string; revisionId: string; digest: string };
@@ -29,7 +30,7 @@ export type RotationJournal = { id: string; operationId: string;
   kind: 'generation' | 'recovery'; status: 'prepared' | 'committed';
   accountId: string; priorRootProof: string; entries: RotationEntry[];
   priorRecoveryEnvelope?: RecoveryEnvelopeV1;
-  newRecoveryEnvelope?: RecoveryEnvelopeV1; newRootProof?: string;
+  newRecoveryEnvelope?: RecoveryEnvelopeV1; newRootProof?: string; newDeviceId?: string;
   result?: { rotated: number; revisions: Array<{ caseId: string; revisionId: string }> } };
 
 const MAX_KEY_USES = 1_048_576;
@@ -146,6 +147,7 @@ export class LocalRepository {
   readonly #validateCase: CaseValidator;
 
   constructor(db: IDBDatabase, session: AccountSession, validateCase: CaseValidator) {
+    session.bindLocalStorage(db.name);
     this.#db = db;
     this.session = session;
     this.#validateCase = validateCase;
@@ -325,6 +327,7 @@ export class LocalRepository {
     nextSession: AccountSession): Promise<{ rotated: number;
       revisions: Array<{ caseId: string; revisionId: string }> }> {
     const db = this.db();
+    nextSession.bindLocalStorage(db.name);
     const journal = await this.readRotation(operationId);
     if (journal.status === 'committed' && journal.result) return journal.result;
     if (journal.status !== 'prepared' || journal.id !== `rotation:${operationId}` ||
@@ -340,12 +343,17 @@ export class LocalRepository {
     const nextProof = base64UrlEncode(nextProofBytes);
     nextProofBytes.fill(0);
     if (journal.kind === 'generation' && (nextProof !== journal.priorRootProof ||
-        journal.newRecoveryEnvelope !== undefined || journal.newRootProof !== undefined)) {
+        journal.newRecoveryEnvelope !== undefined || journal.newRootProof !== undefined ||
+        journal.newDeviceId !== undefined)) {
       throw new StorageError('WRONG_KEY');
     }
     if (journal.kind === 'recovery' && (!journal.newRecoveryEnvelope ||
         journal.newRootProof !== nextProof || nextProof === journal.priorRootProof)) {
       throw new StorageError('WRONG_KEY');
+    }
+    if (journal.kind === 'recovery') {
+      try { base64UrlDecode(journal.newDeviceId, 16, 16); }
+      catch { throw new StorageError('INVALID_ROTATION'); }
     }
     const snapshot = await this.encryptedSnapshot();
     if (JSON.stringify(snapshot.recoveryEnvelope) !==
@@ -368,6 +376,7 @@ export class LocalRepository {
           entry.package.keyGeneration !== entry.nextGeneration ||
           (journal.kind === 'generation' && entry.nextGeneration !== current.keyGeneration + 1) ||
           (journal.kind === 'recovery' && entry.nextGeneration !== 1) ||
+          (journal.kind === 'recovery' && entry.package.deviceId !== journal.newDeviceId) ||
           !HEX_256.test(entry.digest) ||
           await digestText(checkedStringify(entry.package)) !== entry.digest) {
         throw new StorageError('INVALID_ROTATION');
@@ -465,13 +474,15 @@ export class LocalRepository {
           try {
             if (journal.kind === 'recovery') {
               accounts.put({ accountId: this.session.accountId,
-                recoveryEnvelope: journal.newRecoveryEnvelope, rootProof: nextProof });
+                recoveryEnvelope: journal.newRecoveryEnvelope, rootProof: nextProof,
+                deviceId: journal.newDeviceId });
             }
             migrations.put({ id: journal.id, operationId, kind: journal.kind,
               status: 'committed', accountId: journal.accountId,
               priorRootProof: journal.priorRootProof, entries: [],
               newRecoveryEnvelope: journal.newRecoveryEnvelope,
-              newRootProof: journal.newRootProof, result });
+              newRootProof: journal.newRootProof,
+              newDeviceId: journal.newDeviceId, result });
           } catch (error) { fail(storageFault(error)); return; }
           finish(result);
         };
@@ -515,15 +526,27 @@ export class LocalRepository {
         Object.values(expectedLocalRevisions).some((value) => value !== null && !validId(value))) {
       throw new StorageError('INVALID_RESTORE');
     }
-    return transactionResult(db, ['cases', 'anchors', 'outbox'], 'readwrite', (tx, finish, fail) => {
+    const expectedRootProof = await this.rootProof();
+    const expectedDeviceId = this.session.deviceId;
+    return transactionResult(db, ['accounts', 'cases', 'anchors', 'outbox'], 'readwrite', (tx, finish, fail) => {
+      const accounts = tx.objectStore('accounts');
       const cases = tx.objectStore('cases');
       const anchors = tx.objectStore('anchors');
       const outbox = tx.objectStore('outbox');
       let currentCases: CaseRecord[] = [];
       let currentAnchors: AnchorRecord[] = [];
+      const accountRequest = accounts.get(accountId);
       const caseRequest = cases.getAll();
       const anchorRequest = anchors.getAll();
       const outboxRequest = outbox.getAll();
+      accountRequest.onsuccess = () => {
+        const account = accountRequest.result as AccountRecord | undefined;
+        const legacyWithoutDevice = db.version === 1 && account?.deviceId === undefined;
+        if (!account || account.rootProof !== expectedRootProof ||
+            (account.deviceId !== expectedDeviceId && !legacyWithoutDevice)) {
+          fail(new StorageError('STALE_ACCOUNT_ROOT'));
+        }
+      };
       caseRequest.onsuccess = () => { currentCases = caseRequest.result as CaseRecord[]; };
       anchorRequest.onsuccess = () => { currentAnchors = anchorRequest.result as AnchorRecord[]; };
       outboxRequest.onsuccess = () => {
@@ -632,45 +655,59 @@ export class LocalRepository {
     }
     const count = Math.ceil(size / MAX_CHUNK_BYTES);
     if (count < 1 || count > MAX_CHUNKS) throw new StorageError('CASE_TOO_LARGE');
-    await this.reserveEncryptions(caseId, generation, count);
+    const reservedDeviceId = this.session.deviceId;
+    await this.reserveEncryptionsForDevice(caseId, generation, reservedDeviceId, count);
     const pkg = await sealCase(this.session, caseId, copied.revisionId, plaintext, generation);
+    if (pkg.deviceId !== reservedDeviceId) throw new StorageError('STALE_ACCOUNT_ROOT');
     const digest = await digestText(checkedStringify(pkg));
     const steps = await prepareSteps(pkg, copied.operationId, digest);
     const accountId = this.session.accountId;
+    const expectedRootProof = await this.rootProof();
+    const expectedDeviceId = reservedDeviceId;
     const caseKey = [accountId, caseId];
     const operationKey = [accountId, copied.operationId];
-    return transactionResult(db, ['cases', 'outbox', 'anchors'], 'readwrite', (tx, finish, fail) => {
+    return transactionResult(db, ['accounts', 'cases', 'outbox', 'anchors'], 'readwrite', (tx, finish, fail) => {
+      const accounts = tx.objectStore('accounts');
       const cases = tx.objectStore('cases');
       const outbox = tx.objectStore('outbox');
       const anchors = tx.objectStore('anchors');
-      const getCase = cases.get(caseKey);
-      getCase.onsuccess = () => {
-        const prior = getCase.result as CaseRecord | undefined;
-        if ((prior?.revisionId ?? null) !== copied.expectedLocalRevision) {
-          fail(new StorageError('STALE_LOCAL_REVISION')); return;
+      const getAccount = accounts.get(accountId);
+      getAccount.onsuccess = () => {
+        const account = getAccount.result as AccountRecord | undefined;
+        const legacyWithoutDevice = db.version === 1 && account?.deviceId === undefined;
+        if (!account || account.rootProof !== expectedRootProof ||
+            (account.deviceId !== expectedDeviceId && !legacyWithoutDevice)) {
+          fail(new StorageError('STALE_ACCOUNT_ROOT')); return;
         }
-        if (prior && (!Number.isSafeInteger(prior.localSequence) || prior.localSequence < 1 ||
-            !HEX_256.test(prior.digest))) { fail(new StorageError('CORRUPT_RECORD')); return; }
-        const getAnchor = anchors.get(caseKey);
-        getAnchor.onsuccess = () => {
-          const anchor = getAnchor.result as AnchorRecord | undefined;
-          if ((!prior && anchor) || (prior && (!anchor || anchor.revisionId !== prior.revisionId ||
-              anchor.digest !== prior.digest))) {
-            fail(new StorageError('CORRUPT_RECORD')); return;
+        const getCase = cases.get(caseKey);
+        getCase.onsuccess = () => {
+          const prior = getCase.result as CaseRecord | undefined;
+          if ((prior?.revisionId ?? null) !== copied.expectedLocalRevision) {
+            fail(new StorageError('STALE_LOCAL_REVISION')); return;
           }
-          const getOperation = outbox.get(operationKey);
-          getOperation.onsuccess = () => {
-            if (getOperation.result !== undefined) { fail(new StorageError('OPERATION_CONFLICT')); return; }
-            const localSequence = (prior?.localSequence ?? 0) + 1;
-            const caseRecord: CaseRecord = { accountId, caseId, revisionId: copied.revisionId,
-              keyGeneration: generation, localSequence, package: pkg, digest };
-            const outboxRecord: OutboxRecord = { accountId, caseId, operationId: copied.operationId,
-              revisionId: copied.revisionId, expectedServerRevision: copied.serverRevision,
-              localSequence, steps };
-            const anchorRecord: AnchorRecord = { accountId, caseId, revisionId: copied.revisionId, digest };
-            try { cases.put(caseRecord); outbox.put(outboxRecord); anchors.put(anchorRecord); }
-            catch (error) { fail(storageFault(error)); return; }
-            finish({ revisionId: copied.revisionId, packageId: pkg.packageId, digest });
+          if (prior && (!Number.isSafeInteger(prior.localSequence) || prior.localSequence < 1 ||
+              !HEX_256.test(prior.digest))) { fail(new StorageError('CORRUPT_RECORD')); return; }
+          const getAnchor = anchors.get(caseKey);
+          getAnchor.onsuccess = () => {
+            const anchor = getAnchor.result as AnchorRecord | undefined;
+            if ((!prior && anchor) || (prior && (!anchor || anchor.revisionId !== prior.revisionId ||
+                anchor.digest !== prior.digest))) {
+              fail(new StorageError('CORRUPT_RECORD')); return;
+            }
+            const getOperation = outbox.get(operationKey);
+            getOperation.onsuccess = () => {
+              if (getOperation.result !== undefined) { fail(new StorageError('OPERATION_CONFLICT')); return; }
+              const localSequence = (prior?.localSequence ?? 0) + 1;
+              const caseRecord: CaseRecord = { accountId, caseId, revisionId: copied.revisionId,
+                keyGeneration: generation, localSequence, package: pkg, digest };
+              const outboxRecord: OutboxRecord = { accountId, caseId, operationId: copied.operationId,
+                revisionId: copied.revisionId, expectedServerRevision: copied.serverRevision,
+                localSequence, steps };
+              const anchorRecord: AnchorRecord = { accountId, caseId, revisionId: copied.revisionId, digest };
+              try { cases.put(caseRecord); outbox.put(outboxRecord); anchors.put(anchorRecord); }
+              catch (error) { fail(storageFault(error)); return; }
+              finish({ revisionId: copied.revisionId, packageId: pkg.packageId, digest });
+            };
           };
         };
       };
@@ -800,6 +837,7 @@ export async function openLocalRepository(options: {
   if (!options || !(options.session instanceof AccountSession) ||
       options.session.locked) throw new CryptoError('KEY_LOCKED');
   if (typeof options.validateCase !== 'function') throw new StorageError('VALIDATOR_REQUIRED');
+  options.session.bindLocalStorage(options.dbName);
   const proofBytes = await options.session.verificationBytes();
   const rootProof = base64UrlEncode(proofBytes);
   proofBytes.fill(0);
@@ -810,19 +848,21 @@ export async function openLocalRepository(options: {
       const request = tx.objectStore('accounts').get(accountId);
       request.onsuccess = () => finish(request.result as AccountRecord | undefined);
     });
+    let verifiedEnvelope: RecoveryEnvelopeV1 | undefined;
     if (existing) {
       if (existing.rootProof !== rootProof) throw new StorageError('WRONG_KEY');
     } else {
       if (!options.recoveryEnvelope || !options.recoverySecret) {
         throw new StorageError('RECOVERY_VERIFICATION_REQUIRED');
       }
-      let recoveryEnvelope: RecoveryEnvelopeV1;
-      try { recoveryEnvelope = structuredClone(options.recoveryEnvelope); }
+      try { verifiedEnvelope = structuredClone(options.recoveryEnvelope); }
       catch { throw new StorageError('RECOVERY_VERIFICATION_REQUIRED'); }
-      if (!await verifyRecoverySecret(options.session, recoveryEnvelope, options.recoverySecret)) {
+      if (!await verifyRecoverySecret(options.session, verifiedEnvelope, options.recoverySecret)) {
         throw new StorageError('RECOVERY_VERIFICATION_REQUIRED');
       }
-      await transactionResult(db, ['accounts'], 'readwrite', (tx, finish, fail) => {
+    }
+    const boundDeviceId = await transactionResult<string>(db, ['accounts'], 'readwrite',
+      (tx, finish, fail) => {
         const store = tx.objectStore('accounts');
         const request = store.get(accountId);
         request.onsuccess = () => {
@@ -830,11 +870,22 @@ export async function openLocalRepository(options: {
           if (concurrent && concurrent.rootProof !== rootProof) {
             fail(new StorageError('WRONG_KEY')); return;
           }
-          if (!concurrent) store.put({ accountId, recoveryEnvelope, rootProof });
-          finish(undefined);
+          if (concurrent?.deviceId !== undefined) {
+            try { base64UrlDecode(concurrent.deviceId, 16, 16); }
+            catch { fail(new StorageError('CORRUPT_RECORD')); return; }
+            finish(concurrent.deviceId); return;
+          }
+          // Missing account metadata means its prior counter state is unavailable.
+          // Mint a new key identity even if this unlocked session used this DB name before.
+          const deviceId = base64UrlEncode(randomBytes(16));
+          if (concurrent) store.put({ ...concurrent, deviceId });
+          else if (verifiedEnvelope) store.put({ accountId,
+            recoveryEnvelope: verifiedEnvelope, rootProof, deviceId });
+          else { fail(new StorageError('RECOVERY_VERIFICATION_REQUIRED')); return; }
+          finish(deviceId);
         };
       });
-    }
+    options.session.bindLocalDeviceId(boundDeviceId);
     return new LocalRepository(db, options.session, options.validateCase);
   } catch (error) {
     db.close();

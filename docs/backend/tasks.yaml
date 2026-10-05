@@ -646,7 +646,9 @@
         "same-key concurrent retries",
         "lost response",
         "quota race",
-        "deletion race"
+        "deletion race",
+        "canonical device registration/retirement and manifest publication gate",
+        "browser ID stability across reload, new ID after eviction, and old-root restore refusal"
       ],
       "command": "scripts/verify-sync-db.sh with a private local PostgreSQL cluster; scripts/start-local-keycloak-test.sh and SCRYER_LOCAL_OIDC=1 node --test tests/sync/test_oidc_local.mjs; run real token-to-API tests after a maintained JWT verifier is available",
       "expected": "PostgreSQL and PKCE checks pass locally; real JWT/API integration remains an explicit tooling blocker",

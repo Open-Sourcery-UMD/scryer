@@ -19,7 +19,7 @@ from sync.auth import derive_account_id
 from sync.db_context import begin_tenant_transaction
 from sync.migrate import apply_migrations
 from test_api import AUDIENCE, FixtureVerifier, ISSUER
-from test_store import prepared
+from test_store import DEVICE, prepared, wire
 from test_recovery import wrapper
 
 
@@ -73,6 +73,10 @@ class AccountDeletionTests(unittest.TestCase):
 
     def test_deletion_wipes_live_rows_and_denies_old_token(self):
         self.assertEqual(self.request("GET", "/v1/account").status_code, 200)
+        self.assertEqual(self.request("POST", "/v1/account/devices",
+            content=wire({"schemaVersion": "1", "deviceId": DEVICE}),
+            headers={"Content-Type": "application/json",
+                     "Idempotency-Key": f"device:{DEVICE}"}).status_code, 200)
         chunk, manifest, _ = prepared(case_id="case-delete-account",
                                       account_id=self.account_id)
         self.assertEqual(self.request("POST", "/v1/cases/case-delete-account/chunks",
@@ -90,8 +94,6 @@ class AccountDeletionTests(unittest.TestCase):
             content=wrapper(self.account_id), headers={"Content-Type": "application/json",
                 "Idempotency-Key": "deletion-recovery", "If-None-Match": "*"}).status_code, 200)
         with self.admin() as admin:
-            admin.execute("INSERT INTO scryer.devices(account_id,device_id) VALUES (%s,%s)",
-                          (self.account_id, "AAECAwQFBgcICQoLDA0ODw"))
             admin.execute("INSERT INTO scryer.case_tombstones(account_id,case_id,deleted_head) "
                           "VALUES (%s,'case-old','rev-old')", (self.account_id,))
             self.assertEqual(admin.execute("SELECT count(*) FROM scryer.staged_chunks "

@@ -22,12 +22,12 @@ from starlette.concurrency import run_in_threadpool
 from .auth import TokenVerifier, VerifiedIdentity, derive_account_id
 from .db_context import begin_tenant_transaction
 from .pagination import CaseCursorCodec, CursorError
-from .protocol import (CHUNK_BODY_BYTES, MANIFEST_BODY_BYTES, ID, ProtocolError,
-                       parse_chunk, parse_manifest)
+from .protocol import (CHUNK_BODY_BYTES, MANIFEST_BODY_BYTES, DEVICE_BODY_BYTES,
+                       ID, ProtocolError, parse_chunk, parse_manifest, parse_device_id)
 from .recovery import RECOVERY_BODY_BYTES
 from .store import (StoreError, commit_manifest, delete_account, delete_case, get_head,
-                    get_recovery_envelope, get_revision, list_cases,
-                    put_recovery_envelope, stage_chunk)
+                    get_recovery_envelope, get_revision, list_cases, list_devices,
+                    put_recovery_envelope, register_device, retire_device, stage_chunk)
 
 
 HTTP_BODY_BYTES = 12 * 1024 * 1024
@@ -152,6 +152,30 @@ class AccountDeletionReceipt(StrictWireModel):
     kind: Literal["account-deletion"]
     accountId: str
     status: Literal["deleting"]
+
+
+class DeviceWire(StrictWireModel):
+    schemaVersion: Literal["1"]
+    deviceId: str
+
+
+class DeviceReceipt(StrictWireModel):
+    kind: Literal["device"]
+    deviceId: str
+    status: Literal["active", "retired"]
+
+
+class DeviceItem(StrictWireModel):
+    deviceId: str
+    status: Literal["active", "retired"]
+    createdAt: str
+    retiredAt: str | None
+
+
+class DeviceListResponse(StrictWireModel):
+    devices: list[DeviceItem]
+    activeLimit: int
+    totalLimit: int
 
 
 class ErrorDetail(StrictWireModel):
@@ -381,6 +405,41 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
                       {"accountId": account_id, "status": "active", "usedBytes": used,
                        "quotaBytes": 256 * 1024 * 1024,
                        "capabilities": ["ciphertext-sync-v1"]})
+
+    @app.get("/v1/account/devices", response_model=DeviceListResponse,
+             responses=ERROR_RESPONSES)
+    async def account_devices(request: Request):
+        verified = identity(request)
+        if request.query_params:
+            raise ApiError("INVALID_QUERY", 400)
+        await require_empty_body(request)
+        return await run_in_threadpool(tenant, verified,
+            lambda conn, account_id, _used: list_devices(conn, account_id))
+
+    @app.post("/v1/account/devices", response_model=DeviceReceipt,
+              responses=ERROR_RESPONSES, openapi_extra=raw_json_body(DeviceWire))
+    async def create_device(request: Request):
+        verified = identity(request)
+        if request.query_params:
+            raise ApiError("INVALID_QUERY", 400)
+        key = header_one(request, "idempotency-key")
+        raw = await body(request, DEVICE_BODY_BYTES)
+        return await run_in_threadpool(tenant, verified,
+            lambda conn, account_id, _used: register_device(conn, account_id, key, raw))
+
+    @app.delete("/v1/account/devices/{device_id}", response_model=DeviceReceipt,
+                responses=ERROR_RESPONSES,
+                openapi_extra={"parameters": [IDEMPOTENCY_HEADER]})
+    async def delete_device(request: Request, device_id: str):
+        verified = identity(request)
+        if request.query_params:
+            raise ApiError("INVALID_QUERY", 400)
+        parse_device_id(device_id)
+        key = header_one(request, "idempotency-key")
+        await require_empty_body(request)
+        return await run_in_threadpool(tenant, verified,
+            lambda conn, account_id, _used:
+                retire_device(conn, account_id, device_id, key))
 
     @app.delete("/v1/account", status_code=202,
                 response_model=AccountDeletionReceipt, responses=ERROR_RESPONSES,

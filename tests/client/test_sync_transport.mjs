@@ -57,6 +57,9 @@ function successFetch(repo, requests, transform = (_kind, response) => response)
       status: 'active', usedBytes: 0, quotaBytes: 268435456,
       capabilities: ['ciphertext-sync-v1'] }));
     const saved = JSON.parse(init.body);
+    if (url.endsWith('/v1/account/devices')) return transform('device', json({
+      kind: 'device', deviceId: saved.deviceId, status: 'active',
+    }));
     if (saved.kind === 'chunk') return transform('chunk', json({ kind: 'chunk',
       caseId: saved.caseId, revisionId: saved.revisionId, packageId: saved.packageId,
       index: saved.index, digest: sha(init.body) }, 202));
@@ -74,19 +77,60 @@ test('two offline revisions send exact saved bytes with durable create then upda
     accessToken: 'unit-token', fetchImpl: successFetch(repo, requests) });
   assert.deepEqual(result, { status: 'committed', revisionId: 'rev-2', count: 2 });
   assert.deepEqual(repo.acknowledgments, [['op-1', 'rev-1'], ['op-2', 'rev-2']]);
-  assert.equal(requests.length, 5);
+  assert.equal(requests.length, 6);
   for (const request of requests) {
     assert.equal(request.init.headers.Authorization, 'Bearer unit-token');
     assert.equal(request.init.credentials, 'omit');
     assert.equal(request.init.redirect, 'error');
     assert.equal(request.init.cache, 'no-store');
   }
-  assert.equal(requests[1].init.body, operation(1).steps[0].body);
-  assert.equal(requests[2].init.body, operation(1).steps[1].body);
-  assert.equal(requests[3].init.body, operation(2).steps[0].body);
-  assert.equal(requests[4].init.body, operation(2).steps[1].body);
-  assert.equal(requests[2].init.headers['If-None-Match'], '*');
-  assert.equal(requests[4].init.headers['If-Match'], '"rev-1"');
+  const deviceId = JSON.parse(operation(1).steps[1].body).deviceId;
+  assert.equal(requests[1].url, 'http://127.0.0.1:8081/v1/account/devices');
+  assert.equal(requests[1].init.body, JSON.stringify({ schemaVersion: '1', deviceId }));
+  assert.equal(requests[1].init.headers['Idempotency-Key'], `device:${deviceId}`);
+  assert.equal(requests[2].init.body, operation(1).steps[0].body);
+  assert.equal(requests[3].init.body, operation(1).steps[1].body);
+  assert.equal(requests[4].init.body, operation(2).steps[0].body);
+  assert.equal(requests[5].init.body, operation(2).steps[1].body);
+  assert.equal(requests[3].init.headers['If-None-Match'], '*');
+  assert.equal(requests[5].init.headers['If-Match'], '"rev-1"');
+});
+
+test('device registration lost response retries identical bytes before ciphertext upload', async () => {
+  const repo = repository();
+  const attempts = [];
+  let chunks = 0;
+  const normal = successFetch(repo, []);
+  const result = await syncCase(repo, 'case-unit', { baseUrl: 'https://api.example.test',
+    accessToken: 'unit-token', sleepImpl: async () => {}, fetchImpl: async (url, init) => {
+      if (url.endsWith('/v1/account/devices')) {
+        attempts.push({ body: init.body, key: init.headers['Idempotency-Key'] });
+        if (attempts.length === 1) throw new TypeError('lost device response');
+      }
+      if (url.endsWith('/chunks')) chunks++;
+      return normal(url, init);
+    } });
+  const deviceId = JSON.parse(operation(1).steps[1].body).deviceId;
+  assert.deepEqual(result, { status: 'committed', revisionId: 'rev-1', count: 1 });
+  assert.deepEqual(attempts, [
+    { body: JSON.stringify({ schemaVersion: '1', deviceId }), key: `device:${deviceId}` },
+    { body: JSON.stringify({ schemaVersion: '1', deviceId }), key: `device:${deviceId}` },
+  ]);
+  assert.equal(chunks, 1);
+});
+
+test('retired device response stops before upload and preserves the outbox', async () => {
+  const repo = repository();
+  const requests = [];
+  const result = await syncCase(repo, 'case-unit', { baseUrl: 'https://api.example.test',
+    accessToken: 'unit-token', fetchImpl: successFetch(repo, requests, (kind, response) =>
+      kind === 'device' ? json({ error: { code: 'DEVICE_RETIRED', requestId: 'req-device' } }, 409) :
+        response) });
+  assert.equal(result.status, 'permanent');
+  assert.equal(result.httpStatus, 409);
+  assert.equal(requests.length, 2);
+  assert.deepEqual(repo.acknowledgments, []);
+  assert.equal(repo.queue.length, 1);
 });
 
 test('wrong account and malformed manifest receipt preserve the outbox', async () => {

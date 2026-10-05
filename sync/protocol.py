@@ -19,12 +19,14 @@ CHUNK_KEYS = ("schemaVersion", "kind", "accountId", "caseId", "revisionId",
 MANIFEST_KEYS = ("schemaVersion", "kind", "format", "algorithm", "accountId",
                  "caseId", "revisionId", "deviceId", "keyGeneration", "packageId",
                  "chunkCount", "chunkDigests", "packageDigest")
+DEVICE_REGISTRATION_KEYS = ("schemaVersion", "deviceId")
 PACKAGE_KEYS = ("schemaVersion", "format", "algorithm", "accountId", "caseId",
                 "revisionId", "deviceId", "keyGeneration", "packageId", "chunks")
 CHUNK_BYTES = 4 * 1024 * 1024
 ENVELOPE_BYTES = 8 * 1024 * 1024
 CHUNK_BODY_BYTES = 8 * 1024 * 1024
 MANIFEST_BODY_BYTES = 16 * 1024
+DEVICE_BODY_BYTES = 256
 MAX_CHUNKS = 8
 FORMAT = "scryer-case-v1"
 ALGORITHM = "AES-256-GCM+HKDF-SHA-256"
@@ -137,6 +139,18 @@ def _common(value: dict[str, Any], expected_account: str) -> tuple[str, str, str
     package_id = value["packageId"]
     _b64(package_id, 16, 16)
     return account_id, case_id, revision_id, package_id
+
+
+def parse_device_registration(body: bytes) -> str:
+    value = _load(body, DEVICE_REGISTRATION_KEYS, DEVICE_BODY_BYTES)
+    if value["schemaVersion"] != "1":
+        raise ProtocolError("INVALID_WIRE")
+    return parse_device_id(value["deviceId"])
+
+
+def parse_device_id(value: object) -> str:
+    _b64(value, 16, 16)
+    return value
 
 
 def parse_chunk(body: bytes, expected_account: str) -> ChunkRequest:

@@ -8,7 +8,7 @@ transaction successfully before returning a receipt to the browser.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 import json
 import re
@@ -18,12 +18,14 @@ from psycopg.pq import TransactionStatus
 
 from .protocol import (
     ChunkRequest, ProtocolError, assemble_package, parse_chunk, parse_manifest,
-    parse_precondition, request_digest,
+    parse_precondition, parse_device_id, parse_device_registration, request_digest,
 )
 from .recovery import parse_generation_precondition, parse_recovery_wrapper
 
 
 QUOTA = 256 * 1024 * 1024
+DEVICE_ACTIVE_LIMIT = 16
+DEVICE_TOTAL_LIMIT = 256
 ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}\Z")
 IDEMPOTENCY_KEY = re.compile(r"[A-Za-z0-9][A-Za-z0-9:_-]{0,159}\Z")
 
@@ -144,6 +146,96 @@ def _save_receipt(conn: Connection, account_id: str, key: str, digest: str,
                  (account_id, key, digest, operation, case_id, _receipt_bytes(receipt)))
 
 
+def _device_time(value: datetime | None) -> str | None:
+    return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z") \
+        if value is not None else None
+
+
+def list_devices(conn: Connection, account_id: str) -> dict:
+    _transaction(conn)
+    account_id = _id(account_id)
+    _lock_account(conn, account_id)
+    rows = conn.execute("SELECT device_id, created_at, revoked_at FROM scryer.devices "
+                        "WHERE account_id=%s ORDER BY created_at, device_id",
+                        (account_id,)).fetchall()
+    if len(rows) > DEVICE_TOTAL_LIMIT:
+        raise StoreError("CORRUPT_DEVICE_REGISTRY", 500)
+    for device_id, _created_at, _retired_at in rows:
+        try:
+            parse_device_id(device_id)
+        except ProtocolError:
+            raise StoreError("CORRUPT_DEVICE_REGISTRY", 500) from None
+    return {"devices": [{"deviceId": device_id,
+                         "status": "retired" if retired_at is not None else "active",
+                         "createdAt": _device_time(created_at),
+                         "retiredAt": _device_time(retired_at)}
+                        for device_id, created_at, retired_at in rows],
+            "activeLimit": DEVICE_ACTIVE_LIMIT, "totalLimit": DEVICE_TOTAL_LIMIT}
+
+
+def register_device(conn: Connection, account_id: str, idempotency_key: str,
+                    body: bytes) -> dict:
+    _transaction(conn)
+    account_id, idempotency_key = _id(account_id), _key(idempotency_key)
+    device_id = _parse(parse_device_registration, body)
+    used = _lock_account(conn, account_id)
+    _prune_expired(conn, account_id, used)
+    digest = request_digest("POST", "/v1/account/devices", body, None)
+    cached = _idempotent(conn, account_id, idempotency_key, digest, "device", None)
+    if idempotency_key != f"device:{device_id}":
+        raise StoreError("INVALID_IDEMPOTENCY_KEY", 400)
+    row = conn.execute("SELECT revoked_at FROM scryer.devices "
+                       "WHERE account_id=%s AND device_id=%s",
+                       (account_id, device_id)).fetchone()
+    if row is not None and row[0] is not None:
+        raise StoreError("DEVICE_RETIRED")
+    if cached is not None:
+        if row is None or cached != {"kind": "device", "deviceId": device_id,
+                                      "status": "active"}:
+            raise StoreError("CORRUPT_DEVICE_REGISTRY", 500)
+        return cached
+    if row is None:
+        counts = conn.execute("SELECT count(*), count(*) FILTER (WHERE revoked_at IS NULL) "
+                              "FROM scryer.devices WHERE account_id=%s",
+                              (account_id,)).fetchone()
+        if counts[0] >= DEVICE_TOTAL_LIMIT or counts[1] >= DEVICE_ACTIVE_LIMIT:
+            raise StoreError("DEVICE_LIMIT_REACHED")
+        conn.execute("INSERT INTO scryer.devices(account_id, device_id) VALUES (%s,%s)",
+                     (account_id, device_id))
+    receipt = {"kind": "device", "deviceId": device_id, "status": "active"}
+    _save_receipt(conn, account_id, idempotency_key, digest, "device", None, receipt)
+    return receipt
+
+
+def retire_device(conn: Connection, account_id: str, device_id: str,
+                  idempotency_key: str) -> dict:
+    _transaction(conn)
+    account_id, idempotency_key = _id(account_id), _key(idempotency_key)
+    device_id = _parse(parse_device_id, device_id)
+    used = _lock_account(conn, account_id)
+    _prune_expired(conn, account_id, used)
+    digest = request_digest("DELETE", f"/v1/account/devices/{device_id}", b"", None)
+    cached = _idempotent(conn, account_id, idempotency_key, digest, "device", None)
+    if idempotency_key != f"device-retire:{device_id}":
+        raise StoreError("INVALID_IDEMPOTENCY_KEY", 400)
+    row = conn.execute("SELECT revoked_at FROM scryer.devices "
+                       "WHERE account_id=%s AND device_id=%s",
+                       (account_id, device_id)).fetchone()
+    if row is None:
+        raise StoreError("DEVICE_NOT_FOUND", 404)
+    receipt = {"kind": "device", "deviceId": device_id, "status": "retired"}
+    if cached is not None:
+        if row[0] is None or cached != receipt:
+            raise StoreError("CORRUPT_DEVICE_REGISTRY", 500)
+        return cached
+    if row[0] is None:
+        conn.execute("UPDATE scryer.devices SET revoked_at=clock_timestamp() "
+                     "WHERE account_id=%s AND device_id=%s",
+                     (account_id, device_id))
+    _save_receipt(conn, account_id, idempotency_key, digest, "device", None, receipt)
+    return receipt
+
+
 def stage_chunk(conn: Connection, account_id: str, idempotency_key: str,
                 body: bytes) -> dict:
     _transaction(conn)
@@ -208,6 +300,11 @@ def commit_manifest(conn: Connection, account_id: str, idempotency_key: str,
                             body, precondition)
     cached = _idempotent(conn, account_id, idempotency_key, digest,
                          "manifest", manifest.case_id)
+    device = conn.execute("SELECT revoked_at FROM scryer.devices "
+                          "WHERE account_id=%s AND device_id=%s",
+                          (account_id, manifest.device_id)).fetchone()
+    if device is None or device[0] is not None:
+        raise StoreError("DEVICE_NOT_ACTIVE")
     if cached is not None:
         return cached
     case = conn.execute("SELECT head_revision, deleted_at FROM scryer.cases "

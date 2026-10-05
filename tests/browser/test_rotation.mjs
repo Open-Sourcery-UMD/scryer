@@ -42,6 +42,7 @@ test('real browser key and recovery rotations survive interruption without losin
         created.recoverySecret, 'acct-rotate');
       const reopened = await openLocalRepository({ dbName: name, session: reopenedSession,
         validateCase: async () => {} });
+      const reopenedDeviceId = reopened.session.deviceId;
       const committed = await commitGenerationRotation(reopened, 'generation-one');
       const repeated = await commitGenerationRotation(reopened, 'generation-one');
       const after = await reopened.loadCase('case-rotate');
@@ -66,7 +67,8 @@ test('real browser key and recovery rotations survive interruption without losin
         before: before.revisionId, after: after.revisionId,
         generation: after.keyGeneration, previewOld: previewOld.cases[0].archivedRevision,
         staleGeneration, nextCommit, latest: latest.revisionId,
-        latestGeneration: latest.keyGeneration };
+        latestGeneration: latest.keyGeneration,
+        originalDeviceId: created.session.deviceId, reopenedDeviceId };
     }, dbName);
     oldSecret = result.oldSecret;
     oldWrapper = result.oldWrapper;
@@ -80,6 +82,7 @@ test('real browser key and recovery rotations survive interruption without losin
     assert.equal(result.previewOld, 'rev-before-rotation');
     assert.equal(result.latest, 'rev-after-rotation');
     assert.equal(result.latestGeneration, 2);
+    assert.equal(result.reopenedDeviceId, result.originalDeviceId);
   });
 
   await t.test('new-root recovery rotation rejects wrong secret and a failed commit, then succeeds', async () => {
@@ -87,6 +90,7 @@ test('real browser key and recovery rotations survive interruption without losin
       const { unlockRecovery, verifyRecoverySecret } = await import('/crypto/keys.js');
       const { openCase } = await import('/crypto/envelope.js');
       const { openLocalRepository } = await import('/storage/repository.js');
+      const { exportEncrypted, restoreEncrypted } = await import('/export/archive.js');
       const { prepareRecoveryRotation, commitRecoveryRotation,
         prepareGenerationRotation, abortRotation } = await import('/crypto/rotation.js');
       const oldSession = await unlockRecovery(oldWrapper, oldSecret, 'acct-rotate');
@@ -110,6 +114,22 @@ test('real browser key and recovery rotations survive interruption without losin
       const resumedSession = await unlockRecovery(oldWrapper, oldSecret, 'acct-rotate');
       const active = await openLocalRepository({ dbName, session: resumedSession,
         validateCase: async () => {} });
+      const staleSession = await unlockRecovery(oldWrapper, oldSecret, 'acct-rotate');
+      const staleTab = await openLocalRepository({ dbName, session: staleSession,
+        validateCase: async () => {} });
+      const archiveSession = await unlockRecovery(oldWrapper, oldSecret, 'acct-rotate');
+      const archiveRepo = await openLocalRepository({ dbName: `${dbName}-old-archive`,
+        session: archiveSession, recoveryEnvelope: oldWrapper, recoverySecret: oldSecret,
+        validateCase: async () => {} });
+      const staleNewCase = { schemaVersion: '1', caseId: 'case-stale-root', currency: 'USD',
+        institutions: [], accountRefs: [], terms: [], aidItems: [], artifacts: [],
+        proposals: [], events: [] };
+      await archiveRepo.commitReviewed({ case: staleNewCase,
+        ledger: { schemaVersion: '1', reviews: [] }, revisionId: 'rev-archive-stale-root',
+        operationId: 'op-archive-stale-root', expectedLocalRevision: null, serverRevision: null });
+      const staleArchive = await exportEncrypted(archiveRepo, { recoverySecret: oldSecret });
+      archiveRepo.close();
+      const priorDeviceId = active.session.deviceId;
       let wrong = null;
       try { await commitRecoveryRotation(active, 'recovery-one',
         'scryer-recovery-v1:' + 'A'.repeat(43)); }
@@ -126,14 +146,30 @@ test('real browser key and recovery rotations survive interruption without losin
       const afterAbort = await active.loadCase('case-rotate');
       const secondAfterAbort = await active.loadCase('case-rotate-two');
       const committed = await commitRecoveryRotation(active, 'recovery-one', prepared.recoverySecret);
+      const changedRootDeviceId = committed.session.deviceId !== priorDeviceId;
+      let staleTabCode = null;
+      try { await staleTab.commitReviewed({ case: staleNewCase,
+        ledger: { schemaVersion: '1', reviews: [] }, revisionId: 'rev-stale-root',
+        operationId: 'op-stale-root', expectedLocalRevision: null, serverRevision: null }); }
+      catch (error) { staleTabCode = error.code; }
+      let rotatedSessionOtherDbCode = null;
+      try {
+        const other = await openLocalRepository({ dbName: `${dbName}-rotated-other`,
+          session: committed.session, recoveryEnvelope: committed.recoveryEnvelope,
+          recoverySecret: prepared.recoverySecret, validateCase: async () => {} });
+        other.close();
+      } catch (error) { rotatedSessionOtherDbCode = error.code; }
       const verifiedNew = await verifyRecoverySecret(committed.session,
         committed.recoveryEnvelope, prepared.recoverySecret);
       const oldSecretRejected = await verifyRecoverySecret(committed.session,
         committed.recoveryEnvelope, oldSecret);
-      const newRepo = await openLocalRepository({ dbName, session: committed.session,
+      const postRotationSession = rotatedSessionOtherDbCode ? committed.session :
+        await unlockRecovery(committed.recoveryEnvelope, prepared.recoverySecret, 'acct-rotate');
+      const newRepo = await openLocalRepository({ dbName, session: postRotationSession,
         validateCase: async () => {} });
       const after = await newRepo.loadCase('case-rotate');
       const secondAfter = await newRepo.loadCase('case-rotate-two');
+      const absentStaleArchiveCase = await newRepo.loadCase('case-stale-root');
       const beforeAbort = after.revisionId;
       await prepareGenerationRotation(newRepo, 'discard-one');
       await abortRotation(newRepo, 'discard-one');
@@ -145,7 +181,7 @@ test('real browser key and recovery rotations survive interruption without losin
         validateCase: async () => {} });
       const newDeviceCase = await newDeviceRepo.loadCase('case-rotate');
       const newDeviceSecond = await newDeviceRepo.loadCase('case-rotate-two');
-      const differentDevice = newDevice.deviceId !== committed.session.deviceId;
+      const sameInstallationDevice = newDevice.deviceId === committed.session.deviceId;
       newDeviceRepo.close();
       const oldAgain = await unlockRecovery(oldWrapper, oldSecret, 'acct-rotate');
       let oldKeyCode = null;
@@ -156,6 +192,12 @@ test('real browser key and recovery rotations survive interruption without losin
       const oldBackupCase = await openCase(oldAgain, parsed.cases[0].package,
         'case-rotate', 'rev-before-rotation');
       oldAgain.lock();
+      let staleRestoreCode = null;
+      try { await restoreEncrypted(staleTab, staleArchive, oldSecret,
+        { 'case-stale-root': null }); }
+      catch (error) { staleRestoreCode = error.code; }
+      const staleArchiveWritten = Boolean(await staleTab.loadCase('case-stale-root'));
+      staleTab.close();
       return { wrong, interrupted, afterAbort: afterAbort.revisionId,
         secondAfterAbort: secondAfterAbort.revisionId,
         before: before.revisionId, after: after.revisionId,
@@ -163,7 +205,9 @@ test('real browser key and recovery rotations survive interruption without losin
         afterGeneration: after.keyGeneration, oldKeyCode,
         oldBackupStillOpens: oldBackupCase.includes('ROTATION_CASE_SENTINEL'),
         newSecret: prepared.recoverySecret, newWrapper: committed.recoveryEnvelope,
-        verifiedNew, oldSecretRejected, differentDevice,
+        verifiedNew, oldSecretRejected, sameInstallationDevice, changedRootDeviceId,
+        staleTabCode, staleRestoreCode, staleArchiveWritten, rotatedSessionOtherDbCode,
+        absentStaleArchiveCase,
         newDeviceRevision: newDeviceCase.revisionId,
         newDeviceSecondRevision: newDeviceSecond.revisionId,
         abortedGenerationUnchanged: afterAbortRotation.revisionId === beforeAbort,
@@ -182,7 +226,13 @@ test('real browser key and recovery rotations survive interruption without losin
     assert.notEqual(result.newSecret, oldSecret);
     assert.equal(result.verifiedNew, true);
     assert.equal(result.oldSecretRejected, false);
-    assert.equal(result.differentDevice, true);
+    assert.equal(result.sameInstallationDevice, true);
+    assert.equal(result.changedRootDeviceId, true);
+    assert.equal(result.staleTabCode, 'STALE_ACCOUNT_ROOT');
+    assert.equal(result.staleRestoreCode, 'STALE_ACCOUNT_ROOT');
+    assert.equal(result.staleArchiveWritten, false);
+    assert.equal(result.rotatedSessionOtherDbCode, 'SESSION_BOUND_TO_STORAGE');
+    assert.equal(result.absentStaleArchiveCase, null);
     assert.equal(result.newDeviceRevision, result.after);
     assert.equal(result.newDeviceSecondRevision, result.afterSecond);
     assert.equal(result.abortedGenerationUnchanged, true);

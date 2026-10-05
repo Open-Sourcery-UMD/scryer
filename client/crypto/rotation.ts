@@ -92,7 +92,7 @@ export async function prepareRecoveryRotation(repo: LocalRepository,
       status: 'prepared', accountId: repo.session.accountId,
       priorRootProof, priorRecoveryEnvelope, entries,
       newRecoveryEnvelope: created.recoveryEnvelope,
-      newRootProof };
+      newRootProof, newDeviceId: created.session.deviceId };
     await repo.recordPreparedRotation(journal);
     return { operationId, recoverySecret: created.recoverySecret };
   } finally { created.session.lock(); }
@@ -104,7 +104,7 @@ export async function commitRecoveryRotation(repo: LocalRepository,
     rotated: number; revisions: Array<{ caseId: string; revisionId: string }> }> {
   rotationId(operationId);
   const journal = await repo.readRotation(operationId);
-  if (journal.kind !== 'recovery' || !journal.newRecoveryEnvelope) {
+  if (journal.kind !== 'recovery' || !journal.newRecoveryEnvelope || !journal.newDeviceId) {
     throw new StorageError('INVALID_ROTATION');
   }
   let nextSession: AccountSession;
@@ -116,6 +116,7 @@ export async function commitRecoveryRotation(repo: LocalRepository,
     throw error;
   }
   try {
+    nextSession.bindLocalDeviceId(journal.newDeviceId);
     const result = await repo.commitPreparedRotation(operationId, nextSession);
     repo.lock();
     return { session: nextSession, recoveryEnvelope: journal.newRecoveryEnvelope,

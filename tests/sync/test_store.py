@@ -16,7 +16,8 @@ from _db_harness import APP, app_connect, ensure_test_app_role
 from sync.db_context import begin_tenant_transaction
 from sync.migrate import apply_migrations
 from sync.store import (StoreError, stage_chunk, commit_manifest, get_head,
-                        delete_case, get_recovery_envelope, put_recovery_envelope)
+                        delete_case, get_recovery_envelope, put_recovery_envelope,
+                        list_devices, register_device, retire_device)
 from test_recovery import wrapper
 
 
@@ -79,6 +80,9 @@ class StoreTests(unittest.TestCase):
                           "(account_id, identity_issuer, identity_subject) VALUES "
                           "('acct-a', 'https://issuer.invalid', 'subject-a'), "
                           "('acct-b', 'https://issuer.invalid', 'subject-b')")
+            # Existing store tests start after the ordinary device-registration step.
+            admin.execute("INSERT INTO scryer.devices(account_id,device_id) VALUES (%s,%s)",
+                          ("acct-a", DEVICE))
         with psycopg.connect(host=SOCKET, dbname="postgres", user=ADMIN,
                              autocommit=True) as admin:
             ensure_test_app_role(admin)
@@ -110,6 +114,51 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(StoreError) as caught:
             fn(*args)
         self.assertEqual(caught.exception.code, code)
+
+    def test_device_registration_limits_and_retirement_tombstones(self):
+        def register(number):
+            device_id = b64(number.to_bytes(16, "big"))
+            body = wire({"schemaVersion": "1", "deviceId": device_id})
+            return self.run_as(lambda app: register_device(app, "acct-a",
+                f"device:{device_id}", body))
+
+        for number in range(1, 16):
+            self.assertEqual(register(number)["status"], "active")
+        self.assert_code("DEVICE_LIMIT_REACHED", register, 16)
+        retired_id = b64((1).to_bytes(16, "big"))
+        self.assertEqual(self.run_as(lambda app: retire_device(app, "acct-a",
+            retired_id, f"device-retire:{retired_id}"))["status"], "retired")
+        self.assertEqual(register(16)["status"], "active")
+        self.assert_code("DEVICE_RETIRED", register, 1)
+        with self.admin() as admin:
+            with admin.cursor() as cursor:
+                cursor.executemany("INSERT INTO scryer.devices(account_id,device_id,revoked_at) "
+                                   "VALUES ('acct-a',%s,now())",
+                                   [(b64(number.to_bytes(16, "big")),)
+                                    for number in range(17, 256)])
+        devices = self.run_as(lambda app: list_devices(app, "acct-a"))
+        self.assertEqual(len(devices["devices"]), 256)
+        self.assert_code("DEVICE_LIMIT_REACHED", register, 256)
+        other = self.run_as(lambda app: register_device(app, "acct-b",
+            f"device:{DEVICE}", wire({"schemaVersion": "1", "deviceId": DEVICE})),
+            account_id="acct-b")
+        self.assertEqual(other["status"], "active")
+        self.assertEqual(len(self.run_as(lambda app: list_devices(app, "acct-b"),
+                                         account_id="acct-b")["devices"]), 1)
+
+    def test_device_list_normalizes_utc_and_rejects_noncanonical_stored_ids(self):
+        def non_utc(app):
+            app.execute("SET LOCAL TIME ZONE 'America/New_York'")
+            return list_devices(app, "acct-a")
+        devices = self.run_as(non_utc)["devices"]
+        self.assertEqual(len(devices), 1)
+        self.assertTrue(devices[0]["createdAt"].endswith("Z"))
+        with self.admin() as admin:
+            admin.execute("INSERT INTO scryer.devices(account_id,device_id) "
+                          "VALUES ('acct-b',%s)", ("!" * 22,))
+        self.assert_code("CORRUPT_DEVICE_REGISTRY",
+                         lambda: self.run_as(lambda app: list_devices(app, "acct-b"),
+                                             account_id="acct-b"))
 
     def test_lost_response_replay_keeps_one_revision_and_exact_ciphertext(self):
         chunk, manifest, package = prepared()

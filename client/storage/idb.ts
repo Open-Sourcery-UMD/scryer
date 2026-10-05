@@ -139,6 +139,7 @@ export async function openLegacyV1(dbName: string): Promise<IDBDatabase> {
           !db.objectStoreNames.contains('cases') || !db.objectStoreNames.contains('anchors')) {
         db.close(); reject(new StorageError('UNSUPPORTED_STORAGE_VERSION')); return;
       }
+      db.onversionchange = () => db.close();
       resolve(db);
     };
   });

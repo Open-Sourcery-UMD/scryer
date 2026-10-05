@@ -285,6 +285,7 @@ export async function syncCase(repo: SyncRepository, caseId: string,
   let count = 0;
   let lastRevisionId = '';
   const seen = new Set<string>();
+  const registeredDevices = new Set<string>();
   while (count < 100) {
     const pending = await repo.prepareSync(caseId);
     if (!pending.length) return count ? { status: 'committed', revisionId: lastRevisionId, count } :
@@ -295,6 +296,22 @@ export async function syncCase(repo: SyncRepository, caseId: string,
     let prepared: StepContext;
     try { prepared = await validatePending(item, repo.session.accountId, caseId); }
     catch { return { status: 'permanent', code: 'INVALID_OUTBOX' }; }
+    const deviceId = prepared.manifest.deviceId as string;
+    if (!registeredDevices.has(deviceId)) {
+      const deviceBody = JSON.stringify({ schemaVersion: '1', deviceId });
+      const device = await request(`${baseUrl}/v1/account/devices`,
+        init('POST', options.accessToken, options.signal,
+          { 'Content-Type': 'application/json', 'Idempotency-Key': `device:${deviceId}` },
+          deviceBody), options, MAX_RECEIPT_BYTES);
+      if (isResult(device)) return device;
+      if (device.response.status !== 200) return statusResult(device.response.status);
+      try {
+        const receipt = jsonObject(device.json!.value, ['kind', 'deviceId', 'status']);
+        if (receipt.kind !== 'device' || receipt.deviceId !== deviceId ||
+            receipt.status !== 'active') throw new SyncFault('INVALID_SYNC_RESPONSE');
+      } catch { return { status: 'permanent', code: 'INVALID_SYNC_RESPONSE' }; }
+      registeredDevices.add(deviceId);
+    }
     const path = `${baseUrl}/v1/cases/${caseId}`;
     for (const { step, wire, digest: chunkDigest } of prepared.chunkBodies) {
       const response = await request(`${path}/chunks`, init('POST', options.accessToken,

@@ -21,7 +21,7 @@ from sync.api import create_sync_app
 from sync.migrate import apply_migrations
 from sync.protocol import CHUNK_KEYS, MANIFEST_KEYS
 from test_recovery import wrapper
-from test_store import prepared
+from test_store import DEVICE, prepared, wire
 
 
 SOCKET = os.environ.get("SCRYER_TEST_PG_SOCKET")
@@ -95,6 +95,95 @@ class ApiTests(unittest.TestCase):
     def account_id(self, token="one"):
         return derive_account_id(ISSUER, f"subject-{token}", self.account_key)
 
+    def register_device(self, token="one", device_id=DEVICE, key=None):
+        return self.request("POST", "/v1/account/devices", token=token,
+            content=wire({"schemaVersion": "1", "deviceId": device_id}),
+            headers={"Content-Type": "application/json",
+                     "Idempotency-Key": key or f"device:{device_id}"})
+
+    def retire_device(self, device_id, token="one", key=None):
+        return self.request("DELETE", f"/v1/account/devices/{device_id}", token=token,
+            headers={"Idempotency-Key": key or f"device-retire:{device_id}"})
+
+    def test_device_registry_is_tenant_scoped_idempotent_and_nonresurrecting(self):
+        device = "AQEBAQEBAQEBAQEBAQEBAQ"
+        registered = self.register_device("three", device)
+        self.assertEqual(registered.status_code, 200, registered.text)
+        self.assertEqual(registered.json(), {"kind": "device", "deviceId": device,
+                                             "status": "active"})
+        self.assertEqual(self.register_device("three", device).json(),
+                         registered.json())
+        self.assertEqual(self.register_device("three", DEVICE, f"device:{device}")
+                         .json()["error"]["code"], "IDEMPOTENCY_CONFLICT")
+        self.assertEqual(self.register_device("three", device, "device:arbitrary")
+                         .json()["error"]["code"], "INVALID_IDEMPOTENCY_KEY")
+        bad = self.request("POST", "/v1/account/devices", token="three",
+            content=b'{"deviceId":"' + device.encode() + b'","schemaVersion":"1"}',
+            headers={"Content-Type": "application/json",
+                     "Idempotency-Key": "device:test:bad"})
+        self.assertEqual(bad.status_code, 400)
+        self.assertEqual(self.request("GET", "/v1/account/devices?unused=1",
+                         token="three").status_code, 400)
+        self.assertEqual(self.request("DELETE", f"/v1/account/devices/{device}",
+            token="three", content=b"x", headers={"Idempotency-Key": "device:test:body"})
+            .status_code, 400)
+        listed = self.request("GET", "/v1/account/devices", token="three")
+        self.assertEqual(listed.status_code, 200, listed.text)
+        self.assertEqual(listed.json()["activeLimit"], 16)
+        self.assertEqual(listed.json()["totalLimit"], 256)
+        mine = {item["deviceId"]: item for item in listed.json()["devices"]}
+        self.assertEqual(mine[device]["status"], "active")
+        self.assertIsNone(mine[device]["retiredAt"])
+        self.assertEqual(self.request("GET", "/v1/account/devices", token="two")
+                         .json()["devices"], [])
+        self.assertEqual(self.retire_device(device, token="two").status_code, 404)
+        retired = self.retire_device(device, token="three")
+        self.assertEqual(retired.status_code, 200, retired.text)
+        self.assertEqual(retired.json(), {"kind": "device", "deviceId": device,
+                                          "status": "retired"})
+        self.assertEqual(self.retire_device(device, token="three")
+                         .json(), retired.json())
+        self.assertEqual(self.retire_device(device, token="three", key="device:arbitrary")
+                         .json()["error"]["code"], "INVALID_IDEMPOTENCY_KEY")
+        self.assertEqual(self.register_device("three", device, "device:test:new")
+                         .json()["error"]["code"], "INVALID_IDEMPOTENCY_KEY")
+        self.assertEqual(self.register_device("three", device)
+                         .json()["error"]["code"], "DEVICE_RETIRED")
+        retired_rows = {item["deviceId"]: item for item in
+                        self.request("GET", "/v1/account/devices", token="three")
+                        .json()["devices"]}
+        self.assertEqual(retired_rows[device]["status"], "retired")
+        paths = self.client.get("/openapi.json").json()["paths"]
+        self.assertIn("/v1/account/devices", paths)
+        self.assertIn("/v1/account/devices/{device_id}", paths)
+
+    def test_manifest_requires_active_registered_device(self):
+        account = self.account_id("two")
+        chunk, manifest, _ = prepared(case_id="case-device-gate", account_id=account)
+        chunk_headers = {"Content-Type": "application/json",
+                         "Idempotency-Key": "device:gate:chunk"}
+        self.assertEqual(self.request("POST", "/v1/cases/case-device-gate/chunks",
+            token="two", content=chunk, headers=chunk_headers).status_code, 202)
+        headers = {"Content-Type": "application/json",
+                   "Idempotency-Key": "device:gate:manifest", "If-None-Match": "*"}
+        absent = self.request("POST", "/v1/cases/case-device-gate/revisions",
+                              token="two", content=manifest, headers=headers)
+        self.assertEqual(absent.status_code, 409, absent.text)
+        self.assertEqual(absent.json()["error"]["code"], "DEVICE_NOT_ACTIVE")
+        self.assertEqual(self.register_device("two", DEVICE)
+                         .status_code, 200)
+        committed = self.request("POST", "/v1/cases/case-device-gate/revisions",
+                                 token="two", content=manifest, headers=headers)
+        self.assertEqual(committed.status_code, 201, committed.text)
+        self.assertEqual(self.retire_device(DEVICE, token="two")
+                         .status_code, 200)
+        replay = self.request("POST", "/v1/cases/case-device-gate/revisions",
+                              token="two", content=manifest, headers=headers)
+        self.assertEqual(replay.status_code, 409, replay.text)
+        self.assertEqual(replay.json()["error"]["code"], "DEVICE_NOT_ACTIVE")
+        self.assertEqual(self.request("GET", "/v1/cases/case-device-gate", token="two")
+                         .status_code, 200)
+
     def test_liveness_readiness_and_authenticated_account_status(self):
         self.assertEqual(self.client.get("/health/live").status_code, 200)
         self.assertEqual(self.client.get("/health/ready").status_code, 200)
@@ -153,6 +242,7 @@ class ApiTests(unittest.TestCase):
     def test_exact_ciphertext_write_read_and_cross_tenant_404(self):
         account = self.account_id()
         self.request("GET", "/v1/account")
+        self.assertEqual(self.register_device("one", DEVICE).status_code, 200)
         chunk, manifest, package = prepared(case_id="case-http", account_id=account)
         origin = "http://127.0.0.1:39000"
         stage = self.request("POST", "/v1/cases/case-http/chunks", content=chunk,
@@ -206,6 +296,7 @@ class ApiTests(unittest.TestCase):
     def test_update_conflict_delete_and_old_retry_do_not_resurrect(self):
         account = self.account_id()
         self.request("GET", "/v1/account")
+        self.assertEqual(self.register_device("one", DEVICE).status_code, 200)
         first_chunk, first_manifest, _ = prepared(case_id="case-lifecycle", account_id=account)
         second_chunk, second_manifest, _ = prepared(case_id="case-lifecycle",
             revision_id="rev-two", account_id=account)
@@ -349,6 +440,7 @@ class ApiTests(unittest.TestCase):
             return self.request(method, path, token="three", **kwargs)
 
         mine("GET", "/v1/account")
+        self.assertEqual(self.register_device("three", DEVICE).status_code, 200)
         self.request("GET", "/v1/account", token="two")
         original_packages = {}
         for case_id in ("case-list-a", "case-list-b", "case-list-c"):

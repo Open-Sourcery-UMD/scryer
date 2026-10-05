@@ -9,6 +9,7 @@ from sync.protocol import (
     ProtocolError,
     assemble_package,
     parse_chunk,
+    parse_device_registration,
     parse_manifest,
     parse_precondition,
     request_digest,
@@ -73,6 +74,20 @@ class ProtocolTests(unittest.TestCase):
         self.assertEqual(parsed.body, raw)
         self.assertEqual(parsed.digest, hashlib.sha256(raw).hexdigest())
         self.assertEqual(parsed.cipher_bytes, 1)
+
+    def test_device_registration_requires_exact_bounded_canonical_id(self):
+        body = wire({"schemaVersion": "1", "deviceId": DEVICE})
+        self.assertEqual(parse_device_registration(body), DEVICE)
+        self.assert_code("INVALID_WIRE", parse_device_registration, b" " + body)
+        self.assert_code("INVALID_WIRE", parse_device_registration,
+                         wire({"deviceId": DEVICE, "schemaVersion": "1"}))
+        self.assert_code("INVALID_WIRE", parse_device_registration,
+                         body[:-1] + b',"deviceId":"' + DEVICE.encode() + b'"}')
+        self.assert_code("INVALID_WIRE", parse_device_registration,
+                         wire({"schemaVersion": "1", "deviceId": DEVICE + "="}))
+        self.assert_code("INVALID_WIRE", parse_device_registration,
+                         wire({"schemaVersion": "2", "deviceId": DEVICE}))
+        self.assert_code("CASE_TOO_LARGE", parse_device_registration, body + b" " * 256)
 
     def test_random_package_id_may_start_with_base64url_punctuation(self):
         value = chunk()

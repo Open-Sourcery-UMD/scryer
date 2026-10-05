@@ -83,12 +83,13 @@ export async function sealCase(
   try {
     const chunkCount = Math.ceil(bytes.length / MAX_CHUNK_BYTES);
     if (chunkCount > MAX_CHUNKS) throw new CryptoError('CASE_TOO_LARGE');
+    const deviceId = session.deviceId;
     const header: Header = {
       schemaVersion: CRYPTO_VERSION, format: CASE_FORMAT, algorithm: CRYPTO_ALGORITHM,
-      accountId: session.accountId, caseId, revisionId, deviceId: session.deviceId,
+      accountId: session.accountId, caseId, revisionId, deviceId,
       keyGeneration, packageId: base64UrlEncode(randomBytes(16)),
     };
-    const key = await session.deriveCaseKey(caseId, keyGeneration, session.deviceId);
+    const key = await session.deriveCaseKey(caseId, keyGeneration, deviceId);
     const chunks: CaseChunkV1[] = [];
     for (let index = 0; index < chunkCount; index++) {
       const start = index * MAX_CHUNK_BYTES;

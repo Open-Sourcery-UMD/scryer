@@ -319,7 +319,9 @@ export async function migrateLocalDatabase(options: {
   const backup = new Uint8Array(options.backup);
   const archive = parseArchive(backup);
   const legacyDb = await openLegacyV1(options.dbName);
-  const legacy = new LocalRepository(legacyDb, options.session, options.validateCase);
+  let legacy: LocalRepository;
+  try { legacy = new LocalRepository(legacyDb, options.session, options.validateCase); }
+  catch (error) { legacyDb.close(); throw error; }
   const expectedOutbox = new Map<string, string>();
   try {
     await previewRestore(legacy, backup, options.recoverySecret);
@@ -340,7 +342,9 @@ export async function migrateLocalDatabase(options: {
     expectedAccounts: [{ accountId: archive.accountId,
       recoveryEnvelopeJson: JSON.stringify(archive.recoveryEnvelope) }], backupDigest };
   const db = await openDatabase(options.dbName, proof);
-  const upgraded = new LocalRepository(db, options.session, options.validateCase);
+  let upgraded: LocalRepository;
+  try { upgraded = new LocalRepository(db, options.session, options.validateCase); }
+  catch (error) { db.close(); throw error; }
   try {
     const marker = await transactionResult<{ id: string; version: number;
       migratedFrom: number; backupDigest: string | null } | undefined>(

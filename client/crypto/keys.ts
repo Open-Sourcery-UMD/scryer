@@ -88,13 +88,34 @@ function recoveryBytes(secret: string): Uint8Array<ArrayBuffer> {
 
 export class AccountSession {
   #root: CryptoKey | null;
+  #deviceId: string;
+  #storageName: string | null = null;
   readonly accountId: string;
-  readonly deviceId: string;
 
   constructor(root: CryptoKey, accountId: string, deviceId: string) {
     this.#root = root;
     this.accountId = accountId;
-    this.deviceId = deviceId;
+    base64UrlDecode(deviceId, 16, 16);
+    this.#deviceId = deviceId;
+  }
+
+  get deviceId(): string { return this.#deviceId; }
+
+  bindLocalDeviceId(deviceId: string): void {
+    if (this.locked) throw new CryptoError('KEY_LOCKED');
+    base64UrlDecode(deviceId, 16, 16);
+    this.#deviceId = deviceId;
+  }
+
+  bindLocalStorage(name: string): void {
+    if (this.locked) throw new CryptoError('KEY_LOCKED');
+    if (typeof name !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(name)) {
+      throw new CryptoError('INVALID_STORAGE_NAME');
+    }
+    if (this.#storageName !== null && this.#storageName !== name) {
+      throw new CryptoError('SESSION_BOUND_TO_STORAGE');
+    }
+    this.#storageName = name;
   }
 
   get locked(): boolean { return this.#root === null; }

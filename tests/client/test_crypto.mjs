@@ -62,6 +62,21 @@ test('random creation and second-device unlock preserve plaintext without determ
   assert.equal(await codeOf(() => sealCase(created.session, 'case-local', 'rev-two', '{}')), 'KEY_LOCKED');
 });
 
+test('a package uses one device identity for its header and encryption key', async () => {
+  const created = await createAccountKeys('acct-device-snapshot');
+  const originalId = created.session.deviceId;
+  const anotherId = (await createAccountKeys('acct-device-snapshot')).session.deviceId;
+  let reads = 0;
+  Object.defineProperty(created.session, 'deviceId', { get() {
+    reads++;
+    return reads === 1 ? originalId : anotherId;
+  } });
+  const pkg = await sealCase(created.session, 'case-device-snapshot', 'rev-one', '{}');
+  assert.equal(pkg.deviceId, originalId);
+  assert.equal(await openCase(created.session, pkg, 'case-device-snapshot', 'rev-one'), '{}');
+  assert.equal(reads, 1);
+});
+
 test('strict envelopes reject changed bindings, versions, encodings, ciphertext and tags', async () => {
   const secret = `scryer-recovery-v1:${b64Hex(vector.recoverySecretHex)}`;
   const session = await unlockRecovery(vectorWrapper(), secret, vector.accountId);
