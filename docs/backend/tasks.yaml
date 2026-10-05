@@ -666,6 +666,7 @@
         "M7"
       ],
       "requirements": [
+        "S-16",
         "S-60",
         "S-69"
       ],
@@ -684,6 +685,7 @@
       "tests": [
         "Concurrency/crash matrix 1–16",
         "Chrome remote-branch decrypt/validation and unchanged outbox on preview",
+        "Headless read-only branch analysis for event identity collisions, concurrent decisions, and non-event differences",
         "RC-31–RC-39",
         "RC-45",
         "RC-47"

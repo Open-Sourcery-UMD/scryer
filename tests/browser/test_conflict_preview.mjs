@@ -10,6 +10,7 @@ test('real browser previews both authenticated encrypted conflict branches witho
     const { sealCase } = await import('/crypto/envelope.js');
     const { openLocalRepository } = await import('/storage/repository.js');
     const { previewSyncConflict } = await import('/sync/conflict.js');
+    const { analyzeConflictPreview } = await import('/sync/analysis.js');
     const created = await createAccountKeys('acct-conflict-preview');
     const validateCase = async (value) => {
       if (value.events.some((event) => event.kind === 'invalid')) throw new Error('INVALID_CASE');
@@ -48,6 +49,7 @@ test('real browser previews both authenticated encrypted conflict branches witho
     const beforeLocal = JSON.stringify(await repo.loadCase('case-conflict-preview'));
     const beforePending = JSON.stringify(await repo.prepareSync('case-conflict-preview'));
     const preview = await previewSyncConflict(repo, 'case-conflict-preview', conflict);
+    const analysis = analyzeConflictPreview(preview);
     const afterLocal = JSON.stringify(await repo.loadCase('case-conflict-preview'));
     const afterPending = JSON.stringify(await repo.prepareSync('case-conflict-preview'));
     const codeOf = async (candidate) => {
@@ -118,7 +120,8 @@ test('real browser previews both authenticated encrypted conflict branches witho
     const initialReadRace = await codeOf(freshConflict);
     repo.loadCase = load;
     repo.close();
-    return { preview, unchanged: beforeLocal === afterLocal && beforePending === afterPending,
+    return { preview, analysis,
+      unchanged: beforeLocal === afterLocal && beforePending === afterPending,
       refusalUnchanged: beforePending === pendingAfterRefusals &&
         beforeLocal === localAfterRefusals,
       refused, restoredStale, raced, initialReadRace,
@@ -133,6 +136,10 @@ test('real browser previews both authenticated encrypted conflict branches witho
   assert.equal(result.preview.remote.revisionId, 'rev-remote');
   assert.deepEqual(result.preview.remote.heads, ['event-remote']);
   assert.equal(result.preview.remote.case.events[0].fact.rawValue, 'REMOTE_SYNTHETIC_BRANCH');
+  assert.deepEqual(result.analysis, { caseId: 'case-conflict-preview',
+    sharedEventIds: [], localOnlyEventIds: ['event-local'],
+    remoteOnlyEventIds: ['event-remote'], differentCaseFields: [],
+    differentLedger: false, issues: [] });
   assert.equal(result.unchanged, true);
   assert.equal(result.refusalUnchanged, true);
   for (const [name, code] of Object.entries(result.refused)) {
