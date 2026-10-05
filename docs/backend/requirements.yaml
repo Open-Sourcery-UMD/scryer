@@ -467,8 +467,8 @@
         "M4",
         "M9"
       ],
-      "tests": ["tests/engine/test_cli.py", "tests/reference/test_corpus.py"],
-      "evidence": ["M3 33 fixed manifest operations and 200 generated cases pass through native CLI; browser and 10000-case tier open"],
+      "tests": ["tests/engine/test_cli.py", "tests/reference/test_corpus.py", "tests/engine/differential_generated.py — seven deterministic families and exact full projection comparison across 10000 seeds"],
+      "evidence": ["M3 33 fixed manifest operations and 200 generated cases pass through native CLI; M9-1 10000 generated cases across linear, reordered, correction, cancellation, approval-join, contradictory-correction, and manual-source families match every Python reference projection field with zero skips; WASM/browser parity and broader generated domain shapes remain open"],
       "status": "IN_PROGRESS"
     },
     {

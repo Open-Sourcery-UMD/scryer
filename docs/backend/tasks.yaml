@@ -708,7 +708,7 @@
     {
       "id": "M9",
       "title": "Hardening and measurement",
-      "status": "NOT_STARTED",
+      "status": "IN_PROGRESS",
       "dependsOn": [
         "M3",
         "M4",
@@ -740,12 +740,13 @@
       ],
       "tests": [
         "10,000 generated cases",
+        "M9-1 10,000 deterministic projection cases in seven event-history families compared field-for-field with the independent Python reference",
         "declared fuzz budgets",
         "component coverage gates",
         "negative controls"
       ],
       "command": "Freeze verification scripts as each component lands",
-      "expected": "Recorded counts and hardware, no unresolved release blockers",
+      "expected": "M9-1 generated differential tier passes locally; fuzz, coverage, browser parity, broader performance, and security/release gates remain open",
       "risk": "HIGH",
       "done": "Full evidence package and whole-branch review are current at candidate revision."
     },
