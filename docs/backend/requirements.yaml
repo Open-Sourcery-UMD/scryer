@@ -965,13 +965,15 @@
         "tests/sync/test_rls.py — real app-role direct-SQL isolation under forced RLS",
         "tests/sync/test_migrations.py — checksum, rollback, forward repair, and future-version rejection",
         "tests/sync/test_store.py — atomic ciphertext publication, CAS, idempotency, quota, deletion, and tenant isolation",
-        "tests/sync/test_api.py — HTTP behavior with unit-only verifier and real PostgreSQL"
+        "tests/sync/test_api.py — HTTP behavior with unit-only verifier and real PostgreSQL",
+        "tests/client/test_sync_transport.mjs — exact saved-byte requests, account/receipt validation, retry and conflict outcomes",
+        "tests/sync/test_client_integration.mjs — Chrome/FastAPI/PostgreSQL ciphertext journey with synthetic verifier"
       ],
       "evidence": [
         "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass",
         "M7-2 six direct app-role RLS tests and four migration tests pass on fresh private PostgreSQL 15.11",
         "M7-3 thirteen PostgreSQL store tests pass; OIDC/HTTP sync remain open",
-        "M7-4a 38 sync tests pass on PostgreSQL 15.11 and 16.15; real Keycloak PKCE passes separately; JWT-to-API integration remains blocked"
+        "M7-4a 38 sync tests pass on PostgreSQL 15.11 and 16.15; real Keycloak PKCE passes separately; M8 browser/API/PostgreSQL synthetic journey passes; JWT-to-API integration remains blocked"
       ],
       "status": "IN_PROGRESS"
     },
@@ -990,10 +992,12 @@
         "tests/browser/test_storage.mjs — two-tab local revision CAS, atomic outbox, byte-identical retry after reload",
         "tests/browser/test_rotation.mjs — journaled stale-head/account-wrapper checks and two-case atomic switch",
         "tests/sync/test_store.py — two distinct updates racing one head preserve the losing ciphertext branch",
-        "tests/browser/test_sync_chain.mjs — ordered durable offline acknowledgments, wrong/out-of-order refusal, and transaction rollback"
+        "tests/browser/test_sync_chain.mjs — ordered durable offline acknowledgments, wrong/out-of-order refusal, and transaction rollback",
+        "tests/client/test_sync_transport.mjs — stale remote head returns a typed conflict without local acknowledgment",
+        "tests/sync/test_client_integration.mjs — competing encrypted browser branch preserved after server CAS loss"
       ],
       "evidence": [
-        "M6-3 local encrypted conflict/outbox behavior and M6-5 two-case rotation switch pass Chrome; M7-3 server CAS race passes PostgreSQL; M8-1 atomic outbox succession passes Chrome; remote multi-device review remains open"
+        "M6-3 local encrypted conflict/outbox behavior and M6-5 two-case rotation switch pass Chrome; M7-3 server CAS race passes PostgreSQL; M8 atomic outbox succession and synthetic browser/API conflict pass; reviewed remote conflict resolution remains open"
       ],
       "status": "IN_PROGRESS"
     },
@@ -1142,10 +1146,11 @@
         "M10"
       ],
       "tests": [
-        "tests/browser/test_sync_chain.mjs — local multi-edit queue ordering and persistence"
+        "tests/browser/test_sync_chain.mjs — local multi-edit queue ordering and persistence",
+        "tests/sync/test_client_integration.mjs — Chrome, FastAPI, PostgreSQL, two identities, response loss, conflict, deletion"
       ],
       "evidence": [
-        "M8-1 local offline outbox succession passes Chrome; browser/API integration remains open"
+        "M8-1 local offline outbox succession passes Chrome; M8 synthetic Chrome/API/PostgreSQL integration passes; real JWT/WASM-backed user journey remains open"
       ],
       "status": "IN_PROGRESS"
     },

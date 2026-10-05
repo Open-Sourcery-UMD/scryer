@@ -8,5 +8,5 @@
     "outDir": "build",
     "rewriteRelativeImportExtensions": true
   },
-  "include": ["import/**/*.ts", "crypto/**/*.ts", "storage/**/*.ts", "export/**/*.ts", "vendor/d3-dsv/src/**/*.js"]
+  "include": ["import/**/*.ts", "crypto/**/*.ts", "storage/**/*.ts", "export/**/*.ts", "sync/**/*.ts", "vendor/d3-dsv/src/**/*.js"]
 }

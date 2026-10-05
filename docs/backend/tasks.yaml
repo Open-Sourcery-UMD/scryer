@@ -685,8 +685,8 @@
         "RC-45",
         "RC-47"
       ],
-      "command": "Freeze integration command when local services run",
-      "expected": "All named failure outcomes asserted",
+      "command": "cd client && npm run typecheck && npm test && SCRYER_BROWSER_BIN=<local Chrome> npm run test:browser; from repository root, SCRYER_TEST_PG_SOCKET=<private local PostgreSQL socket> SCRYER_BROWSER_BIN=<local Chrome> node --test tests/sync/test_client_integration.mjs",
+      "expected": "Synthetic offline chain and browser/API/PostgreSQL path pass; JWT/WASM-backed journey and full conflict review remain open",
       "risk": "CRITICAL",
       "done": "Multi-device and failure matrix pass locally."
     },
