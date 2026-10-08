@@ -38,6 +38,7 @@ test('real browser portable encrypted archive previews and restores atomically',
   let originalArchiveBytes;
   let recoverySecret;
   let recoveryEnvelope;
+  let sourcePending;
 
   await t.test('default export omits originals and optional encrypted originals verify', async () => {
     const result = await page.evaluate(async (name) => {
@@ -69,10 +70,11 @@ test('real browser portable encrypted archive previews and restores atomically',
         originals: [{ artifactId: 'artifact-archive', bytes: original }] });
       const originalPreview = await previewRestore(repo, withOriginal, created.recoverySecret);
       const encoded = new TextDecoder().decode(withOriginal);
+      const pending = await repo.prepareSync('case-archive');
       repo.close();
       return { bytes: Array.from(archive), originalBytes: Array.from(withOriginal),
         recoverySecret: created.recoverySecret,
-        recoveryEnvelope: created.recoveryEnvelope, preview, originalPreview,
+        recoveryEnvelope: created.recoveryEnvelope, pending, preview, originalPreview,
         defaultOriginalCount: parsed.originals.length,
         unchanged: JSON.stringify(before) === JSON.stringify(after),
         noPlaintext: !encoded.includes('SENSITIVE_ORIGINAL_BYTES') &&
@@ -82,6 +84,7 @@ test('real browser portable encrypted archive previews and restores atomically',
     originalArchiveBytes = result.originalBytes;
     recoverySecret = result.recoverySecret;
     recoveryEnvelope = result.recoveryEnvelope;
+    sourcePending = result.pending;
     assert.equal(result.defaultOriginalCount, 0);
     assert.equal(result.preview.cases.length, 1);
     assert.equal(result.originalPreview.originals.length, 1);
@@ -159,6 +162,60 @@ test('real browser portable encrypted archive previews and restores atomically',
     assert.equal(result.loaded.revisionId, 'rev-archive-one');
     assert.equal(result.pendingCount, 1);
     assert.equal(result.committed.restored, 1);
+  });
+
+  await t.test('retrying a pre-fix restore replaces the retired-device package and outbox', async () => {
+    const context = await browser.newContext();
+    const fresh = await context.newPage();
+    await fresh.goto(page.url());
+    const result = await fresh.evaluate(async ({ bytes, secret, sourcePending }) => {
+      const { unlockRecovery } = await import('/crypto/keys.js');
+      const { openLocalRepository } = await import('/storage/repository.js');
+      const { restoreEncrypted } = await import('/export/archive.js');
+      const archive = Uint8Array.from(bytes);
+      const parsed = JSON.parse(new TextDecoder().decode(archive));
+      const archived = parsed.cases[0];
+      const session = await unlockRecovery(parsed.recoveryEnvelope, secret, parsed.accountId);
+      const dbName = `legacy-restore-${parsed.exportId}`;
+      const repo = await openLocalRepository({ dbName, session,
+        recoveryEnvelope: parsed.recoveryEnvelope, recoverySecret: secret,
+        validateCase: async () => {} });
+      await new Promise((resolve, reject) => {
+        const request = indexedDB.open(dbName);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction(['cases', 'anchors', 'outbox'], 'readwrite');
+          tx.objectStore('cases').put(archived);
+          tx.objectStore('anchors').put({ accountId: archived.accountId,
+            caseId: archived.caseId, revisionId: archived.revisionId,
+            digest: archived.digest });
+          tx.objectStore('outbox').put({ accountId: archived.accountId,
+            ...sourcePending[0] });
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = () => { db.close(); reject(tx.error); };
+          tx.onabort = () => { db.close(); reject(tx.error); };
+        };
+      });
+      const before = await repo.prepareSync(archived.caseId);
+      const restored = await restoreEncrypted(repo, archive, secret,
+        { [archived.caseId]: archived.revisionId });
+      const after = await repo.prepareSync(archived.caseId);
+      const snapshot = await repo.encryptedSnapshot();
+      repo.close();
+      return { oldDeviceId: archived.package.deviceId, deviceId: session.deviceId,
+        beforeOperationId: before[0].operationId, restored,
+        packageDeviceId: snapshot.cases[0].package.deviceId,
+        afterOperationIds: after.map((item) => item.operationId),
+        manifestDeviceId: JSON.parse(after[0].steps.at(-1).body).deviceId };
+    }, { bytes: archiveBytes, secret: recoverySecret, sourcePending });
+    assert.notEqual(result.deviceId, result.oldDeviceId);
+    assert.deepEqual(result.restored, { restored: 1, unchanged: 0 });
+    assert.equal(result.packageDeviceId, result.deviceId);
+    assert.equal(result.manifestDeviceId, result.deviceId);
+    assert.equal(result.afterOperationIds.length, 1);
+    assert.notEqual(result.afterOperationIds[0], result.beforeOperationId);
+    await context.close();
   });
 
   await t.test('encrypted originals can be extracted only after recovery verification', async () => {
@@ -291,6 +348,70 @@ test('real browser portable encrypted archive previews and restores atomically',
     assert.equal(result.success.restored, 2);
     assert.equal(result.presentA, 'rev-case-a');
     assert.equal(result.presentB, 'rev-case-b');
+  });
+
+  await t.test('unchanged case spends no key budget and cannot block another restore', async () => {
+    const result = await page.evaluate(async () => {
+      const { createAccountKeys } = await import('/crypto/keys.js');
+      const { openLocalRepository } = await import('/storage/repository.js');
+      const { exportEncrypted, restoreEncrypted } = await import('/export/archive.js');
+      const created = await createAccountKeys('acct-budget-restore');
+      const dbName = `budget-restore-${crypto.randomUUID()}`;
+      const repo = await openLocalRepository({ dbName, session: created.session,
+        recoveryEnvelope: created.recoveryEnvelope, recoverySecret: created.recoverySecret,
+        validateCase: async () => {} });
+      for (const caseId of ['case-budget-a', 'case-budget-b']) {
+        const caseData = { schemaVersion: '1', caseId, currency: 'USD',
+          institutions: [], accountRefs: [], terms: [], aidItems: [], artifacts: [],
+          proposals: [], events: [] };
+        await repo.commitReviewed({ case: caseData, ledger: { schemaVersion: '1', reviews: [] },
+          revisionId: `rev-${caseId}`, operationId: `op-${caseId}`,
+          expectedLocalRevision: null, serverRevision: null });
+      }
+      const archive = await exportEncrypted(repo, { recoverySecret: created.recoverySecret });
+      const originalA = (await repo.prepareSync('case-budget-a'))[0].operationId;
+      await new Promise((resolve, reject) => {
+        const request = indexedDB.open(dbName);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction(['cases', 'anchors', 'outbox'], 'readwrite');
+          tx.objectStore('cases').delete([created.session.accountId, 'case-budget-b']);
+          tx.objectStore('anchors').delete([created.session.accountId, 'case-budget-b']);
+          tx.objectStore('outbox').delete([created.session.accountId, 'op-case-budget-b']);
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = () => { db.close(); reject(tx.error); };
+          tx.onabort = () => { db.close(); reject(tx.error); };
+        };
+      });
+      await repo.reserveEncryptions('case-budget-a', 1, 1_048_575);
+      const restored = await restoreEncrypted(repo, archive, created.recoverySecret,
+        { 'case-budget-a': 'rev-case-budget-a', 'case-budget-b': null });
+      const afterA = await repo.prepareSync('case-budget-a');
+      const afterB = await repo.prepareSync('case-budget-b');
+      const budget = await new Promise((resolve, reject) => {
+        const request = indexedDB.open(dbName);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction(['budgets'], 'readonly');
+          const get = tx.objectStore('budgets').get([
+            created.session.accountId, 'case-budget-a', 1, created.session.deviceId]);
+          get.onsuccess = () => resolve(get.result.used);
+          tx.oncomplete = () => db.close();
+          tx.onerror = () => { db.close(); reject(tx.error); };
+        };
+      });
+      repo.close();
+      return { restored, budget, originalA, afterA, afterB };
+    });
+    assert.deepEqual(result.restored, { restored: 1, unchanged: 1 });
+    assert.equal(result.budget, 1_048_576);
+    assert.equal(result.afterA.length, 1);
+    assert.equal(result.afterA[0].operationId, result.originalA);
+    assert.equal(result.afterB.length, 1);
+    assert.equal(JSON.parse(result.afterB[0].steps.at(-1).body).deviceId,
+      JSON.parse(result.afterA[0].steps.at(-1).body).deviceId);
   });
 
   await t.test('v1 data requires an exact pre-upgrade backup and an interrupted upgrade rolls back', async () => {
