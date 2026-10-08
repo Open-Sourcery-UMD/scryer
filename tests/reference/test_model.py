@@ -1,0 +1,402 @@
+import copy
+import json
+from pathlib import Path
+import unittest
+
+from scryer_reference.model import ModelError, load_case_json, snapshot_events
+from scryer_reference.projection import project_school_surplus
+
+
+def minimal_case():
+    return {
+        "schemaVersion": "1",
+        "caseId": "case-a",
+        "currency": "USD",
+        "institutions": [{"institutionId": "institution-a"}],
+        "aidItems": [],
+        "accountRefs": [
+            {"accountRefId": "school-a", "kind": "school", "institutionId": "institution-a", "holderKind": None},
+            {"accountRefId": "bank-a", "kind": "bank", "institutionId": None, "holderKind": "student"},
+        ],
+        "terms": [
+            {
+                "termId": "2026-fall",
+                "institutionId": "institution-a",
+                "schoolAccountRefId": "school-a",
+                "startDate": "2026-08-20",
+                "endDateExclusive": "2026-12-21",
+            }
+        ],
+        "artifacts": [
+            {
+                "artifactId": "bill-a",
+                "sha256": "0" * 64,
+                "kind": "school_bill",
+                "observedAt": "2026-09-01T12:00:00Z",
+                "accountRefId": "school-a",
+            }
+        ],
+        "proposals": [],
+        "events": [
+            {
+                "eventId": "event-credit",
+                "parents": [],
+                "recordedAt": "2026-09-02T12:00:00Z",
+                "kind": "approve_fact",
+                "fact": {
+                    "factId": "credit-a",
+                    "termId": "2026-fall",
+                    "accountRefId": "school-a",
+                    "currency": "USD",
+                    "role": "school_credit",
+                    "recipientKind": None,
+                    "amountMinor": "650000",
+                    "proposalId": None,
+                    "aidItemId": None,
+                    "effectiveDate": "2026-08-20",
+                    "source": {"kind": "artifact", "artifactId": "bill-a", "location": "row:1"},
+                    "reviewId": "review-credit",
+                },
+            }
+        ],
+    }
+
+
+def json_case(value):
+    return json.dumps(value, separators=(",", ":"))
+
+
+def proposal(raw_value="6500.00", proposed_minor="650000", location="row:1"):
+    return {
+        "proposalId": "proposal-credit",
+        "artifactId": "bill-a",
+        "sourceLocation": location,
+        "rawValue": raw_value,
+        "parserVersion": "synthetic.1",
+        "mappingVersion": "school-map.1",
+        "proposedAmountMinor": proposed_minor,
+    }
+
+
+class CaseParserTests(unittest.TestCase):
+    def test_reviewed_branch_join_preserves_both_causal_histories(self):
+        raw = minimal_case()
+        original = raw["events"][0]
+        for suffix, role, amount in (("a", "school_charge", "10000"),
+                                     ("b", "school_credit", "20000")):
+            branch = copy.deepcopy(original)
+            branch["eventId"] = f"event-{suffix}"
+            branch["parents"] = ["event-credit"]
+            branch["recordedAt"] = "2026-09-03T12:00:00Z"
+            branch["fact"].update(factId=f"fact-{suffix}", role=role,
+                                  amountMinor=amount, reviewId=f"review-{suffix}",
+                                  source={"kind": "manual", "entryId": f"entry-{suffix}"})
+            raw["events"].append(branch)
+        raw["events"].append({"eventId": "event-join", "parents": ["event-a", "event-b"],
+                              "recordedAt": "2026-09-04T12:00:00Z", "kind": "resolve_branches",
+                              "resolution": {"reviewId": "review-join"}})
+        case = load_case_json(json_case(raw))
+        self.assertEqual(tuple(event.event_id for event in snapshot_events(case, ("event-join",))),
+                         ("event-credit", "event-a", "event-b", "event-join"))
+        joined = project_school_surplus(case, ("event-join",), "2026-fall")
+        both = project_school_surplus(case, ("event-a", "event-b"), "2026-fall")
+        self.assertEqual(joined.amount_minor, both.amount_minor)
+        self.assertEqual(joined.amount_minor, 660000)
+        for change, code in (
+            ({"parents": ["event-a"]}, "INVALID_RESOLUTION_PARENTS"),
+            ({"parents": ["event-a", "event-a"]}, "DUPLICATE_ID"),
+            ({"parents": ["event-a", "missing"]}, "MISSING_PARENT"),
+            ({"resolution": {"reviewId": "review-credit"}}, "DUPLICATE_REVIEW_ID"),
+            ({"resolution": {"reviewId": "review-join", "note": "bad"}}, "INVALID_SCHEMA"),
+        ):
+            with self.subTest(code=code, change=change):
+                broken = copy.deepcopy(raw)
+                broken["events"][-1].update(change)
+                with self.assertRaises(ModelError) as raised:
+                    load_case_json(json_case(broken))
+                self.assertEqual(raised.exception.code, code)
+
+    def test_branch_join_does_not_settle_concurrent_corrections(self):
+        path = Path(__file__).parent / "fixtures" / "ambiguous-case.json"
+        raw = json.loads(path.read_text())
+        raw["events"].append({"eventId": "event-join", "parents": [
+            "event-bank-credit", "event-grant-correction-b"],
+            "recordedAt": "2026-10-04T12:00:00Z", "kind": "resolve_branches",
+            "resolution": {"reviewId": "review-join"}})
+        case = load_case_json(json_case(raw))
+        projection = project_school_surplus(case, ("event-join",), "2026-fall")
+        self.assertEqual(projection.status, "CONTRADICTORY_EVIDENCE")
+        self.assertIsNone(projection.amount_minor)
+
+    def test_minimal_approved_fact_has_exact_provenance(self):
+        case = load_case_json(json_case(minimal_case()))
+        self.assertEqual(case.case_id, "case-a")
+        self.assertEqual(case.currency, "USD")
+        self.assertEqual(case.events[0].fact.amount_minor, 650000)
+        self.assertEqual(case.events[0].fact.currency, "USD")
+        self.assertEqual(case.events[0].fact.source.artifact_id, "bill-a")
+        self.assertEqual(case.events[0].fact.account_ref_id, "school-a")
+        self.assertEqual(case.terms[0].institution_id, "institution-a")
+        self.assertEqual(tuple(event.event_id for event in snapshot_events(case, ("event-credit",))), ("event-credit",))
+
+    def test_bank_holder_kind_and_refund_recipient_kind_are_strict(self):
+        raw = minimal_case()
+        for holder in (None, "not_a_person", 42):
+            with self.subTest(holder=holder):
+                changed = copy.deepcopy(raw)
+                changed["accountRefs"][1]["holderKind"] = holder
+                with self.assertRaises(ModelError) as raised:
+                    load_case_json(json_case(changed))
+                self.assertEqual(raised.exception.code, "INVALID_HOLDER_KIND")
+        raw["events"][0]["fact"]["recipientKind"] = "parent"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "INVALID_RECIPIENT_KIND")
+
+    def test_duplicate_json_key_is_rejected(self):
+        document = '{"schemaVersion":"1","schemaVersion":"1","caseId":"case-a","termIds":[],"artifacts":[],"proposals":[],"events":[]}'
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(document)
+        self.assertEqual(raised.exception.code, "DUPLICATE_JSON_KEY")
+
+    def test_invalid_unicode_in_document_returns_typed_error(self):
+        document = '{"schemaVersion":"1","caseId":"case-\ud800","termIds":[],"artifacts":[],"proposals":[],"events":[]}'
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(document)
+        self.assertEqual(raised.exception.code, "INVALID_JSON")
+
+    def test_unknown_field_is_rejected(self):
+        raw = minimal_case()
+        raw["serverKnowsBalance"] = True
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "INVALID_SCHEMA")
+
+    def test_missing_parent_is_rejected(self):
+        raw = minimal_case()
+        raw["events"][0]["parents"] = ["missing"]
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "MISSING_PARENT")
+
+    def test_parent_cycle_is_rejected(self):
+        raw = minimal_case()
+        raw["events"][0]["parents"] = ["event-correction"]
+        raw["events"].append(
+            {
+                "eventId": "event-correction",
+                "parents": ["event-credit"],
+                "recordedAt": "2026-09-03T12:00:00Z",
+                "kind": "correct_fact",
+                "correction": {
+                    "factId": "credit-a",
+                    "replacementAmountMinor": "620000",
+                    "cancelled": False,
+                    "source": {"kind": "artifact", "artifactId": "bill-a", "location": "row:2"},
+                    "reviewId": "review-correction",
+                },
+            }
+        )
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "EVENT_CYCLE")
+
+    def test_duplicate_event_id_is_rejected(self):
+        raw = minimal_case()
+        raw["events"].append(copy.deepcopy(raw["events"][0]))
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "DUPLICATE_EVENT_ID")
+
+    def test_duplicate_fact_id_is_rejected(self):
+        raw = minimal_case()
+        other = copy.deepcopy(raw["events"][0])
+        other["eventId"] = "event-credit-2"
+        other["fact"]["reviewId"] = "review-credit-2"
+        raw["events"].append(other)
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "DUPLICATE_FACT_ID")
+
+    def test_missing_source_artifact_is_rejected(self):
+        raw = minimal_case()
+        raw["events"][0]["fact"]["source"]["artifactId"] = "other-bill"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "MISSING_ARTIFACT")
+
+    def test_invalid_effective_date_is_rejected(self):
+        raw = minimal_case()
+        raw["events"][0]["fact"]["effectiveDate"] = "2026-02-30"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "INVALID_DATE")
+
+    def test_decoded_proposal_field_over_64_kib_is_rejected(self):
+        raw = minimal_case()
+        raw["proposals"].append(
+            {**proposal(raw_value="é" * 40000), "proposalId": "proposal-a"}
+        )
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "INVALID_SCHEMA")
+
+    def test_unpaired_unicode_surrogate_is_rejected(self):
+        raw = minimal_case()
+        raw["proposals"].append(
+            {**proposal(raw_value="\ud800"), "proposalId": "proposal-a"}
+        )
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "INVALID_SCHEMA")
+
+    def test_permuted_event_input_has_the_same_causal_snapshot(self):
+        raw = minimal_case()
+        raw["events"].append(
+            {
+                "eventId": "event-charge",
+                "parents": ["event-credit"],
+                "recordedAt": "2026-09-03T12:00:00Z",
+                "kind": "approve_fact",
+                "fact": {
+                    "factId": "charge-a",
+                    "termId": "2026-fall",
+                    "accountRefId": "school-a",
+                    "currency": "USD",
+                    "role": "school_charge",
+                    "recipientKind": None,
+                    "amountMinor": "500000",
+                    "proposalId": None,
+                    "aidItemId": None,
+                    "effectiveDate": "2026-08-21",
+                    "source": {"kind": "artifact", "artifactId": "bill-a", "location": "row:2"},
+                    "reviewId": "review-charge",
+                },
+            }
+        )
+        first = load_case_json(json_case(raw))
+        raw["events"].reverse()
+        second = load_case_json(json_case(raw))
+        self.assertEqual(
+            tuple(event.event_id for event in snapshot_events(first, ("event-charge",))),
+            ("event-credit", "event-charge"),
+        )
+        self.assertEqual(
+            tuple(event.event_id for event in snapshot_events(first, ("event-charge",))),
+            tuple(event.event_id for event in snapshot_events(second, ("event-charge",))),
+        )
+
+    def test_unknown_fact_account_is_rejected(self):
+        raw = minimal_case()
+        raw["events"][0]["fact"]["accountRefId"] = "school-missing"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "MISSING_ACCOUNT")
+
+    def test_unsupported_case_and_fact_currency_are_rejected(self):
+        raw = minimal_case()
+        raw["currency"] = "EUR"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "UNSUPPORTED_CURRENCY")
+        raw["currency"] = "USD"
+        raw["events"][0]["fact"]["currency"] = "EUR"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "UNSUPPORTED_CURRENCY")
+
+    def test_linked_proposal_preserves_original_value_and_reviewed_edit(self):
+        raw = minimal_case()
+        raw["proposals"].append(proposal(raw_value="7000.00", proposed_minor="700000"))
+        raw["events"][0]["fact"]["proposalId"] = "proposal-credit"
+        case = load_case_json(json_case(raw))
+        self.assertEqual(case.proposals[0].raw_value, "7000.00")
+        self.assertEqual(case.proposals[0].proposed_amount_minor, 700000)
+        self.assertEqual(case.proposals[0].parser_version, "synthetic.1")
+        self.assertEqual(case.events[0].fact.proposal_id, "proposal-credit")
+        self.assertEqual(case.events[0].fact.amount_minor, 650000)
+
+    def test_missing_or_mismatched_proposal_link_is_rejected(self):
+        raw = minimal_case()
+        raw["events"][0]["fact"]["proposalId"] = "proposal-credit"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "MISSING_PROPOSAL")
+        raw["proposals"].append(proposal(location="row:2"))
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "SOURCE_PROPOSAL_MISMATCH")
+
+    def test_one_proposal_cannot_approve_two_monetary_facts(self):
+        raw = minimal_case()
+        raw["proposals"].append(proposal())
+        raw["events"][0]["fact"]["proposalId"] = "proposal-credit"
+        duplicate = copy.deepcopy(raw["events"][0])
+        duplicate["eventId"] = "event-credit-duplicate"
+        duplicate["parents"] = ["event-credit"]
+        duplicate["fact"]["factId"] = "credit-duplicate"
+        duplicate["fact"]["reviewId"] = "review-credit-duplicate"
+        raw["events"].append(duplicate)
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "DUPLICATE_PROPOSAL_APPROVAL")
+
+    def test_invalid_proposal_version_is_rejected(self):
+        raw = minimal_case()
+        raw["proposals"].append(proposal())
+        raw["proposals"][0]["parserVersion"] = "x" * 65
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "INVALID_VERSION")
+
+    def test_bank_observation_on_school_account_is_rejected(self):
+        raw = minimal_case()
+        raw["events"][0]["fact"]["role"] = "bank_credit_observed"
+        raw["events"][0]["fact"]["termId"] = None
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "ACCOUNT_KIND_MISMATCH")
+
+    def test_school_account_from_another_institution_is_rejected(self):
+        raw = minimal_case()
+        raw["institutions"].append({"institutionId": "institution-other"})
+        raw["accountRefs"][0]["institutionId"] = "institution-other"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "TERM_ACCOUNT_MISMATCH")
+
+    def test_bank_fact_cannot_use_a_different_accounts_statement(self):
+        raw = minimal_case()
+        raw["events"][0]["fact"]["role"] = "bank_credit_observed"
+        raw["events"][0]["fact"]["termId"] = None
+        raw["events"][0]["fact"]["accountRefId"] = "bank-a"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "SOURCE_ACCOUNT_MISMATCH")
+
+    def test_bank_credit_can_have_unknown_term(self):
+        raw = minimal_case()
+        raw["artifacts"][0]["accountRefId"] = "bank-a"
+        raw["events"][0]["fact"]["role"] = "bank_credit_observed"
+        raw["events"][0]["fact"]["termId"] = None
+        raw["events"][0]["fact"]["accountRefId"] = "bank-a"
+        case = load_case_json(json_case(raw))
+        self.assertIsNone(case.events[0].fact.term_id)
+        self.assertEqual(case.events[0].fact.account_ref_id, "bank-a")
+
+    def test_reversed_term_interval_is_rejected(self):
+        raw = minimal_case()
+        raw["terms"][0]["endDateExclusive"] = "2026-08-20"
+        with self.assertRaises(ModelError) as raised:
+            load_case_json(json_case(raw))
+        self.assertEqual(raised.exception.code, "INVALID_TERM_INTERVAL")
+
+    def test_unhashable_head_does_not_escape_as_python_type_error(self):
+        case = load_case_json(json_case(minimal_case()))
+        with self.assertRaises(ModelError) as raised:
+            snapshot_events(case, (["event-credit"],))
+        self.assertEqual(raised.exception.code, "INVALID_HEADS")
+
+
+if __name__ == "__main__":
+    unittest.main()

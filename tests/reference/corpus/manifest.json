@@ -1,0 +1,456 @@
+{
+  "schemaVersion": "1",
+  "cases": {
+    "golden": "../fixtures/golden-case.json",
+    "matching": "../fixtures/matching-case.json",
+    "lifecycle": "../fixtures/lifecycle-case.json",
+    "ambiguous": "../fixtures/ambiguous-case.json",
+    "manual": "../fixtures/manual-case.json",
+    "split": "../fixtures/split-case.json",
+    "annual": "../fixtures/annual-case.json",
+    "recipient": "../fixtures/recipient-case.json",
+    "gross_net": "../fixtures/gross-net-case.json",
+    "reversal": "../fixtures/reversal-case.json"
+  },
+  "operations": [
+    {
+      "id": "school-before",
+      "case": "golden",
+      "operation": "project",
+      "heads": ["event-base-charge"],
+      "termId": "2026-fall",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "currency": "USD",
+        "amountMinor": "150000",
+        "factIds": ["base-charge", "grant", "other-credit"]
+      }
+    },
+    {
+      "id": "school-after",
+      "case": "golden",
+      "operation": "project",
+      "heads": ["event-extra-charge"],
+      "termId": "2026-fall",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "currency": "USD",
+        "amountMinor": "90000",
+        "factIds": ["base-charge", "extra-charge", "grant", "other-credit"]
+      }
+    },
+    {
+      "id": "school-unreviewed-empty",
+      "case": "golden",
+      "operation": "project",
+      "heads": [],
+      "termId": "2026-fall",
+      "expected": {
+        "status": "INSUFFICIENT_COVERAGE",
+        "currency": "USD",
+        "amountMinor": null,
+        "factIds": []
+      }
+    },
+    {
+      "id": "school-delta",
+      "case": "golden",
+      "operation": "compare",
+      "beforeHeads": ["event-base-charge"],
+      "afterHeads": ["event-extra-charge"],
+      "termId": "2026-fall",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "deltaMinor": "-60000",
+        "contributions": {"extra-charge": "-30000", "grant": "-30000"}
+      }
+    },
+    {
+      "id": "school-receipt",
+      "case": "golden",
+      "operation": "receipt",
+      "heads": ["event-extra-charge"],
+      "termId": "2026-fall",
+      "expected": {
+        "amountMinor": "90000",
+        "digest": "f866d458450015bcfbf1456b886888360c532b5c1bb0c91679017b298d7add86"
+      }
+    },
+    {
+      "id": "coverage-complete",
+      "case": "matching",
+      "operation": "coverage",
+      "heads": ["event-coverage"],
+      "accountRefId": "bank-a",
+      "startDate": "2026-09-06",
+      "endDateExclusive": "2026-10-07",
+      "expected": {"status": "SUPPORTED_BY_UPLOADED_RECORDS", "missingIntervals": []}
+    },
+    {
+      "id": "coverage-gap",
+      "case": "matching",
+      "operation": "coverage",
+      "heads": ["event-coverage"],
+      "accountRefId": "bank-a",
+      "startDate": "2026-09-06",
+      "endDateExclusive": "2026-10-10",
+      "expected": {
+        "status": "INSUFFICIENT_COVERAGE",
+        "missingIntervals": [["2026-10-07", "2026-10-10"]]
+      }
+    },
+    {
+      "id": "match-suggestion",
+      "case": "matching",
+      "operation": "matching",
+      "heads": ["event-coverage"],
+      "refundFactId": "issued-refund",
+      "bankAccountRefId": "bank-a",
+      "expected": {
+        "status": "SUGGESTED",
+        "candidateFactIds": ["bank-credit"],
+        "remainingMinor": "90000",
+        "confirmedAllocations": []
+      }
+    },
+    {
+      "id": "match-reviewed",
+      "case": "matching",
+      "operation": "matching",
+      "heads": ["event-confirm"],
+      "refundFactId": "issued-refund",
+      "bankAccountRefId": "bank-a",
+      "expected": {
+        "status": "MATCHED_BY_REVIEW",
+        "candidateFactIds": [],
+        "remainingMinor": "0",
+        "confirmedAllocations": [{"bankFactId": "bank-credit", "allocatedMinor": "90000"}]
+      }
+    },
+    {
+      "id": "history-before",
+      "case": "golden",
+      "operation": "history",
+      "cutoffUtc": "2026-09-02T10:02:00Z",
+      "expected": {"status": "UNIQUE", "heads": ["event-base-charge"]}
+    },
+    {
+      "id": "history-after",
+      "case": "golden",
+      "operation": "history",
+      "cutoffUtc": "2026-09-04T10:00:00Z",
+      "expected": {"status": "UNIQUE", "heads": ["event-extra-charge"]}
+    },
+    {
+      "id": "lifecycle-posted-before-offer",
+      "case": "lifecycle",
+      "operation": "lifecycle",
+      "heads": ["event-other-credit"],
+      "termId": "2026-fall",
+      "aidItemId": "aid-grant",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "postedMinor": "650000",
+        "currentOfferMinor": null,
+        "grossDisbursedMinor": null,
+        "withheldFeeMinor": null,
+        "unexplainedDifferenceMinor": null,
+        "findingCodes": ["ACCEPTANCE_NOT_OBSERVED", "OFFER_NOT_OBSERVED"]
+      }
+    },
+    {
+      "id": "lifecycle-late-offer-after-correction",
+      "case": "lifecycle",
+      "operation": "lifecycle",
+      "heads": ["event-offer-late"],
+      "termId": "2026-fall",
+      "aidItemId": "aid-grant",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "postedMinor": "620000",
+        "currentOfferMinor": "700000",
+        "grossDisbursedMinor": null,
+        "withheldFeeMinor": null,
+        "unexplainedDifferenceMinor": null,
+        "findingCodes": ["ACCEPTANCE_NOT_OBSERVED"]
+      }
+    },
+    {
+      "id": "ambiguous-correction-projection",
+      "case": "ambiguous",
+      "operation": "project",
+      "heads": ["event-grant-correction", "event-grant-correction-b"],
+      "termId": "2026-fall",
+      "expected": {
+        "status": "CONTRADICTORY_EVIDENCE",
+        "currency": "USD",
+        "amountMinor": null,
+        "factIds": ["base-charge", "grant", "other-credit"]
+      }
+    },
+    {
+      "id": "ambiguous-correction-comparison",
+      "case": "ambiguous",
+      "operation": "compare",
+      "beforeHeads": ["event-base-charge"],
+      "afterHeads": ["event-grant-correction", "event-grant-correction-b"],
+      "termId": "2026-fall",
+      "expected": {
+        "status": "CONTRADICTORY_EVIDENCE",
+        "deltaMinor": null,
+        "contributions": {}
+      }
+    },
+    {
+      "id": "ambiguous-history",
+      "case": "ambiguous",
+      "operation": "history",
+      "cutoffUtc": "2026-09-03T12:00:00Z",
+      "expected": {
+        "status": "AMBIGUOUS",
+        "heads": ["event-grant-correction", "event-grant-correction-b"]
+      }
+    },
+    {
+      "id": "manual-school-source",
+      "case": "manual",
+      "operation": "project",
+      "heads": ["event-base-charge"],
+      "termId": "2026-fall",
+      "expected": {
+        "status": "USER_ASSERTED",
+        "currency": "USD",
+        "amountMinor": "150000",
+        "factIds": ["base-charge", "grant", "other-credit"]
+      }
+    },
+    {
+      "id": "manual-school-receipt",
+      "case": "manual",
+      "operation": "receipt",
+      "heads": ["event-base-charge"],
+      "termId": "2026-fall",
+      "expected": {
+        "amountMinor": "150000",
+        "digest": "3f7da45c53b39da741fd92eff6a11d3711a75fa67f582891f565bd6b495a9294"
+      }
+    },
+    {
+      "id": "split-candidates-ambiguous",
+      "case": "split",
+      "operation": "matching",
+      "heads": ["event-coverage"],
+      "refundFactId": "issued-refund",
+      "bankAccountRefId": "bank-a",
+      "expected": {
+        "status": "AMBIGUOUS",
+        "candidateFactIds": ["bank-credit", "bank-credit-b"],
+        "remainingMinor": "90000",
+        "confirmedAllocations": []
+      }
+    },
+    {
+      "id": "split-partial-allocation",
+      "case": "split",
+      "operation": "matching",
+      "heads": ["event-confirm-a"],
+      "refundFactId": "issued-refund",
+      "bankAccountRefId": "bank-a",
+      "expected": {
+        "status": "PARTIALLY_MATCHED_BY_REVIEW",
+        "candidateFactIds": ["bank-credit-b"],
+        "remainingMinor": "50000",
+        "confirmedAllocations": [{"bankFactId": "bank-credit", "allocatedMinor": "40000"}]
+      }
+    },
+    {
+      "id": "split-complete-allocation",
+      "case": "split",
+      "operation": "matching",
+      "heads": ["event-confirm-b"],
+      "refundFactId": "issued-refund",
+      "bankAccountRefId": "bank-a",
+      "expected": {
+        "status": "MATCHED_BY_REVIEW",
+        "candidateFactIds": [],
+        "remainingMinor": "0",
+        "confirmedAllocations": [
+          {"bankFactId": "bank-credit", "allocatedMinor": "40000"},
+          {"bankFactId": "bank-credit-b", "allocatedMinor": "50000"}
+        ]
+      }
+    },
+    {
+      "id": "annual-offer-unallocated",
+      "case": "annual",
+      "operation": "lifecycle",
+      "heads": ["event-annual-offer"],
+      "termId": "2026-fall",
+      "aidItemId": "aid-annual",
+      "expected": {
+        "status": "UNSUPPORTED_INPUT",
+        "postedMinor": "0",
+        "currentOfferMinor": null,
+        "grossDisbursedMinor": null,
+        "withheldFeeMinor": null,
+        "unexplainedDifferenceMinor": null,
+        "findingCodes": ["ANNUAL_UNALLOCATED"]
+      }
+    },
+    {
+      "id": "parent-refund-student-bank-suppressed",
+      "case": "recipient",
+      "operation": "matching",
+      "heads": ["event-coverage"],
+      "refundFactId": "issued-refund",
+      "bankAccountRefId": "bank-a",
+      "expected": {
+        "status": "INSUFFICIENT_COVERAGE",
+        "candidateFactIds": [],
+        "remainingMinor": "90000",
+        "confirmedAllocations": []
+      }
+    },
+    {
+      "id": "parent-refund-reviewed-instruction",
+      "case": "recipient",
+      "operation": "matching",
+      "heads": ["event-confirm"],
+      "refundFactId": "issued-refund",
+      "bankAccountRefId": "bank-a",
+      "expected": {
+        "status": "MATCHED_BY_REVIEW",
+        "candidateFactIds": [],
+        "remainingMinor": "0",
+        "confirmedAllocations": [{"bankFactId": "bank-credit", "allocatedMinor": "90000"}]
+      }
+    },
+    {
+      "id": "gross-net-offer-only",
+      "case": "gross_net",
+      "operation": "lifecycle",
+      "heads": ["event-offer"],
+      "termId": "2026-fall",
+      "aidItemId": "loan-a",
+      "expected": {
+        "status": "OBSERVED",
+        "postedMinor": "0",
+        "currentOfferMinor": "100000",
+        "grossDisbursedMinor": null,
+        "withheldFeeMinor": null,
+        "unexplainedDifferenceMinor": null,
+        "findingCodes": []
+      }
+    },
+    {
+      "id": "gross-net-before-fee",
+      "case": "gross_net",
+      "operation": "lifecycle",
+      "heads": ["event-posted"],
+      "termId": "2026-fall",
+      "aidItemId": "loan-a",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "postedMinor": "99000",
+        "currentOfferMinor": "100000",
+        "grossDisbursedMinor": "100000",
+        "withheldFeeMinor": null,
+        "unexplainedDifferenceMinor": "1000",
+        "findingCodes": ["ACCEPTANCE_NOT_OBSERVED", "FEE_EVIDENCE_MISSING", "GROSS_NET_GAP_UNEXPLAINED"]
+      }
+    },
+    {
+      "id": "gross-net-after-fee",
+      "case": "gross_net",
+      "operation": "lifecycle",
+      "heads": ["event-fee"],
+      "termId": "2026-fall",
+      "aidItemId": "loan-a",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "postedMinor": "99000",
+        "currentOfferMinor": "100000",
+        "grossDisbursedMinor": "100000",
+        "withheldFeeMinor": "1000",
+        "unexplainedDifferenceMinor": "0",
+        "findingCodes": ["ACCEPTANCE_NOT_OBSERVED"]
+      }
+    },
+    {
+      "id": "reversal-before",
+      "case": "reversal",
+      "operation": "project",
+      "heads": ["event-extra-charge"],
+      "termId": "2026-fall",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "currency": "USD",
+        "amountMinor": "90000",
+        "factIds": ["base-charge", "extra-charge", "grant", "other-credit"]
+      }
+    },
+    {
+      "id": "reversal-corrected-source",
+      "case": "reversal",
+      "operation": "project",
+      "heads": ["event-grant-correction-v2"],
+      "termId": "2026-fall",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "currency": "USD",
+        "amountMinor": "70000",
+        "factIds": ["base-charge", "extra-charge", "grant", "other-credit"]
+      }
+    },
+    {
+      "id": "reversal-exact-attribution",
+      "case": "reversal",
+      "operation": "compare",
+      "beforeHeads": ["event-extra-charge"],
+      "afterHeads": ["event-charge-cancel"],
+      "termId": "2026-fall",
+      "expected": {
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "deltaMinor": "10000",
+        "contributions": {"grant": "-20000", "extra-charge": "30000"}
+      }
+    },
+    {
+      "id": "reversal-before-receipt",
+      "case": "reversal",
+      "operation": "receipt",
+      "heads": ["event-extra-charge"],
+      "termId": "2026-fall",
+      "expected": {
+        "amountMinor": "90000",
+        "digest": "13dd1a04c52670c07edd6a283d778bab5540bd242a329f71cc6c5d730d7dcaf9"
+      }
+    },
+    {
+      "id": "reversal-after-receipt",
+      "case": "reversal",
+      "operation": "receipt",
+      "heads": ["event-charge-cancel"],
+      "termId": "2026-fall",
+      "expected": {
+        "amountMinor": "100000",
+        "digest": "fc1819f92046e32054d7975371242e06be5492ba6bdcddc84b45c93aae18ece5"
+      }
+    },
+    {
+      "id": "reversal-explicit-reanalysis",
+      "case": "reversal",
+      "operation": "historical_reanalysis",
+      "oldHeads": ["event-extra-charge"],
+      "newHeads": ["event-charge-cancel"],
+      "termId": "2026-fall",
+      "expected": {
+        "oldReproduced": true,
+        "priorDigest": "13dd1a04c52670c07edd6a283d778bab5540bd242a329f71cc6c5d730d7dcaf9",
+        "newDigest": "273aabb5752dffac6ac09ef77b4eb4e87f2443c64751deae6c84be7fb4fab237",
+        "newEngineVersion": "reference-0.2.0",
+        "newAmountMinor": "100000"
+      }
+    }
+  ]
+}

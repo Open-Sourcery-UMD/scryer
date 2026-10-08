@@ -1,0 +1,5 @@
+# Local release report — in progress
+
+Outcome: `BACKEND_PARTIAL_LOCAL`. No backend release candidate has been assembled. This file is a status anchor, not a claim of completion.
+
+Baseline: `453c2087399894ec2c89717e4d6f32b8d86dfafa`. Active branch: `codex/backend-local`. Native C++ and the independent Python reference, synthetic Chrome/WebCrypto/IndexedDB and loopback API/PostgreSQL journeys, local Keycloak PKCE and provider cleanup, recovery, deletion, and migrations have component-level local evidence in `verification.md`. A 10,000-case native/reference projection differential tier and three 30-second sanitized native mutation targets pass locally. Matching, case-parser, versioned API, and receipt tests raise native source coverage to 88.44% lines and 78.99% branches, still below the 90%/85% gate; the API's unsigned lower-bound check was repaired. This is not an assembled release candidate. WebAssembly, maintained JWT verification in the API, a human conflict-review UI, full M9 security/fuzz/coverage/performance gates, Docker/fresh-stack rehearsal, and public operation remain open or blocked as recorded in `status.md`.

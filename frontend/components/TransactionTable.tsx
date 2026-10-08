@@ -1,5 +1,3 @@
-import React from "react";
-
 type Transaction = {
   date: string;
   merchant: string;
@@ -66,11 +64,10 @@ export default function TransactionTable() {
               </th>
             </tr>
           </thead>
-
           <tbody>
             {transactions.map((transaction, index) => (
               <tr
-                key={index}
+                key={`${transaction.date}-${transaction.merchant}-${index}`}
                 className="border-t border-border transition-colors hover:bg-accent"
               >
                 <td className="px-4 py-3 text-sm text-muted-foreground">

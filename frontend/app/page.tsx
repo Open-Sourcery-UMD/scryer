@@ -1,54 +1,75 @@
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import SummaryCard from "@/components/SummaryCard";
+import TransactionTable from "@/components/TransactionTable";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Dashboard() {
-  const stats = [
-    { label: "Total Balance", value: "$12,450.00", trend: "+2.5%" },
-    { label: "Monthly Spend", value: "$2,100.40", trend: "-10.2%" },
-    { label: "Savings Rate", value: "32%", trend: "+4%" },
+  const statCards = [
+    {
+      title: "Monthly Spend",
+      value: "$2,100.40",
+      trend: "-10.2% vs. last month",
+      trendClassName: "text-green-700 dark:text-green-400",
+    },
+    {
+      title: "Savings Rate",
+      value: "32%",
+      trend: "+4.0% vs. last month",
+      trendClassName: "text-green-700 dark:text-green-400",
+    },
+    {
+      title: "Upcoming Bills",
+      value: "$640.00",
+      trend: "Due in 6 days",
+      trendClassName: "text-muted-foreground",
+    },
   ];
 
   return (
     <div className="space-y-8">
-      <div>
+      <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back to your financial command center.</p>
+        <p className="text-muted-foreground">
+          Welcome back to your financial command center.
+        </p>
       </div>
 
-      {/* Summary Grid */}
+      <SummaryCard
+        title="Net Worth"
+        value={12450.56}
+        trend="+2.5% from last month"
+      />
+
       <div className="grid gap-4 md:grid-cols-3">
-        {stats.map((stat) => (
-          <div 
-            key={stat.label} 
-            className="rounded-xl border bg-card p-6 shadow-sm flex flex-col gap-6"
-          >
-            {/* Top: Label */}
-            <p className="text-sm font-medium text-muted-foreground">
-              {stat.label}
-            </p>
-            
-            {/* Bottom: Value & Trend (Always Stacked) */}
-            <div className="flex flex-col gap-1">
-              <h2 className="text-3xl font-bold tracking-tight">
-                {stat.value}
-              </h2>
-              <div>
-                <span className={cn(
-                  "text-sm font-semibold px-2 py-1 rounded-md bg-secondary inline-block",
-                  stat.trend.startsWith('+') ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                )}>
-                  {stat.trend}
-                </span>
+        {statCards.map((statCard) => (
+          <Card key={statCard.title} className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {statCard.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="text-2xl font-semibold tracking-tight">
+                {statCard.value}
               </div>
-            </div>
-          </div>
+              <p className={`text-sm ${statCard.trendClassName}`}>
+                {statCard.trend}
+              </p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      {/* Placeholder for future charts/table */}
-      <div className="h-[300px] rounded-xl border border-dashed flex items-center justify-center text-muted-foreground">
-        Transaction feed placeholder...
-      </div>
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight">
+            Recent Transactions
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            A quick look at the latest activity across your accounts.
+          </p>
+        </div>
+        <TransactionTable />
+      </section>
     </div>
   );
 }

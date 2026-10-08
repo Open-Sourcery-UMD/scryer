@@ -1,0 +1,454 @@
+import copy
+import json
+from pathlib import Path
+import unittest
+
+from scryer_reference.matching import suggest_refund_deposits
+from scryer_reference.model import ModelError, load_case_json
+
+_FIXTURE = Path(__file__).parent / "fixtures" / "golden-case.json"
+
+
+def raw_case():
+    raw = json.loads(_FIXTURE.read_text())
+    raw["events"][5]["fact"]["effectiveDate"] = "2026-09-06"
+    raw["events"][6]["fact"]["effectiveDate"] = "2026-09-07"
+    raw["artifacts"].append(
+        {
+            "artifactId": "bank-period",
+            "sha256": "4" * 64,
+            "kind": "bank_statement",
+            "observedAt": "2026-10-08T09:00:00Z",
+            "accountRefId": "bank-a",
+        }
+    )
+    raw["events"].append(
+        {
+            "eventId": "event-coverage",
+            "parents": ["event-bank-credit"],
+            "recordedAt": "2026-10-08T10:00:00Z",
+            "kind": "assert_coverage",
+            "coverage": {
+                "coverageId": "coverage-a",
+                "accountRefId": "bank-a",
+                "recordType": "bank_transactions",
+                "startDate": "2026-09-06",
+                "endDateExclusive": "2026-10-07",
+                "basis": "source_asserted",
+                "source": {"kind": "artifact", "artifactId": "bank-period", "location": "statement-period"},
+                "reviewId": "review-coverage-a",
+            },
+        }
+    )
+    return raw
+
+
+def parsed(raw):
+    return load_case_json(json.dumps(raw, separators=(",", ":")))
+
+
+def add_bank(raw, suffix="b", amount="90000", date="2026-09-08", account="bank-a"):
+    event = copy.deepcopy(next(item for item in raw["events"] if item["eventId"] == "event-bank-credit"))
+    event["eventId"] = f"event-bank-credit-{suffix}"
+    event["parents"] = ["event-bank-credit"]
+    event["recordedAt"] = "2026-09-08T10:00:00Z"
+    event["fact"]["factId"] = f"bank-credit-{suffix}"
+    event["fact"]["amountMinor"] = amount
+    event["fact"]["effectiveDate"] = date
+    event["fact"]["accountRefId"] = account
+    event["fact"]["reviewId"] = f"review-bank-credit-{suffix}"
+    event["fact"]["source"]["location"] = f"row:{suffix}"
+    raw["events"].append(event)
+    next(item for item in raw["events"] if item["eventId"] == "event-coverage")["parents"].append(event["eventId"])
+    return event
+
+
+def add_decision(
+    raw, event_id, bank_fact_id="bank-credit", bank_event_id="event-bank-credit", amount="90000",
+    decision="confirm", refund_fact_id="issued-refund", refund_event_id="event-refund-issued", previous=None,
+    recipient_evidence=None,
+):
+    parents = [refund_event_id, bank_event_id, "event-coverage"]
+    if previous is not None:
+        parents.append(previous)
+    event = {
+        "eventId": event_id,
+        "parents": parents,
+        "recordedAt": "2026-10-09T10:00:00Z",
+        "kind": "decide_match",
+        "decision": {
+            "refundFactId": refund_fact_id,
+            "bankFactId": bank_fact_id,
+            "allocatedMinor": amount,
+            "action": decision,
+            "recipientEvidence": recipient_evidence,
+            "reviewId": f"review-{event_id}",
+        },
+    }
+    raw["events"].append(event)
+    return event
+
+
+def query(raw, head="event-coverage", limit=1000, window=30, bank="bank-a"):
+    return suggest_refund_deposits(parsed(raw), (head,), "issued-refund", bank, limit, window)
+
+
+class MatchingTests(unittest.TestCase):
+    def test_cancelled_refund_and_missing_refund_date_are_explicit(self):
+        undated = raw_case()
+        undated["events"][5]["fact"]["effectiveDate"] = None
+        missing_date = query(undated)
+        self.assertEqual(missing_date.status, "INSUFFICIENT_COVERAGE")
+        self.assertIn("MISSING_REFUND_DATE", missing_date.reason_codes)
+
+        cancelled = raw_case()
+        cancelled["events"].append({
+            "eventId": "event-refund-cancel",
+            "parents": ["event-refund-issued", "event-coverage"],
+            "recordedAt": "2026-10-10T10:00:00Z", "kind": "correct_fact",
+            "correction": {
+                "factId": "issued-refund", "replacementAmountMinor": None,
+                "cancelled": True,
+                "source": {"kind": "artifact", "artifactId": "refund-a",
+                           "location": "page:1-cancelled"},
+                "reviewId": "review-refund-cancel",
+            },
+        })
+        result = query(cancelled, head="event-refund-cancel")
+        self.assertEqual(result.status, "REFUND_CANCELLED")
+        self.assertEqual(result.remaining_minor, 0)
+
+    def test_concurrent_refund_corrections_stay_contradictory(self):
+        raw = raw_case()
+        for suffix, amount in (("a", "80000"), ("b", "70000")):
+            raw["events"].append({
+                "eventId": f"event-refund-correction-{suffix}",
+                "parents": ["event-refund-issued", "event-coverage"],
+                "recordedAt": "2026-10-10T10:00:00Z", "kind": "correct_fact",
+                "correction": {
+                    "factId": "issued-refund", "replacementAmountMinor": amount,
+                    "cancelled": False,
+                    "source": {"kind": "artifact", "artifactId": "refund-a",
+                               "location": f"page:1-revised-{suffix}"},
+                    "reviewId": f"review-refund-correction-{suffix}",
+                },
+            })
+        result = suggest_refund_deposits(parsed(raw),
+            ("event-refund-correction-a", "event-refund-correction-b"),
+            "issued-refund", "bank-a")
+        self.assertEqual(result.status, "CONTRADICTORY_EVIDENCE")
+        self.assertIn("UNRESOLVED_CORRECTION_CONFLICT", result.reason_codes)
+
+    def test_explicit_rejection_supersedes_prior_confirmation(self):
+        raw = raw_case()
+        add_decision(raw, "decision-confirm")
+        later = add_decision(raw, "decision-reject-later", amount="0",
+                             decision="reject", previous="decision-confirm")
+        later["recordedAt"] = "2026-10-10T10:00:00Z"
+        result = query(raw, head="decision-reject-later")
+        self.assertEqual(result.status, "NO_CANDIDATE_IN_APPROVED_FACTS")
+        self.assertEqual(result.confirmed_allocations, ())
+
+    def test_one_equal_bank_credit_is_suggestion_not_confirmation(self):
+        result = query(raw_case())
+        self.assertEqual(result.status, "SUGGESTED")
+        self.assertEqual(result.currency, "USD")
+        self.assertEqual(result.candidate_fact_ids, ("bank-credit",))
+        self.assertEqual(result.confirmed_allocations, ())
+        self.assertEqual(result.remaining_minor, 90000)
+        self.assertEqual(result.coverage.status, "SUPPORTED_BY_UPLOADED_RECORDS")
+
+    def test_two_equal_credits_are_ambiguous_until_review(self):
+        raw = raw_case()
+        add_bank(raw)
+        result = query(raw)
+        self.assertEqual(result.status, "AMBIGUOUS")
+        self.assertEqual(result.candidate_fact_ids, ("bank-credit", "bank-credit-b"))
+
+    def test_other_account_credit_cannot_be_candidate(self):
+        raw = raw_case()
+        raw["accountRefs"].append({"accountRefId": "bank-b", "kind": "bank", "institutionId": None, "holderKind": "student"})
+        artifact = copy.deepcopy(next(item for item in raw["artifacts"] if item["artifactId"] == "bank-a"))
+        artifact["artifactId"] = "bank-b-statement"
+        artifact["accountRefId"] = "bank-b"
+        raw["artifacts"].append(artifact)
+        other = add_bank(raw, account="bank-b")
+        other["fact"]["source"]["artifactId"] = "bank-b-statement"
+        result = query(raw)
+        self.assertEqual(result.candidate_fact_ids, ("bank-credit",))
+
+    def test_reviewed_split_deposits_consume_exact_refund_amount(self):
+        raw = raw_case()
+        raw["events"][6]["fact"]["amountMinor"] = "40000"
+        add_bank(raw, amount="50000")
+        add_decision(raw, "decision-a", amount="40000")
+        add_decision(raw, "decision-b", "bank-credit-b", "event-bank-credit-b", amount="50000", previous="decision-a")
+        result = query(raw, head="decision-b")
+        self.assertEqual(result.status, "MATCHED_BY_REVIEW")
+        self.assertEqual(result.remaining_minor, 0)
+        self.assertEqual(
+            tuple((item.bank_fact_id, item.allocated_minor) for item in result.confirmed_allocations),
+            (("bank-credit", 40000), ("bank-credit-b", 50000)),
+        )
+
+    def test_parent_refund_is_not_suggested_for_student_bank_even_with_full_coverage(self):
+        raw = raw_case()
+        raw["events"][5]["fact"]["recipientKind"] = "parent"
+        result = query(raw)
+        self.assertEqual(result.status, "INSUFFICIENT_COVERAGE")
+        self.assertEqual(result.candidate_fact_ids, ())
+        self.assertIn("RECIPIENT_MISMATCH", result.reason_codes)
+
+    def test_unknown_recipient_or_holder_blocks_suggestions(self):
+        for field in ("refund", "bank"):
+            with self.subTest(field=field):
+                raw = raw_case()
+                if field == "refund":
+                    raw["events"][5]["fact"]["recipientKind"] = "unknown"
+                else:
+                    raw["accountRefs"][1]["holderKind"] = "unknown"
+                result = query(raw)
+                self.assertEqual(result.status, "INSUFFICIENT_COVERAGE")
+                self.assertEqual(result.candidate_fact_ids, ())
+                self.assertIn("RECIPIENT_IDENTITY_UNKNOWN", result.reason_codes)
+
+    def test_parent_refund_can_be_suggested_for_parent_bank(self):
+        raw = raw_case()
+        raw["events"][5]["fact"]["recipientKind"] = "parent"
+        raw["accountRefs"][1]["holderKind"] = "parent"
+        result = query(raw)
+        self.assertEqual(result.status, "SUGGESTED")
+        self.assertEqual(result.candidate_fact_ids, ("bank-credit",))
+        self.assertIn("RECIPIENT_METADATA_USER_REVIEWED", result.reason_codes)
+
+    def test_cross_recipient_confirmation_requires_source_backed_instruction(self):
+        raw = raw_case()
+        raw["events"][5]["fact"]["recipientKind"] = "parent"
+        add_decision(raw, "decision-confirm")
+        with self.assertRaises(ModelError) as raised:
+            parsed(raw)
+        self.assertEqual(raised.exception.code, "MATCH_RECIPIENT_EVIDENCE_REQUIRED")
+
+        raw["artifacts"].append({
+            "artifactId": "recipient-instruction", "sha256": "6" * 64,
+            "kind": "recipient_instruction", "observedAt": "2026-10-08T09:00:00Z", "accountRefId": None,
+        })
+        raw["events"][-1]["decision"]["recipientEvidence"] = {
+            "kind": "artifact", "artifactId": "recipient-instruction", "location": "recipient:1"
+        }
+        result = query(raw, head="decision-confirm")
+        self.assertEqual(result.status, "MATCHED_BY_REVIEW")
+        self.assertEqual(result.candidate_fact_ids, ())
+        self.assertIn("RECIPIENT_EXCEPTION_SOURCE_REVIEWED", result.reason_codes)
+
+    def test_cross_recipient_rejection_needs_no_instruction(self):
+        raw = raw_case()
+        raw["events"][5]["fact"]["recipientKind"] = "parent"
+        add_decision(raw, "decision-reject", amount="0", decision="reject")
+        result = query(raw, head="decision-reject")
+        self.assertEqual(result.status, "INSUFFICIENT_COVERAGE")
+        self.assertIn("RECIPIENT_MISMATCH", result.reason_codes)
+
+    def test_cross_recipient_evidence_must_be_instruction_for_selected_bank_and_exist_before_review(self):
+        for variant, expected in (
+            ("manual", "INVALID_RECIPIENT_EVIDENCE"),
+            ("wrong_kind", "INVALID_RECIPIENT_EVIDENCE"),
+            ("wrong_account", "INVALID_RECIPIENT_EVIDENCE"),
+            ("future", "INVALID_RECIPIENT_EVIDENCE"),
+        ):
+            with self.subTest(variant=variant):
+                raw = raw_case()
+                raw["events"][5]["fact"]["recipientKind"] = "parent"
+                raw["artifacts"].append({
+                    "artifactId": "instruction", "sha256": "6" * 64,
+                    "kind": "recipient_instruction", "observedAt": "2026-10-08T09:00:00Z",
+                    "accountRefId": None,
+                })
+                evidence = {"kind": "artifact", "artifactId": "instruction", "location": "recipient:1"}
+                if variant == "manual":
+                    evidence = {"kind": "manual", "entryId": "entry-instruction"}
+                elif variant == "wrong_kind":
+                    raw["artifacts"][-1]["kind"] = "bank_statement"
+                elif variant == "wrong_account":
+                    raw["artifacts"][-1]["accountRefId"] = "school-a"
+                else:
+                    raw["artifacts"][-1]["observedAt"] = "2026-10-10T09:00:00Z"
+                add_decision(raw, "decision-confirm", recipient_evidence=evidence)
+                with self.assertRaises(ModelError) as raised:
+                    parsed(raw)
+                self.assertEqual(raised.exception.code, expected)
+
+    def test_account_specific_query_does_not_claim_match_allocated_only_to_another_bank(self):
+        raw = raw_case()
+        raw["accountRefs"].append({
+            "accountRefId": "bank-b", "kind": "bank", "institutionId": None, "holderKind": "student"
+        })
+        add_decision(raw, "decision-confirm")
+        result = query(raw, head="decision-confirm", bank="bank-b")
+        self.assertEqual(result.status, "MATCHED_ON_OTHER_ACCOUNT_BY_REVIEW")
+        self.assertEqual(result.confirmed_allocations, ())
+        self.assertIn("REFUND_ALLOCATED_TO_OTHER_ACCOUNT", result.reason_codes)
+
+    def test_two_refunds_cannot_overallocate_one_bank_credit(self):
+        raw = raw_case()
+        second_refund = copy.deepcopy(raw["events"][5])
+        second_refund["eventId"] = "event-refund-issued-b"
+        second_refund["fact"]["factId"] = "issued-refund-b"
+        second_refund["fact"]["reviewId"] = "review-refund-b"
+        second_refund["fact"]["source"]["location"] = "page:2"
+        raw["events"].append(second_refund)
+        add_decision(raw, "decision-a", amount="60000")
+        add_decision(
+            raw, "decision-b", amount="60000", refund_fact_id="issued-refund-b",
+            refund_event_id="event-refund-issued-b", previous="decision-a",
+        )
+        result = query(raw, head="decision-b")
+        self.assertEqual(result.status, "CONTRADICTORY_EVIDENCE")
+        self.assertIn("BANK_OVERALLOCATED", result.reason_codes)
+
+    def test_reviewed_rejection_removes_candidate(self):
+        raw = raw_case()
+        add_decision(raw, "decision-reject", amount="0", decision="reject")
+        result = query(raw, head="decision-reject")
+        self.assertEqual(result.status, "NO_CANDIDATE_IN_APPROVED_FACTS")
+        self.assertEqual(result.candidate_fact_ids, ())
+        self.assertEqual(result.remaining_minor, 90000)
+        self.assertIn("SOURCE_SET_MAY_BE_INCOMPLETE", result.reason_codes)
+
+    def test_unreviewed_bank_proposal_does_not_become_a_candidate(self):
+        raw = raw_case()
+        raw["events"][6]["fact"]["effectiveDate"] = "2026-09-05"
+        raw["proposals"].append(
+            {
+                "proposalId": "proposal-bank-unreviewed",
+                "artifactId": "bank-period",
+                "sourceLocation": "row:99",
+                "rawValue": "900.00",
+                "parserVersion": "synthetic.1",
+                "mappingVersion": "bank-map.1",
+                "proposedAmountMinor": "90000",
+            }
+        )
+        result = query(raw)
+        self.assertEqual(result.status, "NO_CANDIDATE_IN_APPROVED_FACTS")
+        self.assertEqual(result.candidate_fact_ids, ())
+
+    def test_later_review_can_reverse_a_confirmation(self):
+        raw = raw_case()
+        add_decision(raw, "decision-confirm")
+        add_decision(raw, "decision-reject", amount="0", decision="reject", previous="decision-confirm")
+        before = query(raw, head="decision-confirm")
+        after = query(raw, head="decision-reject")
+        self.assertEqual(before.status, "MATCHED_BY_REVIEW")
+        self.assertEqual(after.status, "NO_CANDIDATE_IN_APPROVED_FACTS")
+        self.assertEqual(after.confirmed_allocations, ())
+
+    def test_refund_correction_below_confirmed_allocation_is_contradictory(self):
+        raw = raw_case()
+        add_decision(raw, "decision-confirm")
+        raw["events"].append(
+            {
+                "eventId": "event-refund-correction",
+                "parents": ["event-refund-issued", "decision-confirm"],
+                "recordedAt": "2026-10-10T10:00:00Z",
+                "kind": "correct_fact",
+                "correction": {
+                    "factId": "issued-refund",
+                    "replacementAmountMinor": "60000",
+                    "cancelled": False,
+                    "source": {"kind": "artifact", "artifactId": "refund-a", "location": "page:1-revised"},
+                    "reviewId": "review-refund-correction",
+                },
+            }
+        )
+        result = query(raw, head="event-refund-correction")
+        self.assertEqual(result.status, "CONTRADICTORY_EVIDENCE")
+        self.assertIn("REFUND_OVERALLOCATED", result.reason_codes)
+
+    def test_missing_period_coverage_prevents_no_candidate_conclusion(self):
+        raw = raw_case()
+        raw["events"][6]["fact"]["effectiveDate"] = "2026-11-01"
+        raw["events"][7]["coverage"]["endDateExclusive"] = "2026-09-20"
+        result = query(raw)
+        self.assertEqual(result.status, "INSUFFICIENT_COVERAGE")
+        self.assertEqual(result.candidate_fact_ids, ())
+        self.assertEqual(result.coverage.missing_intervals, (("2026-09-20", "2026-10-07"),))
+
+    def test_candidate_limit_returns_computation_limit(self):
+        raw = raw_case()
+        add_bank(raw)
+        result = query(raw, limit=1)
+        self.assertEqual(result.status, "COMPUTATION_LIMIT")
+        self.assertEqual(result.candidate_fact_ids, ())
+        self.assertIn("CANDIDATE_LIMIT_EXCEEDED", result.reason_codes)
+
+    def test_manual_bank_observation_is_labeled_in_suggestion(self):
+        raw = raw_case()
+        raw["events"][6]["fact"]["source"] = {"kind": "manual", "entryId": "manual-bank-credit"}
+        result = query(raw)
+        self.assertEqual(result.status, "SUGGESTED")
+        self.assertIn("MANUAL_BANK_OBSERVATION", result.reason_codes)
+
+    def test_reviewed_confirmation_outside_search_window_is_flagged(self):
+        raw = raw_case()
+        raw["events"][6]["fact"]["effectiveDate"] = "2026-11-01"
+        add_decision(raw, "decision-confirm")
+        result = query(raw, head="decision-confirm")
+        self.assertEqual(result.status, "MATCHED_BY_REVIEW")
+        self.assertIn("CONFIRMED_OUTSIDE_SEARCH_WINDOW", result.reason_codes)
+
+    def test_bank_correction_below_confirmed_allocation_is_contradictory(self):
+        raw = raw_case()
+        add_decision(raw, "decision-confirm")
+        raw["events"].append(
+            {
+                "eventId": "event-bank-correction",
+                "parents": ["event-bank-credit", "decision-confirm"],
+                "recordedAt": "2026-10-10T10:00:00Z",
+                "kind": "correct_fact",
+                "correction": {
+                    "factId": "bank-credit",
+                    "replacementAmountMinor": "60000",
+                    "cancelled": False,
+                    "source": {"kind": "artifact", "artifactId": "bank-a", "location": "row:1-revised"},
+                    "reviewId": "review-bank-correction",
+                },
+            }
+        )
+        result = query(raw, head="event-bank-correction")
+        self.assertEqual(result.status, "CONTRADICTORY_EVIDENCE")
+        self.assertIn("BANK_OVERALLOCATED", result.reason_codes)
+
+    def test_concurrent_opposing_decisions_are_not_ordered_by_event_id(self):
+        raw = raw_case()
+        add_decision(raw, "decision-confirm")
+        add_decision(raw, "decision-reject", amount="0", decision="reject")
+        result = suggest_refund_deposits(
+            parsed(raw), ("decision-confirm", "decision-reject"), "issued-refund", "bank-a"
+        )
+        self.assertEqual(result.status, "CONTRADICTORY_EVIDENCE")
+        self.assertIn("CONFLICTING_MATCH_DECISIONS", result.reason_codes)
+
+    def test_invalid_decision_requires_fact_approvals_as_direct_parents(self):
+        raw = raw_case()
+        decision = add_decision(raw, "decision-confirm")
+        decision["parents"] = ["event-coverage"]
+        with self.assertRaises(ModelError) as raised:
+            parsed(raw)
+        self.assertEqual(raised.exception.code, "INVALID_MATCH_CAUSALITY")
+
+    def test_zero_day_window_is_inclusive_only_on_refund_date_and_parameters_are_bounded(self):
+        raw = raw_case()
+        same_day = copy.deepcopy(raw)
+        same_day["events"][6]["fact"]["effectiveDate"] = "2026-09-06"
+        self.assertEqual(query(same_day, window=0).candidate_fact_ids, ("bank-credit",))
+        self.assertEqual(query(raw, window=0).candidate_fact_ids, ())
+        for limit, window, expected in ((0, 30, "INVALID_CANDIDATE_LIMIT"), (True, 30, "INVALID_CANDIDATE_LIMIT"), (1, 91, "INVALID_MATCH_WINDOW")):
+            with self.subTest(limit=limit, window=window):
+                with self.assertRaises(ModelError) as raised:
+                    query(raw, limit=limit, window=window)
+                self.assertEqual(raised.exception.code, expected)
+
+
+if __name__ == "__main__":
+    unittest.main()

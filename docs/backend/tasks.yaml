@@ -1,0 +1,797 @@
+{
+  "schemaVersion": 1,
+  "statusValues": [
+    "NOT_STARTED",
+    "IN_PROGRESS",
+    "IMPLEMENTED_UNVERIFIED",
+    "VERIFIED_LOCAL",
+    "BLOCKED_EXTERNAL",
+    "BLOCKED_TOOLING",
+    "OUT_OF_BACKEND_SCOPE"
+  ],
+  "tasks": [
+    {
+      "id": "M0",
+      "title": "Safe baseline and audit",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": [],
+      "requirements": [
+        "S-02",
+        "S-13"
+      ],
+      "scope": "Record actual source, Git state, baseline checks, and local-only guardrails.",
+      "files": [
+        "docs/backend/repository-audit.md",
+        "AGENTS.md"
+      ],
+      "interface": "Human-readable audit and directly testable pre-push hook; no product runtime API.",
+      "invariants": [
+        "Original checkout remains untouched",
+        "No remote is contacted"
+      ],
+      "tests": [
+        "direct pre-push invocation exits nonzero",
+        "git status identifies only this worktree changes"
+      ],
+      "command": "git status --porcelain=v1 -b",
+      "expected": "Only intended local branch changes; baseline defects identified",
+      "risk": "MEDIUM",
+      "done": "Audit, tool inventory, baseline results, safeguard restoration instructions, and branch baseline are committed."
+    },
+    {
+      "id": "M1",
+      "title": "Executable domain and security contracts",
+      "status": "IN_PROGRESS",
+      "dependsOn": [
+        "M0"
+      ],
+      "requirements": [
+        "S-01",
+        "S-08",
+        "S-09",
+        "S-11",
+        "S-14",
+        "S-15",
+        "S-16",
+        "S-21",
+        "S-23"
+      ],
+      "scope": "Freeze architecture, domain semantics, versioned input/output, crypto/auth/sync design gates, limits, and requirement traceability.",
+      "files": [
+        "docs/backend/brief.md",
+        "docs/backend/architecture.md",
+        "docs/backend/domain-semantics.md",
+        "docs/backend/contracts/",
+        "docs/backend/decisions/",
+        "docs/backend/security/",
+        "docs/backend/requirements.yaml",
+        "docs/backend/tasks.yaml"
+      ],
+      "interface": "schemaVersion=1; monetary JSON values are canonical decimal strings; approved event DAG is the knowledge snapshot.",
+      "invariants": [
+        "No plaintext financial payload on the sync API",
+        "No unreviewed proposal changes a projection",
+        "Unsupported source format is not claimed supported"
+      ],
+      "tests": [
+        "requirements inventory parses and contains S-01..S-78 once",
+        "documented golden arithmetic is hand checked"
+      ],
+      "command": "python3 -m json.tool docs/backend/requirements.yaml",
+      "expected": "Exit 0; design review records unresolved gates",
+      "risk": "HIGH",
+      "done": "Contracts are internally consistent and M2 has a testable plan; external validation gates remain open."
+    },
+    {
+      "id": "M2-1",
+      "title": "Exact money foundation",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": [
+        "M0"
+      ],
+      "requirements": [
+        "S-15",
+        "S-23",
+        "S-24"
+      ],
+      "scope": "Parse canonical minor-unit strings and explicit US decimal source strings without floats; enforce signed i64 arithmetic.",
+      "files": [
+        "scryer_reference/money.py",
+        "tests/reference/test_money.py"
+      ],
+      "interface": "parse_minor_units(str)->int; parse_us_decimal(str)->int; checked_add(int,int)->int; checked_negate(int)->int",
+      "invariants": [
+        "No rounding",
+        "No negative-zero canonical input",
+        "Overflow raises typed ValueError"
+      ],
+      "tests": [
+        "exact boundaries",
+        "bad grouping and precision",
+        "minimum integer negation",
+        "USD 6500.00 and 5000.00 fixture"
+      ],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -p 'test_money.py' -v",
+      "expected": "All named cases pass",
+      "risk": "HIGH",
+      "done": "Observed red-green tests pass and the full current reference suite passes."
+    },
+    {
+      "id": "M2-2",
+      "title": "Approved journal and snapshots",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": [
+        "M2-1"
+      ],
+      "requirements": [
+        "S-14",
+        "S-16",
+        "S-17",
+        "S-18",
+        "S-19",
+        "S-24"
+      ],
+      "scope": "Validate versioned case JSON, source references, unique IDs, parent DAG, and typed approved facts/corrections; reject duplicate JSON keys.",
+      "files": [
+        "scryer_reference/model.py",
+        "tests/reference/test_model.py",
+        "docs/backend/contracts/case-v1.schema.json"
+      ],
+      "interface": "load_case_json(str)->Case; snapshot_events(Case, tuple[str,...])->tuple[Event,...]",
+      "invariants": [
+        "Proposals have no approved effect",
+        "Missing parents/cycles/duplicate IDs fail",
+        "Fixed events replay regardless of enumeration"
+      ],
+      "tests": [
+        "duplicate JSON key",
+        "missing parent and cycle",
+        "permuted event input",
+        "manual versus source provenance",
+        "concurrent correction branches"
+      ],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -p 'test_model.py' -v",
+      "expected": "All named cases pass",
+      "risk": "HIGH",
+      "done": "The schema, parser, and DAG tests pass with hostile-input rejection."
+    },
+    {
+      "id": "M2-3",
+      "title": "School-surplus projection and attribution",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": [
+        "M2-2"
+      ],
+      "requirements": [
+        "S-18",
+        "S-19",
+        "S-21",
+        "S-22",
+        "S-24"
+      ],
+      "scope": "Project posted school credits and charges at explicit heads; apply corrections without duplicate effects; attribute exact changes.",
+      "files": [
+        "scryer_reference/projection.py",
+        "tests/reference/test_projection.py",
+        "tests/reference/fixtures/golden-case.json"
+      ],
+      "interface": "project_school_surplus(Case, tuple[str,...], str)->Projection; compare_school_surplus(Case, tuple[str,...], tuple[str,...], str)->Comparison",
+      "invariants": [
+        "Only approved posted movements affect surplus",
+        "Unordered correction conflict is explicit",
+        "Contributions sum exactly to delta"
+      ],
+      "tests": [
+        "RC-01, RC-02, RC-03, RC-04, RC-06, RC-14, RC-19, RC-20, RC-21, RC-22"
+      ],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -p 'test_projection.py' -v",
+      "expected": "Golden totals 150000 then 90000 cents, delta -60000 with two -30000 contributions",
+      "risk": "HIGH",
+      "done": "Hand-derived goldens and full reference suite pass."
+    },
+    {
+      "id": "M2-4",
+      "title": "Independent receipts and scenarios",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": [
+        "M2-3"
+      ],
+      "requirements": [
+        "S-23",
+        "S-24",
+        "S-44"
+      ],
+      "scope": "Create canonical derivation receipts, independently verify their arithmetic/references/digest, and generate fixed-seed synthetic cases.",
+      "files": [
+        "scryer_reference/receipt.py",
+        "scryer_reference/check_receipt.py",
+        "scryer_reference/scenarios.py",
+        "tests/reference/test_receipt.py"
+      ],
+      "interface": "make_school_surplus_receipt(Case, tuple[str,...], str)->dict; check_receipt(Case, dict)->CheckResult; generate_case(int)->Case",
+      "invariants": [
+        "Checker never calls the production C++ engine",
+        "Tampered amounts and missing references fail",
+        "Generated data are synthetic"
+      ],
+      "tests": [
+        "RC-26",
+        "digest tampering",
+        "missing source reference",
+        "seed determinism"
+      ],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -p 'test_*.py' -v",
+      "expected": "All reference tests pass",
+      "risk": "HIGH",
+      "done": "The checker detects deliberately altered receipts and generator outputs are repeatable."
+    },
+    {
+      "id": "M2-5a",
+      "title": "Institution and account identity",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": [
+        "M2-4"
+      ],
+      "requirements": [
+        "S-14",
+        "S-17",
+        "S-20",
+        "S-24"
+      ],
+      "scope": "Bind each relevant fact to an explicit school or bank account and each school account/term to an institution.",
+      "files": [
+        "scryer_reference/model.py",
+        "docs/backend/contracts/case-v1.schema.json",
+        "tests/reference/fixtures/golden-case.json",
+        "scryer_reference/scenarios.py",
+        "tests/reference/test_model.py"
+      ],
+      "interface": "Case.institutions, Case.terms, Case.account_refs, Fact.account_ref_id; see account-matching-coverage plan Task 1.",
+      "invariants": [
+        "Wrong institution/account cannot enter a school projection",
+        "Bank credit requires a bank account",
+        "Term bounds are half-open"
+      ],
+      "tests": [
+        "unknown account",
+        "wrong account kind",
+        "cross-institution fact",
+        "source/account mismatch",
+        "golden value unchanged"
+      ],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -p 'test_*.py' -v",
+      "expected": "Account validation and all reference tests pass",
+      "risk": "HIGH",
+      "done": "New strict schema and goldens pass without account ambiguity."
+    },
+    {
+      "id": "M2-5b",
+      "title": "Explicit bank coverage",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": [
+        "M2-5a"
+      ],
+      "requirements": [
+        "S-21",
+        "S-36"
+      ],
+      "scope": "Represent approved bank statement coverage assertions and evaluate exact half-open interval gaps.",
+      "files": [
+        "scryer_reference/model.py",
+        "scryer_reference/coverage.py",
+        "docs/backend/contracts/case-v1.schema.json",
+        "tests/reference/test_coverage.py"
+      ],
+      "interface": "evaluate_bank_coverage(Case,heads,account_ref_id,start_date,end_date_exclusive)->CoverageResult; see plan Task 2.",
+      "invariants": [
+        "CSV extrema are not coverage",
+        "Wrong account does not cover",
+        "A gap yields INSUFFICIENT_COVERAGE"
+      ],
+      "tests": [
+        "source asserted period",
+        "user asserted period",
+        "early end",
+        "gap",
+        "wrong account",
+        "no assertion"
+      ],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -p 'test_*.py' -v",
+      "expected": "Coverage tests and full reference suite pass",
+      "risk": "HIGH",
+      "done": "Coverage decisions preserve exact gaps and provenance."
+    },
+    {
+      "id": "M2-5c",
+      "title": "Conservative matching and allocations",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": [
+        "M2-5b"
+      ],
+      "requirements": [
+        "S-20",
+        "S-21",
+        "S-24",
+        "S-43"
+      ],
+      "scope": "Bounded refund/deposit candidate suggestions and causally reviewed exact allocations.",
+      "files": [
+        "scryer_reference/model.py",
+        "scryer_reference/matching.py",
+        "docs/backend/contracts/case-v1.schema.json",
+        "tests/reference/test_matching.py"
+      ],
+      "interface": "suggest_refund_deposits(Case,heads,refund_fact_id,bank_account_ref_id,candidate_limit=1000)->MatchResult; see plan Task 3.",
+      "invariants": [
+        "Coincidence is suggestion only",
+        "No over-allocation",
+        "Resource cap returns COMPUTATION_LIMIT",
+        "No false definite nonpayment"
+      ],
+      "tests": [
+        "ambiguous equal candidates",
+        "wrong account/term",
+        "split deposits",
+        "duplicate allocation",
+        "coverage gap",
+        "candidate cap"
+      ],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -p 'test_*.py' -v",
+      "expected": "Matching tests and full reference suite pass",
+      "risk": "HIGH",
+      "done": "Supported matching outcomes and negative cases pass with explicit limitations."
+    },
+    {
+      "id": "M2-6a",
+      "title": "Explicit currency binding",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": ["M2-5c"],
+      "requirements": ["S-14", "S-15", "S-17", "S-24"],
+      "scope": "Require USD currency across approved monetary facts, projections, matching, and receipts; reject mixed/unsupported values before computation.",
+      "files": ["scryer_reference/model.py", "scryer_reference/projection.py", "scryer_reference/receipt.py", "scryer_reference/check_receipt.py", "docs/backend/contracts/case-v1.schema.json", "tests/reference/"],
+      "interface": "Case.currency and Fact.currency are explicit USD; receipt/projection currency is checked against the case.",
+      "invariants": ["No implicit currency conversion", "Mixed-currency case rejected", "Exact prior golden values unchanged"],
+      "tests": ["unsupported case/fact currency", "receipt tampering", "seeded goldens"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "All reference tests pass with currency binding",
+      "risk": "HIGH",
+      "done": "Versioned case, projection, and receipt contracts reject non-USD/mixed currency."
+    },
+    {
+      "id": "M2-6b",
+      "title": "Link approved facts to reviewed proposals",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": ["M2-6a"],
+      "requirements": ["S-14", "S-17", "S-24"],
+      "scope": "Preserve parser/mapping version and original proposed value, and validate approved fact links to the exact source proposal.",
+      "files": ["scryer_reference/model.py", "scryer_reference/scenarios.py", "docs/backend/contracts/case-v1.schema.json", "tests/reference/"],
+      "interface": "Proposal parserVersion/mappingVersion/proposedAmountMinor; Fact.proposalId optionally links to the matching artifact/source location.",
+      "invariants": ["Proposal alone has no monetary effect", "Reviewed edits preserve original proposed amount", "Source and proposal position cannot disagree"],
+      "tests": ["proposal acceptance/edit", "missing proposal", "source mismatch", "unreviewed proposal", "version bounds"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "Provenance goldens and negative cases pass",
+      "risk": "HIGH",
+      "done": "Every linked approval is traceable to the exact original proposal without changing projection semantics."
+    },
+    {
+      "id": "M2-6c",
+      "title": "Aid lifecycle evidence and findings",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": ["M2-6b"],
+      "requirements": ["S-18", "S-19", "S-21", "S-22", "S-24"],
+      "scope": "Model explicitly linked aid-item evidence stages and deterministic non-entitlement findings.",
+      "files": ["scryer_reference/model.py", "scryer_reference/lifecycle.py", "docs/backend/contracts/case-v1.schema.json", "tests/reference/test_lifecycle.py"],
+      "interface": "project_aid_lifecycle(Case, heads, term_id, aid_item_id)->LifecycleResult with source-linked observations and next-action codes.",
+      "invariants": ["No mandatory invented stages", "No offer/pending/work-study as posted credits", "No automatic expected refund from surplus"],
+      "tests": ["out-of-order stages", "pending replacement", "split disbursement", "multiple terms", "parent recipient", "balance snapshot"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "Lifecycle goldens and negative cases pass",
+      "risk": "HIGH",
+      "done": "Supported lifecycle classifications are evidence-bound and explicit about unknown stages."
+    },
+    {
+      "id": "M2-6d",
+      "title": "Historical mapping and reference parity corpus",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": ["M2-6c"],
+      "requirements": ["S-16", "S-19", "S-22", "S-23", "S-24", "S-26"],
+      "scope": "Map declared as-known cutoffs to approved causal heads and freeze a scoped, hand-checked synthetic native-port corpus; track the remaining release RC gates separately.",
+      "files": ["scryer_reference/history.py", "scryer_reference/scenarios.py", "tests/reference/", "docs/backend/verification.md"],
+      "interface": "heads_as_known(Case, cutoff_utc)->unique head or typed ambiguity; deterministic corpus manifest for C++/WASM parity.",
+      "invariants": ["No wall-clock tie winner", "Unreviewed proposals cannot enter history", "Same event set permutation has identical result"],
+      "tests": ["divergent branches", "different review histories", "golden exact deltas", "fixed-seed corpus"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "Historical and corpus tests pass locally",
+      "risk": "HIGH",
+      "done": "Native-port corpus has fixed expected semantics and unresolved RC scenarios are explicitly mapped."
+    },
+    {
+      "id": "M2-7a",
+      "title": "Recipient-aware refund matching",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": ["M2-6d"],
+      "requirements": ["S-18", "S-20", "S-21", "S-24"],
+      "scope": "Prevent parent/third-party or unknown-recipient refund evidence from silently matching a student bank account.",
+      "files": ["scryer_reference/model.py", "scryer_reference/matching.py", "docs/backend/contracts/case-v1.schema.json", "tests/reference/test_matching.py"],
+      "interface": "Reviewed refund recipient and bank holder kinds plus an explicit evidence-bound exception rule; see reference-gap-closure plan.",
+      "invariants": ["No cross-recipient automatic candidate", "Unknown identity is incomplete", "Reviewed exceptions remain source-linked"],
+      "tests": ["parent refund to student bank", "unknown recipient", "permitted evidence exception"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "Recipient gates and full reference suite pass",
+      "risk": "HIGH",
+      "done": "RC-08 has a synthetic negative and permitted-evidence case without false student-account claims."
+    },
+    {
+      "id": "M2-7b",
+      "title": "Gross-net aid evidence",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": ["M2-7a"],
+      "requirements": ["S-18", "S-19", "S-22", "S-24"],
+      "scope": "Separate gross loan offer, source-backed withheld fee, and net posted school credit.",
+      "files": ["scryer_reference/model.py", "scryer_reference/lifecycle.py", "docs/backend/contracts/case-v1.schema.json", "tests/reference/test_lifecycle.py"],
+      "interface": "Aid lifecycle reports gross snapshot, withheld fee evidence, net posted movement, and unresolved difference separately.",
+      "invariants": ["No fabricated payment", "No fee as school charge", "No annual half-split"],
+      "tests": ["hand-calculated gross/fee/net", "missing fee unresolved", "school surplus unchanged by gross offer"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "RC-07 and full reference suite pass",
+      "risk": "HIGH",
+      "done": "Gross/net evidence is exact and unresolved gaps are explicitly labeled."
+    },
+    {
+      "id": "M2-7c",
+      "title": "Reversal and historical rule evidence",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": ["M2-7b"],
+      "requirements": ["S-16", "S-19", "S-22", "S-23", "S-24"],
+      "scope": "Freeze corrected-source/reversal fixtures and explicit original-version reproduction versus reanalysis behavior.",
+      "files": ["scryer_reference/projection.py", "scryer_reference/receipt.py", "scryer_reference/check_receipt.py", "tests/reference/corpus/"],
+      "interface": "Typed rule-version support and fixed historical receipts; see reference-gap-closure plan.",
+      "invariants": ["Original receipt preserved", "No silent new-rule rewrite", "Reversal amount exact"],
+      "tests": ["RC-14", "RC-15", "RC-46"],
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/reference -q",
+      "expected": "Reference corpus and old-version checks pass",
+      "risk": "HIGH",
+      "done": "Rule-version and reversal evidence is frozen for native port."
+    },
+    {
+      "id": "M3",
+      "title": "Native C++20 production engine",
+      "status": "VERIFIED_LOCAL",
+      "dependsOn": [
+        "M2-7c"
+      ],
+      "requirements": [
+        "S-25",
+        "S-26",
+        "S-27",
+        "S-28",
+        "S-29",
+        "S-30"
+      ],
+      "scope": "Port validated semantics to a pure C++20 core, native CLI, and differential harness, then extend matching/coverage using new goldens.",
+      "files": [
+        "engine/",
+        "tests/engine/",
+        "docs/backend/contracts/engine-v1.md"
+      ],
+      "interface": "evaluate(Request)->Response and versioned JSON CLI for all operations in contracts/engine-v1.md.",
+      "invariants": [
+        "Checked i64 math",
+        "No hidden time/network",
+        "Canonical semantic parity with Python"
+      ],
+      "tests": [
+        "Native goldens",
+        "hostile JSON",
+        "differential 200-case smoke",
+        "sanitizer boundary tests"
+      ],
+      "command": "make -C engine cli; PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.engine.test_cli -q; make -C engine cli-sanitize; SCRYER_NATIVE_BIN=engine/build/scryer-native-sanitized PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.engine.test_cli -q",
+      "expected": "Native tests, 33 fixed corpus operations, 200 seeded cases, and sanitizer pass; WASM/browser remains M4",
+      "risk": "HIGH",
+      "done": "Native executable, CLI, and measured parity are locally verified."
+    },
+    {
+      "id": "M4",
+      "title": "WASM and real-browser engine harness",
+      "status": "BLOCKED_TOOLING",
+      "dependsOn": [
+        "M3"
+      ],
+      "requirements": [
+        "S-29",
+        "S-30",
+        "S-34"
+      ],
+      "scope": "Build same C++ sources to WASM; typed worker wrapper and browser parity/cancellation tests.",
+      "files": [
+        "engine/",
+        "client/engine/",
+        "tests/browser/"
+      ],
+      "interface": "Typed version-negotiated worker messages with owned input/output buffers.",
+      "invariants": [
+        "No UI-thread heavy compute",
+        "Errors do not cross ABI unchecked",
+        "No false cancellation success"
+      ],
+      "tests": [
+        "Chromium and Firefox loading/repetition/cancellation/parity"
+      ],
+      "command": "Freeze after Emscripten/browser availability is established",
+      "expected": "Real browser results equal native/reference or explicit platform blocker",
+      "risk": "HIGH",
+      "done": "WASM and browser corpus pass on supported local browsers."
+    },
+    {
+      "id": "M5",
+      "title": "Reviewed local ingestion",
+      "status": "IN_PROGRESS",
+      "dependsOn": [
+        "M2-4"
+      ],
+      "requirements": [
+        "S-33",
+        "S-34",
+        "S-35",
+        "S-36",
+        "S-37",
+        "S-38",
+        "S-39",
+        "S-40",
+        "S-41",
+        "S-42",
+        "S-45"
+      ],
+      "scope": "Bounded CSV/manual proposals, review commands, idempotent approval, source reattachment; authentic UMD layouts only with permitted evidence.",
+      "files": [
+        "client/adapters/",
+        "client/review/",
+        "tests/browser/"
+      ],
+      "interface": "detect(input)->Detection; extract(input,mapping)->Proposal[]; approve(case,review)->new immutable journal revision",
+      "invariants": [
+        "No parser output is approved automatically",
+        "Repeated artifact approval has one effect",
+        "Unsupported layout remains manual"
+      ],
+      "tests": [
+        "Quoted/newline/BOM/duplicate-header CSV",
+        "source-position multiplicity",
+        "atomic repeated review",
+        "limits and cancellation",
+        "local Chrome worker extraction and source reattachment status"
+      ],
+      "command": "cd client && npm ci --offline --ignore-scripts --no-audit --no-fund && npm run typecheck && npm test && SCRYER_BROWSER_BIN='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm run test:browser",
+      "expected": "Supported adapters pass; UMD compatibility remains BLOCKED_EXTERNAL absent authentic evidence",
+      "risk": "HIGH",
+      "done": "Browser-backed reviewed import is verified for only declared formats."
+    },
+    {
+      "id": "M6",
+      "title": "Encrypted local storage and recovery",
+      "status": "IN_PROGRESS",
+      "dependsOn": [
+        "M1",
+        "M5"
+      ],
+      "requirements": [
+        "S-48",
+        "S-57",
+        "S-58",
+        "S-61"
+      ],
+      "scope": "Approved crypto envelope, IndexedDB transactions, durable outbox, recovery, key rotation, and authenticated export/restore.",
+      "files": [
+        "client/crypto/",
+        "client/storage/",
+        "client/export/",
+        "tests/browser/",
+        "docs/backend/security/crypto-design.md"
+      ],
+      "interface": "create/unlock/lock/commit/prepareSync/export/previewRestore/restore with typed failures and versioned envelopes",
+      "invariants": [
+        "Plaintext never reaches server",
+        "Wrong key/tamper yields no partial plaintext",
+        "Prepared retry bytes stay stable"
+      ],
+      "tests": [
+        "Known-answer/interoperability",
+        "tamper/binding/downgrade",
+        "crash after commit",
+        "wrong-key restore",
+        "second-device recovery"
+      ],
+      "command": "Follow docs/backend/plans/2026-10-04-encrypted-local.md; run offline typecheck, independent crypto interop, and real-browser IndexedDB tests",
+      "expected": "Browser and crypto gates pass",
+      "risk": "CRITICAL",
+      "done": "Reviewed design and real-browser failure/recovery tests pass."
+    },
+    {
+      "id": "M7",
+      "title": "Local OIDC and ciphertext sync",
+      "status": "IN_PROGRESS",
+      "dependsOn": [
+        "M1",
+        "M6"
+      ],
+      "requirements": [
+        "S-56",
+        "S-59",
+        "S-60",
+        "S-62",
+        "S-63",
+        "S-64",
+        "S-66"
+      ],
+      "scope": "Real local identity provider, PostgreSQL migrations/RLS, token validation, CAS/idempotent opaque revisions, quotas, deletion and lifecycle jobs.",
+      "files": [
+        "main.py",
+        "sync/",
+        "migrations/",
+        "docker-compose.yml",
+        "Dockerfile.backend",
+        "tests/sync/"
+      ],
+      "interface": "Versioned /v1 API with 401/409/412/413/428/429 semantics and no plaintext financial endpoints",
+      "invariants": [
+        "Tenant from verified token",
+        "RLS under non-owner app role",
+        "One atomic revision transaction",
+        "Deletion cannot be undone by retry"
+      ],
+      "tests": [
+        "Two real local OIDC accounts",
+        "direct app-role SQL isolation",
+        "same-key concurrent retries",
+        "lost response",
+        "quota race",
+        "deletion race",
+        "canonical device registration/retirement and manifest publication gate",
+        "browser ID stability across reload, new ID after eviction, and old-root restore refusal"
+      ],
+      "command": "scripts/verify-sync-db.sh with a private local PostgreSQL cluster; scripts/start-local-keycloak-test.sh and SCRYER_LOCAL_OIDC=1 node --test tests/sync/test_oidc_local.mjs; run real token-to-API tests after a maintained JWT verifier is available",
+      "expected": "PostgreSQL and PKCE checks pass locally; real JWT/API integration remains an explicit tooling blocker",
+      "risk": "CRITICAL",
+      "done": "Authenticated local clients sync opaque ciphertext with verified isolation."
+    },
+    {
+      "id": "M8",
+      "title": "Offline multi-device integration",
+      "status": "IN_PROGRESS",
+      "dependsOn": [
+        "M4",
+        "M5",
+        "M6",
+        "M7"
+      ],
+      "requirements": [
+        "S-16",
+        "S-60",
+        "S-69"
+      ],
+      "scope": "Exercise two devices, divergent heads, authenticated read-only conflict preview, reviewed resolution, retry, account disablement and lifecycle races with the official headless client.",
+      "files": [
+        "client/sync/",
+        "tests/browser/",
+        "tests/sync/"
+      ],
+      "interface": "Outbox sync returns committed, retryable transport fault, stale conflict, or permanent failure without dropping local edits.",
+      "invariants": [
+        "No last-writer-wins journal loss",
+        "No duplicate financial effect",
+        "No stale resurrection"
+      ],
+      "tests": [
+        "Concurrency/crash matrix 1–16",
+        "Chrome remote-branch decrypt/validation and unchanged outbox on preview",
+        "Headless read-only branch analysis for event identity collisions, concurrent decisions, and non-event differences",
+        "Local browser/API/PostgreSQL historical ciphertext base retrieval and authenticated browser inspection",
+        "Headless and Chrome read-only candidate-base retention analysis for exact event payloads, metadata prefixes, and review-ledger prefixes",
+        "Headless and Chrome read-only union candidate for disjoint manual approvals; refuse conflicting IDs, sources, metadata, corrections, and match decisions; require review before any write",
+        "Headless and Chrome explicit join-review command binds the complete candidate digest, pending identity, branch revisions and heads; builds one nonmonetary join event in memory without writing the outbox",
+        "Chrome atomic reviewed conflict replacement: exact pending bytes and case digest checked again in IndexedDB, old pending operation replaced, both parent histories retained after reload, remote revision used as server CAS precondition, and failure leaves prior state intact",
+        "Chrome/FastAPI/PostgreSQL synthetic joined-case publication: two independently approved branches, one CAS loser, reviewed local replacement, server CAS receipt, retained joined history, plaintext boundary, and cross-tenant refusal",
+        "Chrome/FastAPI/PostgreSQL second remote-head advance after local join: stale CAS returns typed conflict while exact joined case and pending request survive and authenticated remote preview opens",
+        "Native and Python resolve_branches event parity: one joined head over independent approvals, strict two-parent/review-ID validation, and unresolved correction contradiction",
+        "Headless import preflight refuses reuse of a branch-join review ID",
+        "Synthetic plaintext sentinel and approved bank amount through Chrome recovery and conflicting branches; check browser API bodies, HTTP ciphertext, loopback logs, and disposable database text/bytea/JSON columns",
+        "RC-31–RC-39",
+        "RC-45",
+        "RC-47"
+      ],
+      "command": "cd client && npm run typecheck && npm test && SCRYER_BROWSER_BIN=<local Chrome> npm run test:browser; from repository root, SCRYER_TEST_PG_SOCKET=<private local PostgreSQL socket> SCRYER_BROWSER_BIN=<local Chrome> node --test tests/sync/test_client_integration.mjs",
+      "expected": "Synthetic offline chain, browser/API/PostgreSQL joined-case publication, and second remote-advance conflict preservation pass; JWT/WASM-backed journey, human review UI, and full conflict resolution remain open",
+      "risk": "CRITICAL",
+      "done": "Multi-device and failure matrix pass locally."
+    },
+    {
+      "id": "M9",
+      "title": "Hardening and measurement",
+      "status": "IN_PROGRESS",
+      "dependsOn": [
+        "M3",
+        "M4",
+        "M5",
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "requirements": [
+        "S-30",
+        "S-31",
+        "S-32",
+        "S-44",
+        "S-67",
+        "S-72"
+      ],
+      "scope": "Full differential/property/fuzz/sanitizer/coverage/security review and reproducible performance measurements.",
+      "files": [
+        "tests/",
+        "docs/backend/security/",
+        "docs/backend/verification.md",
+        "docs/backend/release-report.md"
+      ],
+      "interface": "verify-full, verify-fuzz, verify-security, verify-performance return nonzero for mandatory failure.",
+      "invariants": [
+        "No skipped gate reported PASS",
+        "No scan sends private source to a prohibited service",
+        "Performance claims match measured workloads"
+      ],
+      "tests": [
+        "10,000 generated cases",
+        "M9-1 10,000 deterministic projection cases in seven event-history families compared field-for-field with the independent Python reference",
+        "M9-2 deterministic bounded mutation smoke under address/undefined sanitizers for JSON, case, and versioned request boundaries; 30 seconds each with accepted/rejected counts",
+        "M9-3 instrumented native CLI and unit tests produce a source-only line/branch report; the executable coverage gate fails below the 90%/85% targets",
+        "M9-4 native and independent Python matching edge cases pass; rerun the same native source coverage gate and retain its nonzero result until targets are met",
+        "M9-5 strict native case-boundary rejection cases pass for version, IDs, accounts, artifacts, proposals, source evidence, roles, exact money, and correction semantics; remeasure the same coverage gate",
+        "M9-6 versioned native request boundaries and discrepancy queue branches pass; unsigned candidateLimit zero now fails at the API with INVALID_REQUEST",
+        "M9-7 native receipt provenance and historical archive refusal tests pass for reviewed proposal values and malformed archived fields",
+        "declared fuzz budgets",
+        "component coverage gates",
+        "negative controls"
+      ],
+      "command": "Freeze verification scripts as each component lands",
+      "expected": "M9-1 generated differential, M9-2 sanitizer mutation smoke, M9-4 matching, M9-5 case, M9-6 API, and M9-7 receipt suites pass locally; native coverage rises to 88.44% lines/78.99% branches but the 90%/85% gate still fails; coverage-guided fuzz runtime, ten-minute budgets, more coverage, browser parity, broader performance, and security/release gates remain open",
+      "risk": "HIGH",
+      "done": "Full evidence package and whole-branch review are current at candidate revision."
+    },
+    {
+      "id": "M10",
+      "title": "Local release rehearsal and handoff",
+      "status": "NOT_STARTED",
+      "dependsOn": [
+        "M9"
+      ],
+      "requirements": [
+        "S-65",
+        "S-74",
+        "S-75",
+        "S-76",
+        "S-78"
+      ],
+      "scope": "Fresh-stack setup, complete synthetic journey, export/restore, backup, deletion, migration, restart, recovery, and truthful report.",
+      "files": [
+        "docs/backend/operations/",
+        "docs/backend/release-report.md",
+        "docs/backend/status.md",
+        "README.md"
+      ],
+      "interface": "rehearse-release produces revision-bound structured results and nonzero failure status.",
+      "invariants": [
+        "Restored identity and ciphertext remain decryptable",
+        "Deleted accounts stay denied after old-backup restore",
+        "No public-release claim"
+      ],
+      "tests": [
+        "RC-40–RC-42",
+        "RC-48",
+        "clean committed-source setup"
+      ],
+      "command": "Freeze local rehearsal script after components exist",
+      "expected": "Rehearsal results and remaining external gates are explicit",
+      "risk": "HIGH",
+      "done": "A locally reproducible backend profile is reported only at its tested commit."
+    }
+  ]
+}

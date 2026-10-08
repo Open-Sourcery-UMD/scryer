@@ -21,6 +21,9 @@ node_modules/
 
 # testing
 coverage/
+.pytest_cache/
+.backend-artifacts/
+.superpowers/
 
 # next.js
 .next/
@@ -41,6 +44,7 @@ yarn-error.log*
 
 # env files
 .env*
+!.env.example
 
 # vercel
 .vercel

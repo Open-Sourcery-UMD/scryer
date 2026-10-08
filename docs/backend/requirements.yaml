@@ -1,0 +1,1325 @@
+{
+  "schemaVersion": 1,
+  "source": "User-provided Scryer backend master execution prompt, Appendix A",
+  "meaning": "Traceability inventory; empty tests/evidence are unimplemented, not passing.",
+  "requirements": [
+    {
+      "id": "S-01",
+      "sourceResponsibility": "Adopt v1 product contract",
+      "treatment": "LOCAL: encode the backend contract and explicit non-goals; do not claim maintainer approval not given.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-02",
+      "sourceResponsibility": "Audit existing repository",
+      "treatment": "LOCAL: inspect actual code and record retain/adapt/replace/retire decisions.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [
+        "docs/backend/repository-audit.md at local branch baseline"
+      ],
+      "status": "VERIFIED_LOCAL"
+    },
+    {
+      "id": "S-03",
+      "sourceResponsibility": "Interview students",
+      "treatment": "EXTERNAL: prepare a research protocol only if needed; no fabricated interviews or results.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-04",
+      "sourceResponsibility": "Compare alternatives",
+      "treatment": "MIXED: prepare a reproducible synthetic evaluation dataset; actual competitor/user findings remain unverified unless independently obtained within authorization.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-05",
+      "sourceResponsibility": "Verify real source formats",
+      "treatment": "MIXED: conformance harness and fixture inventory locally; authentic format validation needs permitted evidence.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-06",
+      "sourceResponsibility": "Test clickable prototype",
+      "treatment": "FRONTEND/EXTERNAL: support the synthetic scenario; no claim of prototype usability testing.",
+      "scope": "FRONTEND",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "OUT_OF_BACKEND_SCOPE"
+    },
+    {
+      "id": "S-07",
+      "sourceResponsibility": "Product-value gate",
+      "treatment": "EXTERNAL: keep user-value validation open; permit reversible synthetic local engineering.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-08",
+      "sourceResponsibility": "Aid terminology and conclusions",
+      "treatment": "MIXED: implement explicit states and limitations; institutional/legal interpretation remains qualified-review work.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-09",
+      "sourceResponsibility": "Privacy/legal/safety review",
+      "treatment": "MIXED: threat model and technical controls locally; qualified legal/privacy review is external.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-10",
+      "sourceResponsibility": "$0 hosting/operations proof",
+      "treatment": "EXTERNAL: no hosting purchase/provisioning; document future capacity and operator dependencies.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-11",
+      "sourceResponsibility": "Architecture/release contract",
+      "treatment": "LOCAL/MIXED: freeze local contracts; separate public-release approval.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-12",
+      "sourceResponsibility": "CI/review gates",
+      "treatment": "LOCAL: implement equivalent local pipelines and review checks; run no remote CI.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-13",
+      "sourceResponsibility": "Local development/secrets",
+      "treatment": "LOCAL: reliable setup, private generated secrets, safe service bindings.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M0",
+        "M1"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-14",
+      "sourceResponsibility": "Source/fact schema",
+      "treatment": "LOCAL: versioned schemas and cross-language contract tests.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [
+        "tests/reference/test_model.py — strict schema, provenance, DAG, and hostile-input checks"
+      ],
+      "evidence": [
+        "M2-2 red-green run; 25-test reference suite exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-15",
+      "sourceResponsibility": "Money/time rules",
+      "treatment": "LOCAL: exact integers, explicit time axes, validated dates and overflow.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [
+        "tests/reference/test_money.py — 11 exact-money and arithmetic tests"
+      ],
+      "evidence": [
+        "M2-1 red-green run; local unittest discover exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-16",
+      "sourceResponsibility": "Journal/corrections",
+      "treatment": "LOCAL: immutable approved history, correction conflicts, deterministic replay.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2",
+        "M8"
+      ],
+      "tests": [
+        "tests/reference/test_model.py — strict schema, provenance, DAG, and hostile-input checks",
+        "tests/reference/test_model.py and tests/engine/test_case.cpp — exact branch-join event shape, parent validation, and unique review ID",
+        "tests/engine/test_projection.cpp and tests/engine/test_cli.py — a join preserves contradiction between competing corrections",
+        "tests/client/test_conflict_analysis.mjs — explicit in-memory review command adds one join marker only for exact disjoint approval candidate",
+        "tests/client/test_conflict_analysis.mjs — concurrent cross-device corrections and event identity collisions"
+      ],
+      "evidence": [
+        "M2-2 red-green run; 25-test reference suite exit 0 before commit; M8-5a read-only branch analysis passes local headless and Chrome checks; M8-6c nonmonetary join marker passes Python/native parity; M8-6d in-memory explicit review command passes headless/Chrome while atomic reviewed writer remains open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-17",
+      "sourceResponsibility": "Provenance/review status",
+      "treatment": "LOCAL: proposals, approval records, source locations, missing-original behavior.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [
+        "tests/reference/test_model.py — strict schema, exact proposal/source linkage, parser/mapping versions, reviewed edits, duplicate approval prevention",
+        "tests/reference/test_receipt.py — proposal provenance independently checked in derivation receipts",
+        "tests/client/test_review.mjs — proposal, source, decision ledger and approved-event identity",
+        "tests/browser/test_import_worker.mjs — SHA-256 original availability and reattachment status"
+      ],
+      "evidence": [
+        "M2-2 red-green run; 25-test reference suite exit 0 before commit",
+        "M2-6b red-green run; 93-test reference suite exit 0 before local commit",
+        "M5-2 reviewed bank import preserves proposals and verifies prior artifact/proposal/event chain on exact repeat",
+        "M5-4 real-browser source availability reports missing, mismatched, and matching local originals; durable device workflow open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-18",
+      "sourceResponsibility": "Aid lifecycle",
+      "treatment": "LOCAL: evidence states, partial/out-of-order history, financial edge cases.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens",
+        "tests/reference/test_lifecycle.py — split postings, annual offers, accepted/pending snapshots, parent recipient, work-study, corrections"
+      ],
+      "evidence": [
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit",
+        "M2-6c red-green run; 107-test reference suite exit 0 before local commit"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-19",
+      "sourceResponsibility": "Term projections",
+      "treatment": "LOCAL: current/historical projections under explicit fixed-history semantics.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens",
+        "tests/reference/test_history.py — explicit UTC cutoff, permutation, divergent heads, timestamp inversion",
+        "tests/reference/test_corpus.py — fixed current and historical parity operations"
+      ],
+      "evidence": [
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit",
+        "M2-6d red-green run; 116-test reference suite and 22 fixed parity operations exit 0 before local commit"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-20",
+      "sourceResponsibility": "Matching/review rules",
+      "treatment": "LOCAL: allocations, ambiguity, evidence rules, review decisions, bounded search.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [
+        "tests/reference/test_matching.py — suggestions, ambiguity, account isolation, reviewed decisions, split allocations, limits, corrections"
+      ],
+      "evidence": [
+        "M2-5c red-green run; 85-test reference suite exit 0 before local commit ef81a3e"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-21",
+      "sourceResponsibility": "Coverage/uncertainty",
+      "treatment": "LOCAL: explicit coverage assertions and no unsupported missing-payment claims.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens",
+        "tests/reference/test_coverage.py — account-specific intervals, gaps, source binding, retraction, chronology",
+        "tests/reference/test_matching.py — missing coverage and no false nonpayment outcome"
+      ],
+      "evidence": [
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit",
+        "M2-5b/M2-5c red-green runs; 85-test reference suite exit 0 before local commit ef81a3e"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-22",
+      "sourceResponsibility": "Change attribution",
+      "treatment": "LOCAL: exact deltas, interacting changes, no hidden unexplained residual.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [
+        "tests/reference/test_projection.py — synthetic school-surplus, correction-conflict, and attribution goldens"
+      ],
+      "evidence": [
+        "M2-3 red-green run; 36-test reference suite exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-23",
+      "sourceResponsibility": "Evidence receipts",
+      "treatment": "LOCAL: canonical derivation receipts and a scoped independent checker.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [
+        "tests/reference/test_receipt.py — canonical digest, independent arithmetic/source checks, seeded generator"
+      ],
+      "evidence": [
+        "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-24",
+      "sourceResponsibility": "Python reference/generator",
+      "treatment": "LOCAL: independent algorithms, hand-computed golden cases, seeded generators.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M2"
+      ],
+      "tests": [
+        "tests/reference/test_receipt.py — canonical digest, independent arithmetic/source checks, seeded generator"
+      ],
+      "evidence": [
+        "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-25",
+      "sourceResponsibility": "C++ primitives",
+      "treatment": "LOCAL: checked money, schema validation, bounded ownership/lifetimes.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": ["tests/engine/test_money.cpp", "tests/engine/test_json_boundary.cpp", "tests/engine/test_case.cpp"],
+      "evidence": ["M3 native unit targets and sanitizer CLI suite exit 0; WASM and broader hardening remain open"],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-26",
+      "sourceResponsibility": "C++ projections",
+      "treatment": "LOCAL: deterministic current and historical projections.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": ["tests/engine/test_projection.cpp", "tests/engine/test_cli.py"],
+      "evidence": ["M3 fixed and 200-seed native projection/history parity; native CLI suite exit 0"],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-27",
+      "sourceResponsibility": "C++ matching/coverage",
+      "treatment": "LOCAL: matching/allocation/uncertainty with reference parity.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": ["tests/engine/test_coverage.cpp", "tests/engine/test_matching.cpp", "tests/engine/test_cli.py"],
+      "evidence": ["M3 fixed and 200-seed native evidence parity; native CLI suite exit 0"],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-28",
+      "sourceResponsibility": "C++ explanations/receipts",
+      "treatment": "LOCAL: attributed differences and versioned evidence output.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": ["tests/engine/test_receipt.cpp", "tests/engine/test_cli.py", "tests/reference/test_receipt.py"],
+      "evidence": ["M3 native receipts independently checked, fixed digests matched, CLI trace/compare verified"],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-29",
+      "sourceResponsibility": "Native/WASM packaging",
+      "treatment": "LOCAL: same production sources, typed ABI, canonical semantic agreement.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": ["tests/engine/test_cli.py"],
+      "evidence": ["M3 native CLI and shared core source built; WASM ABI/browser parity remains M4"],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-30",
+      "sourceResponsibility": "Differential tests",
+      "treatment": "LOCAL: reference/native/browser comparisons and minimized failures.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": ["tests/engine/test_cli.py", "tests/reference/test_corpus.py", "tests/engine/differential_generated.py — seven deterministic families and exact full projection comparison across 10000 seeds"],
+      "evidence": ["M3 33 fixed manifest operations and 200 generated cases pass through native CLI; M9-1 10000 generated cases across linear, reordered, correction, cancellation, approval-join, contradictory-correction, and manual-source families match every Python reference projection field with zero skips; WASM/browser parity and broader generated domain shapes remain open"],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-31",
+      "sourceResponsibility": "Fuzzing/hardening",
+      "treatment": "LOCAL: bounded fuzz targets, supported sanitizers, resource tests.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": ["tests/engine/test_cli.py", "tests/engine/test_json_boundary.cpp", "tests/engine/mutation_smoke.cpp — 30-second address/undefined sanitizer mutation runs for JSON, case, and request boundaries", "tests/engine/test_matching.cpp and tests/reference/test_matching.py — cancelled/undated refunds, concurrent corrections/decisions, superseding review, manual source, and parameter boundary cases", "tests/engine/test_case.cpp — strict version, identity, source/account, amount, correction, and duplicate-ID refusal", "tests/engine/test_cli.py — versioned API integer bounds, request shapes, queue lists, trace target, and unsupported operation", "tests/engine/test_receipt.cpp — linked proposal provenance and malformed historical archive refusal"],
+      "evidence": ["M3 address/undefined sanitizer CLI suite and bounded JSON inputs pass; M9-2 deterministic 30-second mutation smoke passed all three targets with 906789 total iterations and zero sanitizer findings; M9-3 native source coverage gate failed at 82.90% lines and 73.38% branches; M9-4/M9-5 matching and case tests raised it to 85.67%/75.96%; M9-6 API boundary tests fixed unsigned candidateLimit zero handling at 87.93%/77.93%; M9-7 receipt provenance/archive tests raise coverage to 88.44% lines/78.99% branches; the 90%/85% gate still fails, libFuzzer runtime is absent locally, and ten-minute milestone/coverage work remains open"],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-32",
+      "sourceResponsibility": "Performance/memory study",
+      "treatment": "LOCAL: actual reproducible results; no HFT-style unsupported claims.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M3",
+        "M4",
+        "M9"
+      ],
+      "tests": ["tests/engine/benchmark_cli.py"],
+      "evidence": ["M3 reproducible native CLI golden and 2007-event synthetic latency/RSS baseline in verification.md; broader M9 study open"],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-33",
+      "sourceResponsibility": "Adapter contract",
+      "treatment": "LOCAL: stable plugin-free adapter interface and public-ready local conformance suite.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_bank_csv.mjs",
+        "tests/browser/test_import_worker.mjs — module-worker adapter protocol and format routing"
+      ],
+      "evidence": [
+        "M5-1 pinned CSV contract, offline TypeScript typecheck, and synthetic adapter tests pass; full conformance remains open",
+        "M5-4 versioned one-request worker protocol passes local Chrome; third-party adapter conformance remains open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-34",
+      "sourceResponsibility": "Browser file safety",
+      "treatment": "LOCAL: headless worker/file validation, bounds, cancellation, malicious content handling.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_bank_csv.mjs",
+        "tests/browser/test_import_worker.mjs — FileReader, worker cancellation/timeout and typed failure"
+      ],
+      "evidence": [
+        "M5-1 hostile UTF-8/CSV and byte/row/column/field/cell limits pass; browser worker/cancellation open",
+        "M5-4 local Chrome tests pass for malformed/oversized file, cancellation, timeout, and blocked worker creation"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-35",
+      "sourceResponsibility": "Bank CSV import",
+      "treatment": "LOCAL: exact parsing, mapping proposals, review commands, account identity.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_bank_csv.mjs",
+        "tests/client/test_review.mjs — native-validated atomic bank CSV approval",
+        "tests/browser/test_import_worker.mjs — deterministic real-browser CSV proposal extraction"
+      ],
+      "evidence": [
+        "M5-1 exact mapped CSV proposals, stable source positions, repeated-row multiplicity, and account-bound artifact IDs pass; review open",
+        "M5-2 reviewed CSV decisions produce only approved bank-credit events; browser and real-format validation remain open",
+        "M5-4 browser extraction preserves source positions and repeated-row multiplicity; browser-side native review validation open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-36",
+      "sourceResponsibility": "Statement coverage",
+      "treatment": "LOCAL: source/user-asserted periods; no coverage inference from transaction extrema.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_bank_csv.mjs",
+        "tests/browser/test_import_worker.mjs — worker output is proposals only, no coverage event"
+      ],
+      "evidence": [
+        "M5-1 generic CSV extractor emits no coverage assertion; reviewed source/user period commands open",
+        "M5-4 browser CSV extraction emits no coverage assertion; reviewed period commands open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-37",
+      "sourceResponsibility": "UMD offer import",
+      "treatment": "MIXED: implement verified layouts; unsupported real formats remain blocked, manual entry remains functional.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_manual.mjs — PDFs route to reviewed manual entry; no UMD offer layout declared"
+      ],
+      "evidence": [
+        "M5-3 permitted representative UMD offer layout absent; real-format extraction remains blocked"
+      ],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-38",
+      "sourceResponsibility": "UMD bill import",
+      "treatment": "MIXED: same compatibility gate; distinguish snapshots, pending aid, postings, charges.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_manual.mjs — PDFs route to reviewed manual entry; no UMD bill layout declared"
+      ],
+      "evidence": [
+        "M5-3 permitted representative UMD bill layout absent; real-format extraction remains blocked"
+      ],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-39",
+      "sourceResponsibility": "Refund notices",
+      "treatment": "MIXED: verified extraction or explicit reviewed manual capture; never invent source status.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_manual.mjs — reviewed manual refund fact and explicit recipient category"
+      ],
+      "evidence": [
+        "M5-3 manual refund capture passes native case validation; notice layout extraction remains blocked"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-40",
+      "sourceResponsibility": "Generic manual entry",
+      "treatment": "LOCAL: typed, source-labeled reviewed facts for unsupported institutions.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_manual.mjs — reviewed manual school, refund, bank facts and corrections"
+      ],
+      "evidence": [
+        "M5-3 headless manual events and corrections pass native case validation; browser and persistence remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-41",
+      "sourceResponsibility": "Import review screen",
+      "treatment": "FRONTEND/MIXED: implement full headless review/correction commands, not the finished screen.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_review.mjs — headless approve/edit/reject/exclude decision command",
+        "tests/client/test_manual.mjs — headless manual facts and correction commands"
+      ],
+      "evidence": [
+        "M5-2 headless review operation passes; visual review screen remains open",
+        "M5-3 manual review commands pass; visual review screen remains open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-42",
+      "sourceResponsibility": "Repeat-import idempotence",
+      "treatment": "LOCAL: artifact/event identity, overlap ambiguity, multiplicity, atomic approval.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_review.mjs — unchanged repeat, changed decision conflict, stale heads and equal row multiplicity",
+        "tests/browser/test_import_worker.mjs — repeated browser extraction gives identical artifact/proposal IDs"
+      ],
+      "evidence": [
+        "M5-2 in-memory exact repeat is inert, conflict is typed, and equal movements are retained; durable storage and statement overlap remain open",
+        "M5-4 repeated browser extraction deterministic; durable review idempotency remains open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-43",
+      "sourceResponsibility": "Refund/bank reconciliation",
+      "treatment": "LOCAL: candidate/confirmed/rejected/unresolved match flows and coverage.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-44",
+      "sourceResponsibility": "Release corpus",
+      "treatment": "LOCAL: synthetic adversarial fixtures only; real-record pilot corpus needs separate consent/evidence.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M2-6d",
+        "M5",
+        "M9"
+      ],
+      "tests": [
+        "tests/reference/test_receipt.py — canonical digest, independent arithmetic/source checks, seeded generator",
+        "tests/reference/test_corpus.py — 22 literal synthetic parity operations across seven case fixtures",
+        "tests/browser/test_import_worker.mjs — synthetic real-browser RC-12/13/24/27/44 slices",
+        "tests/engine/test_matching.cpp and tests/reference/test_matching.py — synthetic adverse matching/review boundaries",
+        "tests/engine/test_case.cpp — synthetic invalid source, account, temporal, and exact-money case boundaries",
+        "tests/engine/test_cli.py — synthetic versioned API limits and discrepancy-queue contract boundaries",
+        "tests/engine/test_receipt.cpp — reviewed linked proposal and historical archive tamper/refusal"
+      ],
+      "evidence": [
+        "M2-4 red-green run; 44-test reference suite and 200 seeded receipt checks exit 0 before commit",
+        "docs/backend/release-corpus.md maps all RC-01 through RC-48; many browser/server/crypto gates remain OPEN",
+        "M5-4 six local Chrome tests pass; release corpus remains partial without WASM/storage/auth",
+        "M9-4 native/reference matching regressions cover cancellation, missing date, conflicting and superseded reviews, and refusal paths; M9-5 strict native parser regressions cover invalid IDs, roles, money, source/account links, and correction semantics; M9-6 synthetic API limits/queue cases pass; M9-7 native receipt provenance/archive refusal passes; synthetic cases do not replace real-record pilot evidence"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-45",
+      "sourceResponsibility": "Unsupported-input failures",
+      "treatment": "LOCAL: typed failure states and manual-entry continuation contracts.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5"
+      ],
+      "tests": [
+        "tests/client/test_review.mjs — typed invalid batch, missing ledger, invalid decision, stale head and native validation failure",
+        "tests/client/test_manual.mjs — conservative PDF-to-manual and invalid-input outcomes",
+        "tests/browser/test_import_worker.mjs — typed malformed, oversized, cancelled, timed-out and worker-failure states"
+      ],
+      "evidence": [
+        "M5-2 typed review failures leave case and ledger inputs unchanged; unsupported-file continuation remains open",
+        "M5-3 all PDFs route to manual without compatibility claims; precise PDF diagnostics remain open",
+        "M5-4 real-browser error paths pass; detailed PDF diagnostics remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-46",
+      "sourceResponsibility": "Visual/language system",
+      "treatment": "FRONTEND/MIXED: machine-readable statuses and safe default explanation language only.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-47",
+      "sourceResponsibility": "Onboarding/first case",
+      "treatment": "FRONTEND/MIXED: seed demo and headless case/recovery contracts; no UI completion claim.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-48",
+      "sourceResponsibility": "Local case workspace",
+      "treatment": "LOCAL/MIXED: encrypted local store, offline commands, exports; visual workspace remains frontend.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [
+        "tests/browser/test_storage.mjs — encrypted local case and import ledger round trip, reload, lock, and atomic abort",
+        "tests/browser/test_archive.mjs — authenticated portable export and atomic restore"
+      ],
+      "evidence": [
+        "M6-3 encrypted IndexedDB repository and M6-4 portable archive pass local Chrome tests; browser native validation and visual workspace remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-49",
+      "sourceResponsibility": "Timeline",
+      "treatment": "FRONTEND/MIXED: complete timeline projection model; finished rendering remains frontend.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-50",
+      "sourceResponsibility": "Why did this change?",
+      "treatment": "LOCAL/MIXED: complete comparison/explanation APIs and fixtures; visual interaction remains frontend.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-51",
+      "sourceResponsibility": "Discrepancy queue",
+      "treatment": "LOCAL/MIXED: deterministic findings/priorities/action codes; visual queue remains frontend.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-52",
+      "sourceResponsibility": "Evidence inspector",
+      "treatment": "LOCAL/MIXED: source/calculation traversal contracts; visual inspector remains frontend.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-53",
+      "sourceResponsibility": "Inquiry brief",
+      "treatment": "LOCAL/MIXED: redacted structured/text generation and export; editing UI and office usefulness remain later.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-54",
+      "sourceResponsibility": "Synthetic demo",
+      "treatment": "LOCAL/MIXED: complete native/headless-browser scenario; public demo hosting/UI excluded.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M5",
+        "M6"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-55",
+      "sourceResponsibility": "Mobile/assistive use",
+      "treatment": "FRONTEND/EXTERNAL: no accessibility certification from headless backend tests.",
+      "scope": "FRONTEND",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "OUT_OF_BACKEND_SCOPE"
+    },
+    {
+      "id": "S-56",
+      "sourceResponsibility": "Managed signup/auth",
+      "treatment": "LOCAL/MIXED: real local identity integration; public signup/deployed sessions not enabled.",
+      "scope": "MIXED",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [
+        "tests/sync/test_oidc_local.mjs — real local Keycloak browser PKCE and two synthetic identities"
+      ],
+      "evidence": [
+        "M7-4a cached Keycloak 26.7.3 PKCE/audience/userinfo test passes; server JWT verification and public signup remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-57",
+      "sourceResponsibility": "Client encryption",
+      "treatment": "LOCAL: reviewed design, official-client encrypted requests, tamper/interop tests.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [
+        "tests/crypto/test_vectors.mjs — fixed independent Node/OpenSSL HKDF/AES-GCM bytes",
+        "tests/client/test_crypto.mjs — WebCrypto interop, strict envelopes, tamper, chunk atomicity",
+        "tests/browser/test_crypto.mjs — real Chrome fixed-vector open and independent browser-to-Node decrypt",
+        "tests/browser/test_archive.mjs — independent Node/OpenSSL verification of Chrome archive HMAC",
+        "tests/browser/test_rotation.mjs — budget exhaustion, journaled generation transition, and new-root rotation",
+        "tests/sync/test_client_integration.mjs — synthetic source sentinel absent from browser API request bodies, HTTP ciphertext, local outbox, and disposable PostgreSQL"
+      ],
+      "evidence": [
+        "M6 design selected locally in docs/backend/security/local-storage-design.md; independent review remains open",
+        "M6-1 crypto-v1 format frozen; three Node vector checks and generator/fixture equality exit 0",
+        "M6-2 WebCrypto primitives pass headless and Chrome interop/tamper checks",
+        "M6-3 encrypted IndexedDB persistence and durable encryption-use budgets pass Chrome failure tests",
+        "M6-4 archive-wide HMAC membership check passes Chrome and independent Node/OpenSSL",
+        "M6-5 two-case rotation and interruption tests pass Chrome; browser regressions cover database recreation, direct-constructor binding, rotated-session binding, stale-tab restore refusal, and one package device ID across header/key derivation; independent human review remains open",
+        "M8-6a and M8-6f Chrome/FastAPI/PostgreSQL synthetic sentinel journeys pass, including reviewed joined-case publication; public auth, WASM validation, deployed logs and backups remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-58",
+      "sourceResponsibility": "Recovery key",
+      "treatment": "LOCAL/MIXED: tested recovery protocol and headless verification; user-facing key-save UX remains frontend.",
+      "scope": "MIXED",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [
+        "tests/client/test_crypto.mjs — recovery re-entry, wrong secret and second-device unlock",
+        "tests/browser/test_crypto.mjs — fresh Chrome page recovery",
+        "tests/browser/test_archive.mjs — recovery-secret-gated fresh-device archive restore",
+        "tests/browser/test_rotation.mjs — new-root secret re-entry, wrong-secret refusal, second-device unlock",
+        "tests/sync/test_recovery.py — exact recovery wrapper wire and precondition validation",
+        "tests/sync/test_api.py — initial encrypted wrapper HTTP create/read with tenant isolation",
+        "tests/sync/test_client_integration.mjs — Chrome-generated wrapper round trip through local API"
+      ],
+      "evidence": [
+        "M6-2 high-entropy recovery secret and authenticated root wrapper pass local tests; M6-4 Chrome archive restore works in a fresh profile; M6-5 new-root rotation passes local interruption/re-entry checks",
+        "M7-6 initial wrapper create/read passes 46 sync tests on PostgreSQL 15.11 and 16.15, plus one Chrome/API/PostgreSQL exact-byte fresh-page recovery check; standalone server rotation returns 409 until an atomic account-wide protocol exists; frontend key-save UX remains open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-59",
+      "sourceResponsibility": "Encrypted sync/isolation",
+      "treatment": "LOCAL: authenticated API, PostgreSQL/RLS, real two-account tests.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [
+        "tests/sync/test_protocol.py — strict ciphertext chunk/manifest validation and exact package assembly",
+        "tests/browser/test_sync_wire.mjs — Chrome outbox accepted by independent Python parser",
+        "tests/sync/test_rls.py — real app-role direct-SQL isolation under forced RLS",
+        "tests/sync/test_migrations.py — checksum, rollback, forward repair, and future-version rejection",
+        "tests/sync/test_store.py — atomic ciphertext publication, CAS, idempotency, quota, deletion, and tenant isolation",
+        "tests/sync/test_api.py — HTTP behavior with unit-only verifier and real PostgreSQL",
+        "tests/client/test_sync_transport.mjs — exact saved-byte requests, account/receipt validation, retry and conflict outcomes",
+        "tests/sync/test_client_integration.mjs — Chrome/FastAPI/PostgreSQL ciphertext journey with synthetic verifier",
+        "tests/sync/test_api.py — tenant-scoped keyset listing, historical ciphertext read, deletion and corruption refusal",
+        "tests/sync/test_pagination.py — cursor expiry, exact timestamp, tenant binding, and tamper refusal",
+        "tests/sync/test_recovery.py — exact encrypted recovery wrapper wire and strong preconditions",
+        "tests/sync/test_protocol.py, test_store.py, and test_api.py — exact device registry wire, active-device publication gate, tenant isolation, retirement, and limits",
+        "tests/sync/test_client_integration.mjs — synthetic plaintext boundary sentinel with recovered amount, all browser API request bodies, logs, and disposable database scan",
+        "tests/sync/test_client_integration.mjs — two-device reviewed joined-case ciphertext publication, current server head, and cross-tenant denial"
+      ],
+      "evidence": [
+        "M7-1 seven Python protocol tests and one Chrome/Python wire parity test pass",
+        "M7-2 six direct app-role RLS tests and four migration tests pass on fresh private PostgreSQL 15.11",
+        "M7-3 thirteen PostgreSQL store tests pass; OIDC/HTTP sync remain open",
+        "M7 device registry, HTTP boundary, ciphertext reads, and initial wrapper API pass within 85 sync tests on PostgreSQL 15.11 and 16.15 with local Keycloak; 32 headless client tests, 33 Chrome tests, and one synthetic browser/API/PostgreSQL journey pass; JWT-to-API integration remains blocked",
+        "M8-6a and M8-6f Chrome/FastAPI/PostgreSQL synthetic sentinel stays in decrypted cases but absent from observed browser API bodies, HTTP ciphertext, collected API logs, and disposable PostgreSQL tables, including after a joined-case publish; production identity and WASM validation remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-60",
+      "sourceResponsibility": "Device conflicts",
+      "treatment": "LOCAL: revision CAS, durable outbox, typed conflict, no silent overwrite.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [
+        "tests/browser/test_storage.mjs — two-tab local revision CAS, atomic outbox, byte-identical retry after reload",
+        "tests/browser/test_rotation.mjs — journaled stale-head/account-wrapper checks and two-case atomic switch",
+        "tests/sync/test_store.py — two distinct updates racing one head preserve the losing ciphertext branch",
+        "tests/browser/test_sync_chain.mjs — ordered durable offline acknowledgments, wrong/out-of-order refusal, and transaction rollback",
+        "tests/client/test_sync_transport.mjs — stale remote head returns a typed conflict without local acknowledgment",
+        "tests/browser/test_conflict_preview.mjs — decrypt and semantically validate both branches without changing the outbox",
+        "tests/client/test_conflict_analysis.mjs — deterministic read-only branch IDs, collisions, and concurrent decisions",
+        "tests/client/test_sync_transport.mjs — historical base retrieval, unavailable base, and malformed historical response",
+        "tests/client/test_conflict_analysis.mjs — candidate-base event and metadata retention without merge permission",
+        "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — read-only disjoint manual-approval union candidate and conservative refusal",
+        "tests/reference/test_model.py and tests/engine/test_cli.py — explicit causal join of independent approval branches preserves both without overwriting",
+        "tests/client/test_review.mjs — import review ID cannot collide with a branch-join review ID",
+        "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — exact review-command bindings and joined native-valid candidate without a local write",
+        "tests/browser/test_conflict_commit.mjs — atomic encrypted local replacement retains both branch events and refuses stale/quota/multi-pending cases",
+        "tests/sync/test_client_integration.mjs — competing encrypted browser branch preserved after server CAS loss, joined and published under a reviewed remote-revision precondition, then a second stale joined request preserved through another server-head advance"
+      ],
+      "evidence": [
+        "M6 local conflict/outbox and two-case rotation pass Chrome; old-root tab cannot commit or restore after root rotation; M7 server CAS and active-device publication gate pass PostgreSQL; M8 atomic outbox succession, synthetic browser/API conflict, authenticated browser branch preview, read-only branch and candidate-base content analysis, encrypted historical-base candidate inspection, narrow disjoint-approval candidate, M8-6c join parser, M8-6d bound review command, M8-6e atomic local replacement, M8-6f synthetic joined-case publication, and M8-6g second stale-head preservation pass; production identity/WASM paths and arbitrary conflict resolution remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-61",
+      "sourceResponsibility": "Portable export/restore",
+      "treatment": "LOCAL: encrypted archive, optional originals, atomic restore, semantic parity.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [
+        "tests/browser/test_archive.mjs — canonical HMAC archive, optional originals, conflict preview, two-case atomic restore, and v1-to-v2 migration",
+        "tests/browser/test_rotation.mjs — old backup remains decryptable under old secret after new-root rotation"
+      ],
+      "evidence": [
+        "M6-4 Chrome archive tag independently verifies in Node/OpenSSL; wrong-key/tamper/interruption/fresh-device checks pass; M6-5 old-backup compatibility passes; frontend UX and independent review remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-62",
+      "sourceResponsibility": "Deletion/retention",
+      "treatment": "LOCAL/MIXED: tested lifecycle and tombstones; published legal promises require review.",
+      "scope": "MIXED",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [
+        "tests/sync/test_store.py — case tombstone, ciphertext removal, and old retry nonresurrection",
+        "tests/sync/test_account_deletion.py — atomic account wipe, role nonresurrection, exact retry, provider worker failure/crash/lease, and anonymous tombstone",
+        "tests/sync/test_migrations.py — forward-only deletion migration and legacy lifecycle preflight",
+        "tests/sync/test_keycloak_provider.py and test_deletion_runner.py — bounded provider protocol and restricted one-shot runner",
+        "tests/sync/test_keycloak_local.py — real local Keycloak service-account failure, PostgreSQL retry, provider deletion, and anonymous tombstone"
+      ],
+      "evidence": [
+        "M7-7 account deletion passes 65 sync tests on PostgreSQL 15.11 and 16.15; M7-8 real local Keycloak/worker reconciliation passes within 80 sync tests on PostgreSQL 15.11 and 16.15 with real local Keycloak enabled; old-backup deletion ledger, real JWT integration, deployed scheduler, scalable provider-absence proof beyond 5,000 users, and public policy review remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-63",
+      "sourceResponsibility": "Quotas/abuse",
+      "treatment": "LOCAL: bounded local enforcement/concurrency tests; no public abuse-resistance guarantee.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [
+        "tests/sync/test_store.py — concurrent quota staging admits one bounded write and rejects the other"
+      ],
+      "evidence": [
+        "M7-3 private PostgreSQL account-row quota race passes; HTTP streaming limit and rate limiting remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-64",
+      "sourceResponsibility": "Deployment/configuration",
+      "treatment": "LOCAL/MIXED: local packaging/config checks and migration rehearsal only, no remote deployment.",
+      "scope": "MIXED",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-65",
+      "sourceResponsibility": "Backup/restore",
+      "treatment": "LOCAL/MIXED: fresh-stack local drills; independent hosted destination/operator remain external.",
+      "scope": "MIXED",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-66",
+      "sourceResponsibility": "Observability",
+      "treatment": "LOCAL: privacy-preserving logs/metrics; no hosted telemetry.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-67",
+      "sourceResponsibility": "Internal security",
+      "treatment": "LOCAL: threat-model tests, eligible local scans, actual finding resolution.",
+      "scope": "LOCAL",
+      "risk": "HIGH",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-68",
+      "sourceResponsibility": "Policies/terms",
+      "treatment": "MIXED: technical facts/limitations draft; qualified approval and publication remain external.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M6",
+        "M7",
+        "M8"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-69",
+      "sourceResponsibility": "Multi-user journey",
+      "treatment": "LOCAL: full headless/browser synthetic integration with actual local services.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [
+        "tests/browser/test_sync_chain.mjs — local multi-edit queue ordering and persistence",
+        "tests/browser/test_conflict_preview.mjs — two validated encrypted branches and unchanged pending operation",
+        "tests/client/test_conflict_analysis.mjs — branch divergence and unresolved decision hazards",
+        "tests/client/test_conflict_analysis.mjs — conservative candidate-base content retention on both branches",
+        "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — candidate union of disjoint manual approvals requires review and does not mutate the pending branch",
+        "tests/engine/test_cli.py — independently branched approvals have one joined current head without changing their amounts",
+        "tests/client/test_conflict_analysis.mjs and tests/browser/test_conflict_preview.mjs — explicit review command binds candidate and produces one validated joined head in memory",
+        "tests/browser/test_conflict_commit.mjs — one reviewed joined case and new remote-CAS outbox survive reload while old pending operation disappears atomically",
+        "tests/client/test_sync_transport.mjs — tagged historical base lookup and fail-closed malformed response",
+        "tests/sync/test_client_integration.mjs — Chrome, FastAPI, PostgreSQL, two identities, response loss, conflict, deletion, reviewed joined-case publication, and second remote-head advance preservation"
+      ],
+      "evidence": [
+        "M8 local offline outbox succession and authenticated read-only branch preview pass Chrome; pure branch divergence and candidate-base content analysis flag collisions, concurrent decisions, and altered base history; a narrow disjoint manual-approval candidate passes native validation; M8-6c adds the causal join parser, M8-6d binds an explicit review command, M8-6e atomically replaces one pending local branch, M8-6f publishes the joined ciphertext through synthetic Chrome/API/PostgreSQL, and M8-6g preserves a queued second join when the remote head advances again; real JWT/WASM-backed and human-reviewed user journeys remain open"
+      ],
+      "status": "IN_PROGRESS"
+    },
+    {
+      "id": "S-70",
+      "sourceResponsibility": "Real-record pilot",
+      "treatment": "EXTERNAL: no invented consenting users, outcomes, or real-data operation.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-71",
+      "sourceResponsibility": "Pilot blockers",
+      "treatment": "MIXED: fix actual known engineering defects; pilot-derived closure cannot precede a pilot.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-72",
+      "sourceResponsibility": "Load/quotas/client performance",
+      "treatment": "LOCAL: measured synthetic load/failure behavior on declared hardware.",
+      "scope": "LOCAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-73",
+      "sourceResponsibility": "Independent security review",
+      "treatment": "EXTERNAL: additional AI review is not independent human review; keep the gate open.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-74",
+      "sourceResponsibility": "Operator/runbooks",
+      "treatment": "LOCAL/MIXED: write/test local procedures; real operator/on-call assignment remains external.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-75",
+      "sourceResponsibility": "Documentation",
+      "treatment": "LOCAL/MIXED: backend/contributor/local run docs; complete product UI docs wait for UI.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-76",
+      "sourceResponsibility": "Release rehearsal",
+      "treatment": "LOCAL/MIXED: local release-candidate drill, not approval of public service.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    },
+    {
+      "id": "S-77",
+      "sourceResponsibility": "Public signups",
+      "treatment": "EXCLUDED/EXTERNAL: explicitly forbidden during this assignment.",
+      "scope": "EXTERNAL",
+      "risk": "MEDIUM",
+      "implementationTasks": [],
+      "tests": [],
+      "evidence": [],
+      "status": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "S-78",
+      "sourceResponsibility": "Engineering/postlaunch report",
+      "treatment": "LOCAL/MIXED: local evidence package and tradeoffs; do not fabricate publication or postlaunch history.",
+      "scope": "MIXED",
+      "risk": "MEDIUM",
+      "implementationTasks": [
+        "M8",
+        "M9",
+        "M10"
+      ],
+      "tests": [],
+      "evidence": [],
+      "status": "NOT_STARTED"
+    }
+  ]
+}

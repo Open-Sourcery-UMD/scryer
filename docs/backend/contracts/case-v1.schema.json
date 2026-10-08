@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://scryer.invalid/contracts/case-v1.schema.json",
+  "title": "Scryer local approved case v1",
+  "description": "Parser additionally rejects duplicate JSON keys, out-of-range i64 values, invalid Gregorian dates, missing references, duplicate IDs, event cycles, invalid account/source/coverage bindings, and decoded proposal fields over 65536 UTF-8 bytes.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "caseId", "currency", "institutions", "accountRefs", "terms", "aidItems", "artifacts", "proposals", "events"],
+  "properties": {
+    "schemaVersion": {"const": "1"},
+    "caseId": {"$ref": "#/$defs/id"},
+    "currency": {"const": "USD"},
+    "institutions": {"type": "array", "items": {"$ref": "#/$defs/institution"}},
+    "accountRefs": {"type": "array", "items": {"$ref": "#/$defs/accountRef"}},
+    "terms": {"type": "array", "items": {"$ref": "#/$defs/term"}},
+    "aidItems": {"type": "array", "items": {"$ref": "#/$defs/aidItem"}},
+    "artifacts": {"type": "array", "items": {"$ref": "#/$defs/artifact"}},
+    "proposals": {"type": "array", "items": {"$ref": "#/$defs/proposal"}},
+    "events": {"type": "array", "maxItems": 200000, "items": {"$ref": "#/$defs/event"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$"},
+    "version": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"},
+    "location": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[!-~]+$"},
+    "utc": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "sourceDate": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}]},
+    "nonnegativeMinor": {"type": "string", "pattern": "^(0|[1-9][0-9]*)$", "maxLength": 19},
+    "recipientKind": {"enum": ["student", "parent", "third_party", "unknown"]},
+    "institution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["institutionId"],
+      "properties": {"institutionId": {"$ref": "#/$defs/id"}}
+    },
+    "accountRef": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["accountRefId", "kind", "institutionId", "holderKind"],
+          "properties": {"accountRefId": {"$ref": "#/$defs/id"}, "kind": {"const": "school"}, "institutionId": {"$ref": "#/$defs/id"}, "holderKind": {"type": "null"}}
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["accountRefId", "kind", "institutionId", "holderKind"],
+          "properties": {"accountRefId": {"$ref": "#/$defs/id"}, "kind": {"const": "bank"}, "institutionId": {"type": "null"}, "holderKind": {"$ref": "#/$defs/recipientKind"}}
+        }
+      ]
+    },
+    "term": {
+      "type": "object", "additionalProperties": false,
+      "required": ["termId", "institutionId", "schoolAccountRefId", "startDate", "endDateExclusive"],
+      "properties": {
+        "termId": {"$ref": "#/$defs/id"},
+        "institutionId": {"$ref": "#/$defs/id"},
+        "schoolAccountRefId": {"$ref": "#/$defs/id"},
+        "startDate": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "endDateExclusive": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      }
+    },
+    "aidItem": {
+      "type": "object", "additionalProperties": false,
+      "required": ["aidItemId", "institutionId", "termId", "recipientKind"],
+      "properties": {
+        "aidItemId": {"$ref": "#/$defs/id"},
+        "institutionId": {"$ref": "#/$defs/id"},
+        "termId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
+        "recipientKind": {"$ref": "#/$defs/recipientKind"}
+      }
+    },
+    "source": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "artifactId", "location"],
+          "properties": {"kind": {"const": "artifact"}, "artifactId": {"$ref": "#/$defs/id"}, "location": {"$ref": "#/$defs/location"}}
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "entryId"],
+          "properties": {"kind": {"const": "manual"}, "entryId": {"$ref": "#/$defs/id"}}
+        }
+      ]
+    },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["artifactId", "sha256", "kind", "observedAt", "accountRefId"],
+      "properties": {
+        "artifactId": {"$ref": "#/$defs/id"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "kind": {"$ref": "#/$defs/id"},
+        "observedAt": {"$ref": "#/$defs/utc"},
+        "accountRefId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]}
+      }
+    },
+    "proposal": {
+      "type": "object", "additionalProperties": false,
+      "required": ["proposalId", "artifactId", "sourceLocation", "rawValue", "parserVersion", "mappingVersion", "proposedAmountMinor"],
+      "properties": {
+        "proposalId": {"$ref": "#/$defs/id"},
+        "artifactId": {"$ref": "#/$defs/id"},
+        "sourceLocation": {"$ref": "#/$defs/location"},
+        "rawValue": {"type": "string", "maxLength": 65536},
+        "parserVersion": {"$ref": "#/$defs/version"},
+        "mappingVersion": {"$ref": "#/$defs/version"},
+        "proposedAmountMinor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/nonnegativeMinor"}]}
+      }
+    },
+    "fact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["factId", "termId", "accountRefId", "aidItemId", "currency", "role", "recipientKind", "amountMinor", "proposalId", "effectiveDate", "source", "reviewId"],
+      "properties": {
+        "factId": {"$ref": "#/$defs/id"},
+        "termId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
+        "accountRefId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
+        "aidItemId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
+        "currency": {"const": "USD"},
+        "role": {"enum": ["school_credit", "school_charge", "refund_issued", "bank_credit_observed", "aid_offer", "aid_accepted", "aid_pending", "aid_gross_disbursement", "aid_fee_withheld", "balance_snapshot", "work_study_offer"]},
+        "recipientKind": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/recipientKind"}]},
+        "amountMinor": {"$ref": "#/$defs/nonnegativeMinor"},
+        "proposalId": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/id"}]},
+        "effectiveDate": {"$ref": "#/$defs/sourceDate"},
+        "source": {"$ref": "#/$defs/source"},
+        "reviewId": {"$ref": "#/$defs/id"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"role": {"const": "refund_issued"}}},
+          "then": {"properties": {"recipientKind": {"$ref": "#/$defs/recipientKind"}}},
+          "else": {"properties": {"recipientKind": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"role": {"enum": ["aid_gross_disbursement", "aid_fee_withheld"]}}},
+          "then": {"properties": {
+            "accountRefId": {"type": "null"},
+            "aidItemId": {"$ref": "#/$defs/id"},
+            "source": {
+              "type": "object", "additionalProperties": false,
+              "required": ["kind", "artifactId", "location"],
+              "properties": {"kind": {"const": "artifact"}, "artifactId": {"$ref": "#/$defs/id"}, "location": {"$ref": "#/$defs/location"}}
+            }
+          }}
+        }
+      ]
+    },
+    "correction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["factId", "replacementAmountMinor", "cancelled", "source", "reviewId"],
+      "properties": {
+        "factId": {"$ref": "#/$defs/id"},
+        "replacementAmountMinor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/nonnegativeMinor"}]},
+        "cancelled": {"type": "boolean"},
+        "source": {"$ref": "#/$defs/source"},
+        "reviewId": {"$ref": "#/$defs/id"}
+      },
+      "allOf": [{
+        "if": {"properties": {"cancelled": {"const": true}}},
+        "then": {"properties": {"replacementAmountMinor": {"type": "null"}}},
+        "else": {"properties": {"replacementAmountMinor": {"$ref": "#/$defs/nonnegativeMinor"}}}
+      }]
+    },
+    "coverage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["coverageId", "accountRefId", "recordType", "startDate", "endDateExclusive", "basis", "source", "reviewId"],
+      "properties": {
+        "coverageId": {"$ref": "#/$defs/id"},
+        "accountRefId": {"$ref": "#/$defs/id"},
+        "recordType": {"const": "bank_transactions"},
+        "startDate": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "endDateExclusive": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "basis": {"enum": ["source_asserted", "user_asserted"]},
+        "source": {"$ref": "#/$defs/source"},
+        "reviewId": {"$ref": "#/$defs/id"}
+      }
+    },
+    "coverageRetraction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["coverageId", "reason", "reviewId"],
+      "properties": {
+        "coverageId": {"$ref": "#/$defs/id"},
+        "reason": {"enum": ["incorrect_period", "wrong_account", "source_invalid", "other"]},
+        "reviewId": {"$ref": "#/$defs/id"}
+      }
+    },
+    "matchDecision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["refundFactId", "bankFactId", "allocatedMinor", "action", "recipientEvidence", "reviewId"],
+      "properties": {
+        "refundFactId": {"$ref": "#/$defs/id"},
+        "bankFactId": {"$ref": "#/$defs/id"},
+        "allocatedMinor": {"$ref": "#/$defs/nonnegativeMinor"},
+        "action": {"enum": ["confirm", "reject"]},
+        "recipientEvidence": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/source"}]},
+        "reviewId": {"$ref": "#/$defs/id"}
+      },
+      "allOf": [{
+        "if": {"properties": {"action": {"const": "reject"}}},
+        "then": {"properties": {"allocatedMinor": {"const": "0"}}},
+        "else": {"properties": {"allocatedMinor": {"pattern": "^[1-9][0-9]*$"}}}
+      }]
+    },
+    "branchResolution": {
+      "type": "object", "additionalProperties": false,
+      "required": ["reviewId"],
+      "properties": {"reviewId": {"$ref": "#/$defs/id"}}
+    },
+    "event": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "fact"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "approve_fact"},
+            "fact": {"$ref": "#/$defs/fact"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "correction"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "correct_fact"},
+            "correction": {"$ref": "#/$defs/correction"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "coverage"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "assert_coverage"},
+            "coverage": {"$ref": "#/$defs/coverage"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "retraction"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "retract_coverage"},
+            "retraction": {"$ref": "#/$defs/coverageRetraction"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "decision"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "decide_match"},
+            "decision": {"$ref": "#/$defs/matchDecision"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["eventId", "parents", "recordedAt", "kind", "resolution"],
+          "properties": {
+            "eventId": {"$ref": "#/$defs/id"},
+            "parents": {"type": "array", "minItems": 2, "maxItems": 2,
+              "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+            "recordedAt": {"$ref": "#/$defs/utc"},
+            "kind": {"const": "resolve_branches"},
+            "resolution": {"$ref": "#/$defs/branchResolution"}
+          }
+        }
+      ]
+    }
+  }
+}
