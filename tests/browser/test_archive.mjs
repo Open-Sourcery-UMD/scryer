@@ -218,6 +218,71 @@ test('real browser portable encrypted archive previews and restores atomically',
     await context.close();
   });
 
+  await t.test('a later edit does not hide an older retired-device pending operation', async () => {
+    const context = await browser.newContext();
+    const fresh = await context.newPage();
+    await fresh.goto(page.url());
+    const result = await fresh.evaluate(async ({ bytes, secret, sourcePending }) => {
+      const { unlockRecovery } = await import('/crypto/keys.js');
+      const { openLocalRepository } = await import('/storage/repository.js');
+      const { exportEncrypted, restoreEncrypted } = await import('/export/archive.js');
+      const parsed = JSON.parse(new TextDecoder().decode(Uint8Array.from(bytes)));
+      const archived = parsed.cases[0];
+      const session = await unlockRecovery(parsed.recoveryEnvelope, secret, parsed.accountId);
+      const dbName = `legacy-later-edit-${parsed.exportId}`;
+      const repo = await openLocalRepository({ dbName, session,
+        recoveryEnvelope: parsed.recoveryEnvelope, recoverySecret: secret,
+        validateCase: async () => {} });
+      await new Promise((resolve, reject) => {
+        const request = indexedDB.open(dbName);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const db = request.result;
+          const tx = db.transaction(['cases', 'anchors', 'outbox'], 'readwrite');
+          tx.objectStore('cases').put(archived);
+          tx.objectStore('anchors').put({ accountId: archived.accountId,
+            caseId: archived.caseId, revisionId: archived.revisionId,
+            digest: archived.digest });
+          tx.objectStore('outbox').put({ accountId: archived.accountId,
+            ...sourcePending[0] });
+          tx.oncomplete = () => { db.close(); resolve(); };
+          tx.onerror = () => { db.close(); reject(tx.error); };
+          tx.onabort = () => { db.close(); reject(tx.error); };
+        };
+      });
+      const current = await repo.loadCase(archived.caseId);
+      current.case.events.push({ eventId: 'event-archive-later',
+        parents: ['event-archive'], recordedAt: '2026-10-04T00:00:01Z',
+        kind: 'manual', fact: { factId: 'fact-archive-later',
+          reviewId: 'review-archive-later', proposalId: null,
+          rawValue: 'SYNTHETIC_LATER_EDIT' } });
+      await repo.commitReviewed({ case: current.case, ledger: current.ledger,
+        revisionId: 'rev-archive-later', operationId: 'op-archive-later',
+        expectedLocalRevision: archived.revisionId, serverRevision: null });
+      const laterArchive = await exportEncrypted(repo, { recoverySecret: secret });
+      const before = await repo.prepareSync(archived.caseId);
+      const restored = await restoreEncrypted(repo, laterArchive, secret,
+        { [archived.caseId]: 'rev-archive-later' });
+      const after = await repo.prepareSync(archived.caseId);
+      const loaded = await repo.loadCase(archived.caseId);
+      repo.close();
+      return { oldDeviceId: archived.package.deviceId, deviceId: session.deviceId,
+        beforeDeviceIds: before.map((item) => JSON.parse(item.steps.at(-1).body).deviceId),
+        restored, afterDeviceIds: after.map((item) => JSON.parse(item.steps.at(-1).body).deviceId),
+        afterOperationIds: after.map((item) => item.operationId),
+        revisionId: loaded.revisionId, eventCount: loaded.case.events.length };
+    }, { bytes: archiveBytes, secret: recoverySecret, sourcePending });
+    assert.notEqual(result.deviceId, result.oldDeviceId);
+    assert.deepEqual(result.beforeDeviceIds, [result.oldDeviceId, result.deviceId]);
+    assert.deepEqual(result.restored, { restored: 1, unchanged: 0 });
+    assert.deepEqual(result.afterDeviceIds, [result.deviceId]);
+    assert.equal(result.afterOperationIds.length, 1);
+    assert.notEqual(result.afterOperationIds[0], 'op-archive-one');
+    assert.equal(result.revisionId, 'rev-archive-later');
+    assert.equal(result.eventCount, 2);
+    await context.close();
+  });
+
   await t.test('encrypted originals can be extracted only after recovery verification', async () => {
     const result = await page.evaluate(async ({ dbName, wrapper, secret, bytes }) => {
       const { unlockRecovery } = await import('/crypto/keys.js');

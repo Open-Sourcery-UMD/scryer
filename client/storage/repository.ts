@@ -147,6 +147,18 @@ async function prepareSteps(pkg: CasePackageV1, operationId: string, packageDige
   return steps;
 }
 
+function pendingNamesDevice(pending: OutboxRecord, deviceId: string): boolean {
+  if (!Array.isArray(pending.steps)) return false;
+  const manifests = pending.steps.filter((step) => step?.kind === 'manifest');
+  const manifest = manifests[0];
+  if (manifests.length !== 1 || !manifest || typeof manifest.body !== 'string') return false;
+  try {
+    const body = JSON.parse(manifest.body) as Record<string, unknown>;
+    return body.deviceId === deviceId && body.accountId === pending.accountId &&
+      body.caseId === pending.caseId && body.revisionId === pending.revisionId;
+  } catch { return false; }
+}
+
 export class LocalRepository {
   #db: IDBDatabase | null;
   readonly session: AccountSession;
@@ -549,16 +561,20 @@ export class LocalRepository {
     const expectedRootProof = await this.rootProof();
     const initial = await transactionResult<{
       account: AccountRecord | undefined; cases: CaseRecord[]; anchors: AnchorRecord[];
-    }>(db, ['accounts', 'cases', 'anchors'], 'readonly', (tx, finish) => {
+      outbox: OutboxRecord[];
+    }>(db, ['accounts', 'cases', 'anchors', 'outbox'], 'readonly', (tx, finish) => {
       let account: AccountRecord | undefined;
       let cases: CaseRecord[] = [];
+      let anchors: AnchorRecord[] = [];
       const accountRequest = tx.objectStore('accounts').get(accountId);
       const caseRequest = tx.objectStore('cases').getAll();
       const anchorRequest = tx.objectStore('anchors').getAll();
+      const outboxRequest = tx.objectStore('outbox').getAll();
       accountRequest.onsuccess = () => { account = accountRequest.result as AccountRecord | undefined; };
       caseRequest.onsuccess = () => { cases = caseRequest.result as CaseRecord[]; };
-      anchorRequest.onsuccess = () => finish({ account, cases,
-        anchors: anchorRequest.result as AnchorRecord[] });
+      anchorRequest.onsuccess = () => { anchors = anchorRequest.result as AnchorRecord[]; };
+      outboxRequest.onsuccess = () => finish({ account, cases, anchors,
+        outbox: outboxRequest.result as OutboxRecord[] });
     });
     const legacyWithoutDevice = db.version === 1 && initial.account?.deviceId === undefined;
     if (!initial.account || initial.account.rootProof !== expectedRootProof ||
@@ -569,6 +585,13 @@ export class LocalRepository {
       .map((item) => [item.caseId, item]));
     const initialAnchorByCase = new Map(initial.anchors.filter((item) => item.accountId === accountId)
       .map((item) => [item.caseId, item]));
+    const initialOutboxByCase = new Map<string, OutboxRecord[]>();
+    for (const pending of initial.outbox) {
+      if (pending.accountId !== accountId || !caseIds.has(pending.caseId)) continue;
+      const entries = initialOutboxByCase.get(pending.caseId) ?? [];
+      entries.push(pending);
+      initialOutboxByCase.set(pending.caseId, entries);
+    }
     const noOpCases = new Set<string>();
     for (const record of inputRecords) {
       const prior = initialByCase.get(record.caseId);
@@ -583,7 +606,9 @@ export class LocalRepository {
       if (prior?.revisionId === record.revisionId && prior.keyGeneration === record.keyGeneration &&
           prior.digest === record.digest &&
           prior.package.deviceId === reservedDeviceId &&
-          checkedStringify(prior.package) === checkedStringify(record.package)) {
+          checkedStringify(prior.package) === checkedStringify(record.package) &&
+          (initialOutboxByCase.get(record.caseId) ?? []).every((item) =>
+            pendingNamesDevice(item, reservedDeviceId))) {
         noOpCases.add(record.caseId);
       }
     }
@@ -651,16 +676,22 @@ export class LocalRepository {
             fail(new StorageError('STALE_LOCAL_REVISION')); return;
           }
           let packageChanged = false;
+          let outboxChanged = false;
           if (prior && initialPrior) {
             try { packageChanged = checkedStringify(prior.package) !==
               checkedStringify(initialPrior.package); }
             catch { fail(new StorageError('CORRUPT_RECORD')); return; }
           }
+          try {
+            outboxChanged = checkedStringify(currentOutbox.filter((item) =>
+              item.accountId === accountId && item.caseId === record.caseId)) !==
+              checkedStringify(initialOutboxByCase.get(record.caseId) ?? []);
+          } catch { fail(new StorageError('CORRUPT_RECORD')); return; }
           if ((prior?.localSequence ?? null) !== (initialPrior?.localSequence ?? null) ||
               (prior?.digest ?? null) !== (initialPrior?.digest ?? null) ||
               (prior?.keyGeneration ?? null) !== (initialPrior?.keyGeneration ?? null) ||
               (prior?.package.deviceId ?? null) !== (initialPrior?.package.deviceId ?? null) ||
-              packageChanged) {
+              packageChanged || outboxChanged) {
             fail(new StorageError('STALE_LOCAL_REVISION')); return;
           }
           if ((prior && (!anchor || anchor.digest !== prior.digest ||
