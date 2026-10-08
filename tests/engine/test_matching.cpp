@@ -266,4 +266,89 @@ int main() {
     );
     require(other_account_result.status == "MATCHED_ON_OTHER_ACCOUNT_BY_REVIEW");
     require(other_account_result.confirmed_allocations.empty());
+
+    auto too_late_raw = fixture("matching-case");
+    too_late_raw["events"][5]["fact"]["effectiveDate"] = "9999-12-31";
+    const auto too_late = scryer::parse_case(too_late_raw);
+    expect_error("UNSUPPORTED_DATE_RANGE", [&] {
+        (void)scryer::suggest_refund_deposits(too_late, coverage_head, "issued-refund", "bank-a");
+    });
+
+    auto undated_confirmed_raw = fixture("matching-case");
+    undated_confirmed_raw["events"][5]["fact"]["effectiveDate"] = nullptr;
+    const auto undated_confirmed = scryer::parse_case(undated_confirmed_raw);
+    const auto date_missing = scryer::suggest_refund_deposits(
+        undated_confirmed, confirm_head, "issued-refund", "bank-a");
+    require(date_missing.status == "MATCHED_BY_REVIEW");
+    require(std::find(date_missing.reason_codes.begin(), date_missing.reason_codes.end(),
+                      "CONFIRMED_WITHOUT_REFUND_DATE") != date_missing.reason_codes.end());
+
+    auto out_of_window_raw = fixture("matching-case");
+    out_of_window_raw["events"][6]["fact"]["effectiveDate"] = "2026-10-08";
+    const auto out_of_window = scryer::parse_case(out_of_window_raw);
+    const auto outside = scryer::suggest_refund_deposits(
+        out_of_window, confirm_head, "issued-refund", "bank-a");
+    require(outside.status == "MATCHED_BY_REVIEW");
+    require(std::find(outside.reason_codes.begin(), outside.reason_codes.end(),
+                      "CONFIRMED_OUTSIDE_SEARCH_WINDOW") != outside.reason_codes.end());
+    auto undated_bank_raw = fixture("matching-case");
+    undated_bank_raw["events"][6]["fact"]["effectiveDate"] = nullptr;
+    const auto undated_bank = scryer::parse_case(undated_bank_raw);
+    const auto bank_without_date = scryer::suggest_refund_deposits(
+        undated_bank, confirm_head, "issued-refund", "bank-a");
+    require(std::find(bank_without_date.reason_codes.begin(), bank_without_date.reason_codes.end(),
+                      "CONFIRMED_OUTSIDE_SEARCH_WINDOW") != bank_without_date.reason_codes.end());
+
+    auto partial_recipient_raw = fixture("recipient-case");
+    partial_recipient_raw["events"][8]["decision"]["allocatedMinor"] = "50000";
+    const auto partial_recipient = scryer::parse_case(partial_recipient_raw);
+    const auto recipient_partial = scryer::suggest_refund_deposits(
+        partial_recipient, confirm_head, "issued-refund", "bank-a");
+    require(recipient_partial.status == "PARTIALLY_MATCHED_BY_REVIEW");
+    require(recipient_partial.remaining_minor == 40000);
+
+    auto refund_over_raw = fixture("split-case");
+    refund_over_raw["events"][5]["fact"]["amountMinor"] = "80000";
+    const auto refund_over = scryer::parse_case(refund_over_raw);
+    const auto overallocated_refund = scryer::suggest_refund_deposits(
+        refund_over, full_head, "issued-refund", "bank-a");
+    require(overallocated_refund.status == "CONTRADICTORY_EVIDENCE");
+    require(std::find(overallocated_refund.reason_codes.begin(), overallocated_refund.reason_codes.end(),
+                      "REFUND_OVERALLOCATED") != overallocated_refund.reason_codes.end());
+
+    auto user_coverage_raw = fixture("matching-case");
+    user_coverage_raw["events"][7]["coverage"]["basis"] = "user_asserted";
+    user_coverage_raw["events"][7]["coverage"]["source"] = {
+        {"kind", "manual"}, {"entryId", "coverage-entry"}
+    };
+    const auto user_coverage = scryer::parse_case(user_coverage_raw);
+    const auto asserted = scryer::suggest_refund_deposits(
+        user_coverage, coverage_head, "issued-refund", "bank-a");
+    require(std::find(asserted.reason_codes.begin(), asserted.reason_codes.end(),
+                      "USER_ASSERTED_COVERAGE") != asserted.reason_codes.end());
+
+    auto competing_bank_raw = fixture("matching-case");
+    for (const auto& suffix : {"a", "b"}) {
+        const std::string ending = suffix;
+        competing_bank_raw["events"].push_back({
+            {"eventId", "event-bank-correction-" + ending},
+            {"parents", scryer::Json::array({"event-bank-credit", "event-coverage"})},
+            {"recordedAt", "2026-10-10T10:00:00Z"}, {"kind", "correct_fact"},
+            {"correction", {{"factId", "bank-credit"},
+                            {"replacementAmountMinor", ending == "a" ? "80000" : "70000"},
+                            {"cancelled", false},
+                            {"source", {{"kind", "artifact"}, {"artifactId", "bank-a"},
+                                        {"location", "row:1-revised-" + ending}}},
+                            {"reviewId", "review-bank-correction-" + ending}}}
+        });
+    }
+    const auto competing_bank = scryer::parse_case(competing_bank_raw);
+    const std::vector<std::string> competing_bank_heads{
+        "event-bank-correction-a", "event-bank-correction-b"
+    };
+    const auto bank_conflict = scryer::suggest_refund_deposits(
+        competing_bank, competing_bank_heads, "issued-refund", "bank-a");
+    require(bank_conflict.status == "CONTRADICTORY_EVIDENCE");
+    require(std::find(bank_conflict.reason_codes.begin(), bank_conflict.reason_codes.end(),
+                      "UNRESOLVED_CORRECTION_CONFLICT") != bank_conflict.reason_codes.end());
 }

@@ -526,9 +526,15 @@ export class LocalRepository {
     if (!Array.isArray(inputRecords) || inputRecords.length < 1 || inputRecords.length > 64 ||
         !expectedLocalRevisions || typeof expectedLocalRevisions !== 'object' ||
         Array.isArray(expectedLocalRevisions)) throw new StorageError('INVALID_RESTORE');
+    if (Object.keys(expectedLocalRevisions).length !== inputRecords.length ||
+        Object.values(expectedLocalRevisions).some((value) => value !== null && !validId(value))) {
+      throw new StorageError('INVALID_RESTORE');
+    }
     const accountId = this.session.accountId;
     const caseIds = new Set<string>();
-    const prepared: Array<{ record: CaseRecord; operationId: string; steps: SyncStep[] }> = [];
+    const reservedDeviceId = this.session.deviceId;
+    const prepared: Array<{ record: CaseRecord; archivedDigest: string;
+      operationId: string; steps: SyncStep[] }> = [];
     for (const record of inputRecords) {
       if (!record || !validId(record.caseId) || !validId(record.revisionId) ||
           record.accountId !== accountId || caseIds.has(record.caseId) ||
@@ -541,23 +547,31 @@ export class LocalRepository {
         throw new StorageError('INVALID_RESTORE');
       }
       caseIds.add(record.caseId);
+      let plaintext: string;
       try {
-        const plaintext = await openCase(this.session, record.package, record.caseId, record.revisionId);
+        plaintext = await openCase(this.session, record.package, record.caseId, record.revisionId);
         await validateStored(parseStored(plaintext), record.caseId, this.#validateCase);
       } catch { throw new StorageError('CORRUPT_ARCHIVE'); }
+      const bytes = utf8Bytes(plaintext);
+      const count = Math.ceil(bytes.length / MAX_CHUNK_BYTES);
+      bytes.fill(0);
+      if (count < 1 || count > MAX_CHUNKS) throw new StorageError('CASE_TOO_LARGE');
+      await this.reserveEncryptionsForDevice(record.caseId, record.keyGeneration,
+        reservedDeviceId, count);
+      const pkg = await sealCase(this.session, record.caseId, record.revisionId,
+        plaintext, record.keyGeneration);
+      if (pkg.deviceId !== reservedDeviceId) throw new StorageError('STALE_ACCOUNT_ROOT');
+      const digest = await digestText(checkedStringify(pkg));
       const operationId = `restore_${base64UrlEncode(randomBytes(16))}`;
       if (prepared.some((item) => item.operationId === operationId)) {
         throw new StorageError('OPERATION_CONFLICT');
       }
-      const steps = await prepareSteps(record.package, operationId, record.digest);
-      prepared.push({ record: structuredClone(record), operationId, steps });
-    }
-    if (Object.keys(expectedLocalRevisions).length !== caseIds.size ||
-        Object.values(expectedLocalRevisions).some((value) => value !== null && !validId(value))) {
-      throw new StorageError('INVALID_RESTORE');
+      const steps = await prepareSteps(pkg, operationId, digest);
+      prepared.push({ record: { ...record, package: pkg, digest },
+        archivedDigest: record.digest, operationId, steps });
     }
     const expectedRootProof = await this.rootProof();
-    const expectedDeviceId = this.session.deviceId;
+    const expectedDeviceId = reservedDeviceId;
     return transactionResult(db, ['accounts', 'cases', 'anchors', 'outbox'], 'readwrite', (tx, finish, fail) => {
       const accounts = tx.objectStore('accounts');
       const cases = tx.objectStore('cases');
@@ -598,9 +612,9 @@ export class LocalRepository {
         }
         let restored = 0;
         let unchanged = 0;
-        for (const { record, operationId, steps } of prepared) {
+        for (const { record, archivedDigest, operationId, steps } of prepared) {
           const prior = byCase.get(record.caseId);
-          if (prior?.revisionId === record.revisionId && prior.digest === record.digest) {
+          if (prior?.revisionId === record.revisionId && prior.digest === archivedDigest) {
             unchanged++;
             continue;
           }

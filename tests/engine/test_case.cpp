@@ -24,7 +24,10 @@ void expect_error(std::string_view code, Callable&& action) {
     try {
         action();
     } catch (const scryer::ScryerError& error) {
-        require(error.code() == code);
+        if (error.code() != code) {
+            throw std::runtime_error("expected " + std::string(code) + ", got " +
+                                     std::string(error.code()));
+        }
         return;
     }
     throw std::runtime_error("expected typed case error");
@@ -164,6 +167,209 @@ int main() {
     });
     reject_golden("INVALID_CORRECTION", [](auto& value) {
         value["events"][3]["correction"]["cancelled"] = true;
+    });
+    // Malformed records must fail at the boundary before any projection can use them.
+    reject_golden("INVALID_SCHEMA", [](auto& value) { value["events"] = nullptr; });
+    reject_golden("INVALID_SCHEMA", [](auto& value) { value["institutions"] = {}; });
+    reject_golden("UNSUPPORTED_CURRENCY", [](auto& value) { value["currency"] = 1; });
+    reject_golden("INVALID_ID", [](auto& value) { value["caseId"] = ""; });
+    reject_golden("INVALID_ID", [](auto& value) { value["caseId"] = std::string(65, 'a'); });
+    reject_golden("INVALID_ID", [](auto& value) { value["caseId"] = "_invalid"; });
+    reject_golden("INVALID_ID", [](auto& value) { value["caseId"] = 5; });
+    reject_golden("DUPLICATE_INSTITUTION_ID", [](auto& value) {
+        value["institutions"].push_back(value["institutions"][0]);
+    });
+    reject_golden("ACCOUNT_KIND_MISMATCH", [](auto& value) {
+        value["accountRefs"][0]["kind"] = "wallet";
+    });
+    reject_golden("ACCOUNT_KIND_MISMATCH", [](auto& value) {
+        value["accountRefs"][1]["institutionId"] = "institution-a";
+    });
+    reject_golden("INVALID_HOLDER_KIND", [](auto& value) {
+        value["accountRefs"][1]["holderKind"] = "alien";
+    });
+    reject_golden("MISSING_ACCOUNT", [](auto& value) {
+        value["terms"][0]["schoolAccountRefId"] = "missing";
+    });
+    reject_golden("MISSING_INSTITUTION", [](auto& value) {
+        value["terms"][0]["institutionId"] = "missing";
+    });
+    reject_golden("DUPLICATE_TERM_ID", [](auto& value) {
+        value["terms"].push_back(value["terms"][0]);
+    });
+    reject_golden("INVALID_DATE", [](auto& value) { value["terms"][0]["startDate"] = "2026-00-01"; });
+    reject_golden("INVALID_DATE", [](auto& value) { value["terms"][0]["startDate"] = "2026-13-01"; });
+    reject_golden("INVALID_DATE", [](auto& value) { value["terms"][0]["startDate"] = "2026-01-00"; });
+    reject_golden("INVALID_DATE", [](auto& value) { value["terms"][0]["startDate"] = "0000-01-01"; });
+    reject_golden("INVALID_DATE", [](auto& value) { value["terms"][0]["startDate"] = "1900-02-29"; });
+    reject_golden("INVALID_DATE", [](auto& value) { value["terms"][0]["startDate"] = "2026/09/01"; });
+    reject_golden("INVALID_DATE", [](auto& value) { value["terms"][0]["startDate"] = "2026-09-0x"; });
+    reject_golden("INVALID_ARTIFACT_HASH", [](auto& value) {
+        value["artifacts"][0]["sha256"] = std::string(63, 'a');
+    });
+    reject_golden("DUPLICATE_ARTIFACT_ID", [](auto& value) {
+        value["artifacts"].push_back(value["artifacts"][0]);
+    });
+    reject_golden("INVALID_INSTANT", [](auto& value) {
+        value["artifacts"][0]["observedAt"] = "2026-10-04T25:00:00Z";
+    });
+    reject_golden("INVALID_INSTANT", [](auto& value) {
+        value["artifacts"][0]["observedAt"] = "2026-10-04T00:60:00Z";
+    });
+    reject_golden("INVALID_INSTANT", [](auto& value) {
+        value["artifacts"][0]["observedAt"] = "2026-10-04T00:00:60Z";
+    });
+    reject_golden("INVALID_INSTANT", [](auto& value) {
+        value["artifacts"][0]["observedAt"] = "2026-10-04 00:00:00Z";
+    });
+    reject_golden("INVALID_INSTANT", [](auto& value) {
+        value["artifacts"][0]["observedAt"] = "2026-02-30T00:00:00Z";
+    });
+    reject_golden("MISSING_ARTIFACT", [](auto& value) {
+        value["proposals"][0]["artifactId"] = "missing";
+    });
+    reject_golden("DUPLICATE_PROPOSAL_ID", [](auto& value) {
+        value["proposals"].push_back(value["proposals"][0]);
+    });
+    reject_golden("INVALID_SOURCE_LOCATION", [](auto& value) {
+        value["proposals"][0]["sourceLocation"] = "";
+    });
+    reject_golden("INVALID_SOURCE_LOCATION", [](auto& value) {
+        value["proposals"][0]["sourceLocation"] = "bad location";
+    });
+    reject_golden("INVALID_SOURCE_LOCATION", [](auto& value) {
+        value["proposals"][0]["sourceLocation"] = std::string(257, 'x');
+    });
+    reject_golden("INVALID_VERSION", [](auto& value) {
+        value["proposals"][0]["parserVersion"] = "bad/version";
+    });
+    reject_golden("INVALID_VERSION", [](auto& value) {
+        value["proposals"][0]["mappingVersion"] = "";
+    });
+    reject_golden("INVALID_SCHEMA", [](auto& value) { value["events"][0] = 1; });
+    reject_golden("INVALID_SCHEMA", [](auto& value) { value["events"][0].erase("kind"); });
+    reject_golden("INVALID_SOURCE", [](auto& value) {
+        value["events"][0]["fact"]["source"] = scryer::Json::object();
+    });
+    reject_golden("INVALID_SOURCE", [](auto& value) {
+        value["events"][0]["fact"]["source"]["kind"] = "invented";
+    });
+    reject_golden("INVALID_MONEY", [](auto& value) {
+        value["events"][0]["fact"]["amountMinor"] = "-1";
+    });
+    reject_golden("INVALID_RECIPIENT_KIND", [](auto& value) {
+        value["events"][5]["fact"]["recipientKind"] = nullptr;
+    });
+    reject_golden("ACCOUNT_KIND_MISMATCH", [](auto& value) {
+        value["events"][6]["fact"]["accountRefId"] = "school-a";
+    });
+    reject_golden("ACCOUNT_KIND_MISMATCH", [](auto& value) {
+        value["events"][0]["fact"]["accountRefId"] = "bank-a";
+    });
+    reject_golden("SOURCE_PROPOSAL_MISMATCH", [](auto& value) {
+        value["events"][2]["fact"]["proposalId"] = "proposal-unreviewed";
+        value["events"][2]["fact"]["source"]["location"] = "row:other";
+    });
+    const auto reject_matching = [&](std::string_view code, auto&& change) {
+        auto candidate = fixture("matching-case");
+        change(candidate);
+        expect_error(code, [&] { (void)parse_case(candidate); });
+    };
+    reject_matching("MISSING_ACCOUNT", [](auto& value) {
+        value["events"][7]["coverage"]["accountRefId"] = "missing";
+    });
+    reject_matching("ACCOUNT_KIND_MISMATCH", [](auto& value) {
+        value["events"][7]["coverage"]["accountRefId"] = "school-a";
+    });
+    reject_matching("UNSUPPORTED_COVERAGE_TYPE", [](auto& value) {
+        value["events"][7]["coverage"]["recordType"] = "all_records";
+    });
+    reject_matching("INVALID_COVERAGE_INTERVAL", [](auto& value) {
+        value["events"][7]["coverage"]["endDateExclusive"] = "2026-09-06";
+    });
+    reject_matching("INVALID_COVERAGE_BASIS", [](auto& value) {
+        value["events"][7]["coverage"]["basis"] = "inferred";
+    });
+    reject_matching("INVALID_COVERAGE_SOURCE", [](auto& value) {
+        value["events"][7]["coverage"]["source"] = {
+            {"kind", "manual"}, {"entryId", "unsupported-source"}
+        };
+    });
+    reject_matching("INVALID_COVERAGE_SOURCE", [](auto& value) {
+        value["events"][7]["coverage"]["source"]["artifactId"] = "refund-a";
+    });
+    reject_matching("SOURCE_ACCOUNT_MISMATCH", [](auto& value) {
+        for (auto& artifact : value["artifacts"]) {
+            if (artifact["artifactId"] == "bank-period") artifact["accountRefId"] = "school-a";
+        }
+    });
+    reject_matching("INVALID_COVERAGE_CHRONOLOGY", [](auto& value) {
+        value["events"][7]["coverage"]["endDateExclusive"] = "2026-10-10";
+    });
+    reject_matching("INVALID_COVERAGE_SOURCE", [](auto& value) {
+        value["events"][7]["coverage"]["basis"] = "user_asserted";
+    });
+    reject_matching("DUPLICATE_COVERAGE_ID", [](auto& value) {
+        auto second = value["events"][7];
+        second["eventId"] = "event-coverage-repeat";
+        second["coverage"]["reviewId"] = "review-coverage-repeat";
+        value["events"].push_back(second);
+    });
+    reject_matching("DUPLICATE_REVIEW_ID", [](auto& value) {
+        value["events"][7]["coverage"]["reviewId"] = "review-confirm";
+    });
+    reject_matching("MISSING_FACT", [](auto& value) {
+        value["events"][8]["decision"]["refundFactId"] = "missing";
+    });
+    reject_matching("MISSING_FACT", [](auto& value) {
+        value["events"][8]["decision"]["bankFactId"] = "missing";
+    });
+    reject_matching("MATCH_ROLE_MISMATCH", [](auto& value) {
+        value["events"][8]["decision"]["bankFactId"] = "grant";
+    });
+    reject_matching("INVALID_MATCH_ACTION", [](auto& value) {
+        value["events"][8]["decision"]["action"] = "maybe";
+    });
+    reject_matching("INVALID_MATCH_ALLOCATION", [](auto& value) {
+        value["events"][8]["decision"]["allocatedMinor"] = "0";
+    });
+    reject_matching("INVALID_MATCH_ALLOCATION", [](auto& value) {
+        value["events"][8]["decision"]["action"] = "reject";
+    });
+    reject_matching("INVALID_RECIPIENT_EVIDENCE", [](auto& value) {
+        value["events"][8]["decision"]["action"] = "reject";
+        value["events"][8]["decision"]["allocatedMinor"] = "0";
+        value["events"][8]["decision"]["recipientEvidence"] = {
+            {"kind", "manual"}, {"entryId", "recipient-note"}
+        };
+    });
+    reject_matching("INVALID_MATCH_CAUSALITY", [](auto& value) {
+        value["events"][8]["parents"] = scryer::Json::array({"event-refund-issued", "event-coverage"});
+    });
+    reject_matching("MATCH_RECIPIENT_EVIDENCE_REQUIRED", [](auto& value) {
+        value["accountRefs"][1]["holderKind"] = "parent";
+    });
+    reject_matching("INVALID_RECIPIENT_EVIDENCE", [](auto& value) {
+        value["events"][8]["decision"]["recipientEvidence"] = {
+            {"kind", "artifact"}, {"artifactId", "bank-period"}, {"location", "row:1"}
+        };
+    });
+    const auto reject_gross = [&](std::string_view code, auto&& change) {
+        auto candidate = fixture("gross-net-case");
+        change(candidate);
+        expect_error(code, [&] { (void)parse_case(candidate); });
+    };
+    reject_gross("INVALID_AID_DISBURSEMENT_SOURCE", [](auto& value) {
+        value["events"][1]["fact"]["accountRefId"] = "school-a";
+    });
+    reject_gross("INVALID_AID_DISBURSEMENT_SOURCE", [](auto& value) {
+        value["events"][1]["fact"]["source"]["artifactId"] = "offer-a";
+    });
+    reject_gross("INVALID_AID_DISBURSEMENT_CHRONOLOGY", [](auto& value) {
+        for (auto& artifact : value["artifacts"]) {
+            if (artifact["artifactId"] == "disbursement-a")
+                artifact["observedAt"] = "2026-09-04T10:00:00Z";
+        }
     });
     const std::vector<std::string> bad_heads{"event-grant", "event-grant"};
     expect_error("INVALID_HEADS", [&] { (void)snapshot(case_a, bad_heads); });
