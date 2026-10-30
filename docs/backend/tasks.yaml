@@ -750,12 +750,13 @@
         "M9-6 versioned native request boundaries and discrepancy queue branches pass; unsigned candidateLimit zero now fails at the API with INVALID_REQUEST",
         "M9-7 native receipt provenance and historical archive refusal tests pass for reviewed proposal values and malformed archived fields",
         "M9-8 behavior-focused parser, lifecycle, coverage, and matching tests make the reproducible native source gate pass at or above 90% lines and 85% branches",
+        "M9-9 native and independent Python matching tests prevent a fully allocated shared bank credit from being suggested again and isolate an unrelated account decision",
         "declared fuzz budgets",
         "component coverage gates",
         "negative controls"
       ],
       "command": "Freeze verification scripts as each component lands",
-      "expected": "M9-1 generated differential, M9-2 sanitizer mutation smoke, M9-4 matching, M9-5 case, M9-6 API, M9-7 receipt, and M9-8 behavior-focused coverage suites pass locally; native source coverage reaches 93.03% lines/85.24% branches and the 90%/85% gate exits 0 on macOS arm64; coverage-guided fuzz runtime, ten-minute budgets, Python/client coverage, browser parity, broader performance, and security/release gates remain open",
+      "expected": "M9-1 generated differential, M9-2 sanitizer mutation smoke, M9-4 matching, M9-5 case, M9-6 API, M9-7 receipt, M9-8 behavior-focused coverage, and M9-9 cross-refund matching suites pass locally; native source coverage reaches 93.11% lines/85.84% branches and the 90%/85% gate exits 0 on macOS arm64; coverage-guided fuzz runtime, ten-minute budgets, Python/client coverage, browser parity, broader performance, and security/release gates remain open",
       "risk": "HIGH",
       "done": "Full evidence package and whole-branch review are current at candidate revision."
     },
