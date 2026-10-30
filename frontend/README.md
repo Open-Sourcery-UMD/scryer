@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scryer frontend
 
-## Getting Started
+This Next.js app currently provides a public introduction and an account-free
+**synthetic evidence demo**. The sample shows how a revised aid fact and a new
+school charge change a calculated school-account surplus. Its figures and
+source references come from the native C++ engine's versioned `demo` result.
 
-First, run the development server:
+The sample accepts no uploads and creates no account. The personal-case
+workspace, WebAssembly engine, production authentication, and hosted sync UI
+remain separate development milestones. Do not use this demo as evidence that
+Scryer is ready for real financial records.
 
-```bash
+## Local development
+
+From `frontend/`:
+
+```sh
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000` for the introduction and `/demo` for the sample.
+The development server requires permission to bind a local port. The release
+build is static and does not need a running service:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```sh
+npm run lint
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The build uses Next.js's Webpack mode because the default Turbopack build
+tries to bind a helper port in the restricted local test environment.
 
-## Learn More
+## Reproduce the sample
 
-To learn more about Next.js, take a look at the following resources:
+The demo snapshot is generated from `engine/build/scryer-native`, with the
+fictional source case defined in `tests/reference/fixtures/golden-case.json`.
+From the repository root:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sh
+make -C engine cli
+node scripts/generate-demo-snapshot.mjs --check
+npm --prefix frontend run test:demo
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+To intentionally refresh the snapshot after a reviewed engine change, run
+`node scripts/generate-demo-snapshot.mjs`, then inspect the resulting diff and
+rerun `npm --prefix frontend run test:demo`. Exact money formatting uses
+decimal minor-unit strings and `BigInt`; it never passes financial amounts
+through JavaScript floating point.
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The receipt demonstrates internal reproducibility. It does not authenticate
+the fictional source files or establish that a school owes money.

@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:demo": "make -C ../engine cli && npm run build && node --test ../tests/frontend/test_*.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
