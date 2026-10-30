@@ -10,13 +10,15 @@ The repository's three-container Compose stack is a **local development scaffold
 
 ## Start the local scaffold
 
-Install Docker with Compose and `curl`. From the repository root, run:
+Install Docker with Compose, Python 3, and `curl`. Start the Docker daemon, then run from the repository root:
 
 ```sh
 ./setup.sh
 ```
 
-On first run, the script creates a private `.env` file with a random database password. It checks the Compose configuration, builds the images, starts the services, then requires a successful PostgreSQL `SELECT 1`, API health response, and frontend response. It prints the local frontend URL when those checks pass.
+On first run, the script creates a private `.env` file with a random database password. It checks the Compose configuration, builds the images, starts the services, then requires a successful authenticated PostgreSQL query, API health response, and frontend response. It prints the local frontend URL when those checks pass. Setup accepts only comments, `API_PORT=digits`, and one `POSTGRES_PASSWORD=64-lowercase-hex-characters` entry in `.env`; it rejects ambiguous entries and a conflicting shell password.
+
+Keep `.env` with its PostgreSQL volume. An existing volume retains the password that initialized it. If `.env` is lost, `setup.sh` refuses to generate a replacement over that volume. Recover the original `.env` or explicitly rotate the database role's password before trying to restart; do not remove the volume to bypass this check if you need its data.
 
 The frontend is at <http://127.0.0.1:3000> and the local API health route is at <http://127.0.0.1:8000/health>. Set `API_PORT` in `.env` before starting if port 8000 is occupied. The frontend image runs an optimized Next.js build and `next start`.
 

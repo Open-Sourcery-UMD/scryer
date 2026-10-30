@@ -7,10 +7,11 @@ services:
       POSTGRES_DB: scryer
       POSTGRES_USER: scryer
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run setup.sh to create a local password}
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "PGPASSWORD=\"$$POSTGRES_PASSWORD\" psql -h 127.0.0.1 -X -qAt -v ON_ERROR_STOP=1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -c 'SELECT 1' | grep -qx 1"]
+      test: ["CMD-SHELL", "PGPASSWORD=\"$$POSTGRES_PASSWORD\" psql -h postgres -X -qAt -v ON_ERROR_STOP=1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -c \"SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM pg_hba_file_rules WHERE type LIKE 'host%' AND auth_method = 'trust')\" | grep -qx 1"]
       interval: 5s
       timeout: 5s
       retries: 10
