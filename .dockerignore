@@ -6,5 +6,10 @@ __pycache__
 *.pyd
 .pytest_cache
 .venv
+.env*
+**/.env*
 frontend/node_modules
 frontend/.next
+frontend/public/headless
+client/node_modules
+client/build

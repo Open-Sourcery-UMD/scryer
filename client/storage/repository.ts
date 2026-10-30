@@ -147,6 +147,18 @@ async function prepareSteps(pkg: CasePackageV1, operationId: string, packageDige
   return steps;
 }
 
+function pendingNamesDevice(pending: OutboxRecord, deviceId: string): boolean {
+  if (!Array.isArray(pending.steps)) return false;
+  const manifests = pending.steps.filter((step) => step?.kind === 'manifest');
+  const manifest = manifests[0];
+  if (manifests.length !== 1 || !manifest || typeof manifest.body !== 'string') return false;
+  try {
+    const body = JSON.parse(manifest.body) as Record<string, unknown>;
+    return body.deviceId === deviceId && body.accountId === pending.accountId &&
+      body.caseId === pending.caseId && body.revisionId === pending.revisionId;
+  } catch { return false; }
+}
+
 export class LocalRepository {
   #db: IDBDatabase | null;
   readonly session: AccountSession;
@@ -526,9 +538,13 @@ export class LocalRepository {
     if (!Array.isArray(inputRecords) || inputRecords.length < 1 || inputRecords.length > 64 ||
         !expectedLocalRevisions || typeof expectedLocalRevisions !== 'object' ||
         Array.isArray(expectedLocalRevisions)) throw new StorageError('INVALID_RESTORE');
+    if (Object.keys(expectedLocalRevisions).length !== inputRecords.length ||
+        Object.values(expectedLocalRevisions).some((value) => value !== null && !validId(value))) {
+      throw new StorageError('INVALID_RESTORE');
+    }
     const accountId = this.session.accountId;
     const caseIds = new Set<string>();
-    const prepared: Array<{ record: CaseRecord; operationId: string; steps: SyncStep[] }> = [];
+    const reservedDeviceId = this.session.deviceId;
     for (const record of inputRecords) {
       if (!record || !validId(record.caseId) || !validId(record.revisionId) ||
           record.accountId !== accountId || caseIds.has(record.caseId) ||
@@ -541,23 +557,90 @@ export class LocalRepository {
         throw new StorageError('INVALID_RESTORE');
       }
       caseIds.add(record.caseId);
+    }
+    const expectedRootProof = await this.rootProof();
+    const initial = await transactionResult<{
+      account: AccountRecord | undefined; cases: CaseRecord[]; anchors: AnchorRecord[];
+      outbox: OutboxRecord[];
+    }>(db, ['accounts', 'cases', 'anchors', 'outbox'], 'readonly', (tx, finish) => {
+      let account: AccountRecord | undefined;
+      let cases: CaseRecord[] = [];
+      let anchors: AnchorRecord[] = [];
+      const accountRequest = tx.objectStore('accounts').get(accountId);
+      const caseRequest = tx.objectStore('cases').getAll();
+      const anchorRequest = tx.objectStore('anchors').getAll();
+      const outboxRequest = tx.objectStore('outbox').getAll();
+      accountRequest.onsuccess = () => { account = accountRequest.result as AccountRecord | undefined; };
+      caseRequest.onsuccess = () => { cases = caseRequest.result as CaseRecord[]; };
+      anchorRequest.onsuccess = () => { anchors = anchorRequest.result as AnchorRecord[]; };
+      outboxRequest.onsuccess = () => finish({ account, cases, anchors,
+        outbox: outboxRequest.result as OutboxRecord[] });
+    });
+    const legacyWithoutDevice = db.version === 1 && initial.account?.deviceId === undefined;
+    if (!initial.account || initial.account.rootProof !== expectedRootProof ||
+        (initial.account.deviceId !== reservedDeviceId && !legacyWithoutDevice)) {
+      throw new StorageError('STALE_ACCOUNT_ROOT');
+    }
+    const initialByCase = new Map(initial.cases.filter((item) => item.accountId === accountId)
+      .map((item) => [item.caseId, item]));
+    const initialAnchorByCase = new Map(initial.anchors.filter((item) => item.accountId === accountId)
+      .map((item) => [item.caseId, item]));
+    const initialOutboxByCase = new Map<string, OutboxRecord[]>();
+    for (const pending of initial.outbox) {
+      if (pending.accountId !== accountId || !caseIds.has(pending.caseId)) continue;
+      const entries = initialOutboxByCase.get(pending.caseId) ?? [];
+      entries.push(pending);
+      initialOutboxByCase.set(pending.caseId, entries);
+    }
+    const noOpCases = new Set<string>();
+    for (const record of inputRecords) {
+      const prior = initialByCase.get(record.caseId);
+      const anchor = initialAnchorByCase.get(record.caseId);
+      if ((prior?.revisionId ?? null) !== expectedLocalRevisions[record.caseId]) {
+        throw new StorageError('STALE_LOCAL_REVISION');
+      }
+      if ((prior && (!anchor || anchor.digest !== prior.digest ||
+          anchor.revisionId !== prior.revisionId)) || (!prior && anchor)) {
+        throw new StorageError('CORRUPT_RECORD');
+      }
+      if (prior?.revisionId === record.revisionId && prior.keyGeneration === record.keyGeneration &&
+          prior.digest === record.digest &&
+          prior.package.deviceId === reservedDeviceId &&
+          checkedStringify(prior.package) === checkedStringify(record.package) &&
+          (initialOutboxByCase.get(record.caseId) ?? []).every((item) =>
+            pendingNamesDevice(item, reservedDeviceId))) {
+        noOpCases.add(record.caseId);
+      }
+    }
+    const prepared: Array<{ record: CaseRecord; operationId?: string; steps?: SyncStep[] }> = [];
+    for (const record of inputRecords) {
+      let plaintext: string;
       try {
-        const plaintext = await openCase(this.session, record.package, record.caseId, record.revisionId);
+        plaintext = await openCase(this.session, record.package, record.caseId, record.revisionId);
         await validateStored(parseStored(plaintext), record.caseId, this.#validateCase);
       } catch { throw new StorageError('CORRUPT_ARCHIVE'); }
+      if (noOpCases.has(record.caseId)) {
+        prepared.push({ record });
+        continue;
+      }
+      const bytes = utf8Bytes(plaintext);
+      const count = Math.ceil(bytes.length / MAX_CHUNK_BYTES);
+      bytes.fill(0);
+      if (count < 1 || count > MAX_CHUNKS) throw new StorageError('CASE_TOO_LARGE');
+      await this.reserveEncryptionsForDevice(record.caseId, record.keyGeneration,
+        reservedDeviceId, count);
+      const pkg = await sealCase(this.session, record.caseId, record.revisionId,
+        plaintext, record.keyGeneration);
+      if (pkg.deviceId !== reservedDeviceId) throw new StorageError('STALE_ACCOUNT_ROOT');
+      const digest = await digestText(checkedStringify(pkg));
       const operationId = `restore_${base64UrlEncode(randomBytes(16))}`;
       if (prepared.some((item) => item.operationId === operationId)) {
         throw new StorageError('OPERATION_CONFLICT');
       }
-      const steps = await prepareSteps(record.package, operationId, record.digest);
-      prepared.push({ record: structuredClone(record), operationId, steps });
+      const steps = await prepareSteps(pkg, operationId, digest);
+      prepared.push({ record: { ...record, package: pkg, digest }, operationId, steps });
     }
-    if (Object.keys(expectedLocalRevisions).length !== caseIds.size ||
-        Object.values(expectedLocalRevisions).some((value) => value !== null && !validId(value))) {
-      throw new StorageError('INVALID_RESTORE');
-    }
-    const expectedRootProof = await this.rootProof();
-    const expectedDeviceId = this.session.deviceId;
+    const expectedDeviceId = reservedDeviceId;
     return transactionResult(db, ['accounts', 'cases', 'anchors', 'outbox'], 'readwrite', (tx, finish, fail) => {
       const accounts = tx.objectStore('accounts');
       const cases = tx.objectStore('cases');
@@ -588,7 +671,27 @@ export class LocalRepository {
         for (const { record } of prepared) {
           const prior = byCase.get(record.caseId);
           const anchor = anchorByCase.get(record.caseId);
+          const initialPrior = initialByCase.get(record.caseId);
           if ((prior?.revisionId ?? null) !== expectedLocalRevisions[record.caseId]) {
+            fail(new StorageError('STALE_LOCAL_REVISION')); return;
+          }
+          let packageChanged = false;
+          let outboxChanged = false;
+          if (prior && initialPrior) {
+            try { packageChanged = checkedStringify(prior.package) !==
+              checkedStringify(initialPrior.package); }
+            catch { fail(new StorageError('CORRUPT_RECORD')); return; }
+          }
+          try {
+            outboxChanged = checkedStringify(currentOutbox.filter((item) =>
+              item.accountId === accountId && item.caseId === record.caseId)) !==
+              checkedStringify(initialOutboxByCase.get(record.caseId) ?? []);
+          } catch { fail(new StorageError('CORRUPT_RECORD')); return; }
+          if ((prior?.localSequence ?? null) !== (initialPrior?.localSequence ?? null) ||
+              (prior?.digest ?? null) !== (initialPrior?.digest ?? null) ||
+              (prior?.keyGeneration ?? null) !== (initialPrior?.keyGeneration ?? null) ||
+              (prior?.package.deviceId ?? null) !== (initialPrior?.package.deviceId ?? null) ||
+              packageChanged || outboxChanged) {
             fail(new StorageError('STALE_LOCAL_REVISION')); return;
           }
           if ((prior && (!anchor || anchor.digest !== prior.digest ||
@@ -599,11 +702,12 @@ export class LocalRepository {
         let restored = 0;
         let unchanged = 0;
         for (const { record, operationId, steps } of prepared) {
-          const prior = byCase.get(record.caseId);
-          if (prior?.revisionId === record.revisionId && prior.digest === record.digest) {
+          if (noOpCases.has(record.caseId)) {
             unchanged++;
             continue;
           }
+          const prior = byCase.get(record.caseId);
+          if (!operationId || !steps) { fail(new StorageError('INVALID_RESTORE')); return; }
           if (currentOutbox.some((item) => item.accountId === accountId &&
               item.operationId === operationId)) {
             fail(new StorageError('OPERATION_CONFLICT')); return;

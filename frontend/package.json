@@ -3,10 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node scripts/stage-browser-client.mjs",
     "dev": "next dev",
-    "build": "next build",
+    "prebuild": "node scripts/stage-browser-client.mjs",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:demo": "make -C ../engine cli && npm run build && node --test ../tests/frontend/test_*.mjs",
+    "test:demo:browser": "npm run build && node --test ../tests/frontend/browser_demo_accessibility.mjs",
+    "test:workspace:browser": "npm run build && node --test ../tests/frontend/browser_workspace.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",

@@ -64,6 +64,60 @@ int main() {
     expect_error("INVALID_COVERAGE_INTERVAL", [&] {
         (void)scryer::evaluate_bank_coverage(matching, covered_head, "bank-a", "2026-02-30", "2026-10-07");
     });
+    expect_error("ACCOUNT_KIND_MISMATCH", [&] {
+        (void)scryer::evaluate_bank_coverage(matching, covered_head, "school-a", "2026-09-06", "2026-10-07");
+    });
+    expect_error("INVALID_COVERAGE_INTERVAL", [&] {
+        (void)scryer::evaluate_bank_coverage(matching, covered_head, "bank-a", "2026-10-07", "2026-09-06");
+    });
+    const auto both_sides = scryer::evaluate_bank_coverage(
+        matching, covered_head, "bank-a", "2026-09-01", "2026-10-10"
+    );
+    require(both_sides.missing_intervals == std::vector<scryer::Interval>({
+        {"2026-09-01", "2026-09-06"}, {"2026-10-07", "2026-10-10"}
+    }));
+    const auto outside = scryer::evaluate_bank_coverage(
+        matching, covered_head, "bank-a", "2026-09-01", "2026-09-05"
+    );
+    require(outside.covered_intervals.empty());
+
+    auto overlap_raw = fixture("matching-case");
+    auto overlap = overlap_raw["events"][7];
+    overlap["eventId"] = "event-overlap";
+    overlap["parents"] = scryer::Json::array({"event-coverage"});
+    overlap["coverage"]["coverageId"] = "coverage-overlap";
+    overlap["coverage"]["reviewId"] = "review-overlap";
+    overlap["coverage"]["startDate"] = "2026-09-20";
+    overlap_raw["events"].push_back(overlap);
+    const auto overlapping = scryer::parse_case(overlap_raw);
+    const std::vector<std::string> overlap_head{"event-overlap"};
+    const auto united = scryer::evaluate_bank_coverage(
+        overlapping, overlap_head, "bank-a", "2026-09-06", "2026-10-07"
+    );
+    require(united.covered_intervals == std::vector<scryer::Interval>({{"2026-09-06", "2026-10-07"}}));
+    require(united.assertion_ids == std::vector<std::string>({"coverage-a", "coverage-overlap"}));
+
+    auto disjoint_raw = fixture("matching-case");
+    auto disjoint = disjoint_raw["events"][7];
+    disjoint["eventId"] = "event-disjoint";
+    disjoint["parents"] = scryer::Json::array({"event-coverage"});
+    disjoint["recordedAt"] = "2026-10-11T10:00:00Z";
+    disjoint["coverage"]["coverageId"] = "coverage-disjoint";
+    disjoint["coverage"]["reviewId"] = "review-disjoint";
+    disjoint["coverage"]["startDate"] = "2026-10-08";
+    disjoint["coverage"]["endDateExclusive"] = "2026-10-10";
+    disjoint["coverage"]["basis"] = "user_asserted";
+    disjoint["coverage"]["source"] = { {"kind", "manual"}, {"entryId", "coverage-gap"} };
+    disjoint_raw["events"].push_back(disjoint);
+    const auto separated = scryer::parse_case(disjoint_raw);
+    const std::vector<std::string> disjoint_head{"event-disjoint"};
+    const auto separated_result = scryer::evaluate_bank_coverage(
+        separated, disjoint_head, "bank-a", "2026-09-06", "2026-10-10"
+    );
+    require(separated_result.covered_intervals.size() == 2);
+    require(separated_result.missing_intervals == std::vector<scryer::Interval>({
+        {"2026-10-07", "2026-10-08"}
+    }));
 
     auto manual_raw = fixture("matching-case");
     manual_raw["events"][7]["coverage"]["basis"] = "user_asserted";

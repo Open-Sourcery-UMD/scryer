@@ -1,36 +1,38 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Scryer | Wealth Intelligence",
-  description: "Privacy-first financial aggregator",
+  title: "Scryer | Know what your records actually show",
+  description:
+    "Trace financial aid through school charges, refunds, and bank observations with reviewed evidence and exact explanations.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="antialiased bg-background text-foreground">
-        <div className="flex min-h-screen">
-          {/* Sidebar */}
-          <aside className="w-64 border-r bg-card p-6 flex flex-col gap-8">
-            <div className="font-bold text-xl tracking-tight text-primary">🔮 Scryer</div>
-            <nav className="flex flex-col gap-2">
-              {["Dashboard", "Transactions", "Accounts", "Settings"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-sm font-medium"
-                >
-                  {item}
-                </a>
-              ))}
+      <body>
+        <a className="skip-link" href="#main-content">Skip to content</a>
+        <div className="site-frame">
+          <header className="site-header">
+            <Link href="/" className="brand" aria-label="Scryer home">
+              <span className="brand-mark" aria-hidden="true">✦</span>
+              <span>Scryer</span>
+            </Link>
+            <nav className="site-nav" aria-label="Main navigation">
+              <Link href="/#how-it-works">How it works</Link>
+              <Link href="/demo">Synthetic case</Link>
+              <a href="https://github.com/Open-Sourcery-UMD/scryer" target="_blank" rel="noreferrer">
+                Open source <span aria-hidden="true">↗</span>
+              </a>
             </nav>
-          </aside>
-
-          {/* Main Content Area */}
-          <main className="flex-1 p-8">
-            {children}
-          </main>
+          </header>
+          <main id="main-content" tabIndex={-1}>{children}</main>
+          <footer className="site-footer">
+            <div className="brand"><span className="brand-mark" aria-hidden="true">✦</span><span>Scryer</span></div>
+            <p>Built by Open Sourcery at the University of Maryland.</p>
+            <p>Explain the evidence. Name what remains unknown.</p>
+          </footer>
         </div>
       </body>
     </html>

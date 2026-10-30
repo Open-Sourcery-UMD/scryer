@@ -28,6 +28,7 @@ coverage/
 # next.js
 .next/
 out/
+frontend/public/headless/
 
 # production
 build/

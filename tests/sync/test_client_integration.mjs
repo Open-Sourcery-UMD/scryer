@@ -95,6 +95,102 @@ async function account(api, token) {
   return response.json();
 }
 
+test('fresh device restores and syncs an archive after its source device is retired', async (t) => {
+  const { page, browser } = await openBrowserHarness(t);
+  const { api } = await startApi(t, new URL(page.url()).origin);
+  const identity = await account(api, 'one');
+  const source = await page.evaluate(async (accountId) => {
+    const { createAccountKeys } = await import('/crypto/keys.js');
+    const { openLocalRepository } = await import('/storage/repository.js');
+    const { exportEncrypted } = await import('/export/archive.js');
+    const created = await createAccountKeys(accountId);
+    const repo = await openLocalRepository({ dbName: `restore-source-${crypto.randomUUID()}`,
+      session: created.session, recoveryEnvelope: created.recoveryEnvelope,
+      recoverySecret: created.recoverySecret, validateCase: async () => {} });
+    const caseData = { schemaVersion: '1', caseId: 'case-retired-restore', currency: 'USD',
+      institutions: [], accountRefs: [{ accountRefId: 'bank-restore', kind: 'bank',
+        institutionId: null, holderKind: 'student' }], terms: [], aidItems: [], artifacts: [],
+      proposals: [], events: [] };
+    await repo.commitReviewed({ case: caseData, ledger: { schemaVersion: '1', reviews: [] },
+      revisionId: 'rev-retired-archive', operationId: 'op-retired-archive',
+      expectedLocalRevision: null, serverRevision: null });
+    const archive = await exportEncrypted(repo, { recoverySecret: created.recoverySecret });
+    const deviceId = created.session.deviceId;
+    repo.close();
+    return { bytes: Array.from(archive), secret: created.recoverySecret, deviceId };
+  }, identity.accountId);
+
+  const register = await fetch(`${api}/v1/account/devices`, { method: 'POST',
+    headers: { Authorization: 'Bearer one', 'Content-Type': 'application/json',
+      'Idempotency-Key': `device:${source.deviceId}` },
+    body: JSON.stringify({ schemaVersion: '1', deviceId: source.deviceId }) });
+  assert.equal(register.status, 200);
+  const retire = await fetch(`${api}/v1/account/devices/${source.deviceId}`, { method: 'DELETE',
+    headers: { Authorization: 'Bearer one',
+      'Idempotency-Key': `device-retire:${source.deviceId}` } });
+  assert.equal(retire.status, 200);
+
+  const context = await browser.newContext();
+  const fresh = await context.newPage();
+  await fresh.goto(page.url());
+  const restored = await fresh.evaluate(async ({ bytes, secret, api, accountId }) => {
+    const { unlockRecovery } = await import('/crypto/keys.js');
+    const { openLocalRepository } = await import('/storage/repository.js');
+    const { previewRestore, restoreEncrypted } = await import('/export/archive.js');
+    const { syncCase } = await import('/sync/transport.js');
+    const archive = Uint8Array.from(bytes);
+    const wrapper = JSON.parse(new TextDecoder().decode(archive)).recoveryEnvelope;
+    const session = await unlockRecovery(wrapper, secret, accountId);
+    const repo = await openLocalRepository({ dbName: `restore-fresh-${crypto.randomUUID()}`,
+      session, recoveryEnvelope: wrapper, recoverySecret: secret,
+      validateCase: async () => {} });
+    const preview = await previewRestore(repo, archive, secret);
+    const result = await restoreEncrypted(repo, archive, secret,
+      { 'case-retired-restore': null });
+    const snapshot = await repo.encryptedSnapshot();
+    const pending = await repo.prepareSync('case-retired-restore');
+    const firstSync = await syncCase(repo, 'case-retired-restore',
+      { baseUrl: api, accessToken: 'one' });
+    const afterFirst = await repo.prepareSync('case-retired-restore');
+    const loaded = await repo.loadCase('case-retired-restore');
+    loaded.case.events.push({ eventId: 'event-after-restore', parents: [],
+      recordedAt: '2026-10-08T00:00:00Z', kind: 'approve_fact',
+      fact: { factId: 'fact-after-restore', termId: null, accountRefId: 'bank-restore',
+        aidItemId: null, currency: 'USD', role: 'bank_credit_observed',
+        recipientKind: null, amountMinor: '100', proposalId: null,
+        effectiveDate: '2026-10-08',
+        source: { kind: 'manual', entryId: 'SYNTHETIC_ONLY_RESTORED_EDIT' },
+        reviewId: 'review-after-restore' } });
+    await repo.commitReviewed({ case: loaded.case, ledger: loaded.ledger,
+      revisionId: 'rev-retired-next', operationId: 'op-retired-next',
+      expectedLocalRevision: loaded.revisionId, serverRevision: loaded.revisionId });
+    const secondSync = await syncCase(repo, 'case-retired-restore',
+      { baseUrl: api, accessToken: 'one' });
+    const afterSecond = await repo.prepareSync('case-retired-restore');
+    repo.close();
+    return { preview, result, sourcePackageDeviceId: JSON.parse(new TextDecoder().decode(archive))
+      .cases[0].package.deviceId, currentDeviceId: session.deviceId,
+      storedPackageDeviceId: snapshot.cases[0].package.deviceId,
+      queuedDeviceId: JSON.parse(pending[0].steps.at(-1).body).deviceId,
+      firstSync, afterFirst: afterFirst.length, secondSync, afterSecond: afterSecond.length };
+  }, { ...source, api, accountId: identity.accountId });
+  assert.equal(restored.preview.cases[0].currentRevision, null);
+  assert.equal(restored.result.restored, 1);
+  assert.equal(restored.sourcePackageDeviceId, source.deviceId);
+  assert.notEqual(restored.currentDeviceId, source.deviceId);
+  assert.equal(restored.storedPackageDeviceId, restored.currentDeviceId);
+  assert.equal(restored.queuedDeviceId, restored.currentDeviceId);
+  assert.equal(restored.firstSync.status, 'committed');
+  assert.equal(restored.afterFirst, 0);
+  assert.equal(restored.secondSync.status, 'committed');
+  assert.equal(restored.afterSecond, 0);
+  const head = await fetch(`${api}/v1/cases/case-retired-restore`,
+    { headers: { Authorization: 'Bearer one' } });
+  assert.equal(head.status, 200);
+  assert.equal(head.headers.get('etag'), '"rev-retired-next"');
+  assert.equal((await head.text()).includes('SYNTHETIC_ONLY_RESTORED_EDIT'), false);
+});
+
 test('Chrome syncs real ciphertext through local HTTP and PostgreSQL, preserving conflicts', async (t) => {
   const { page } = await openBrowserHarness(t);
   const { api, scanSentinel, logHasSentinel } = await startApi(t,

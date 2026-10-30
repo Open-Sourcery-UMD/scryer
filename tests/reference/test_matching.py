@@ -158,6 +158,47 @@ class MatchingTests(unittest.TestCase):
         self.assertEqual(result.remaining_minor, 90000)
         self.assertEqual(result.coverage.status, "SUPPORTED_BY_UPLOADED_RECORDS")
 
+    def test_bank_credit_allocated_to_another_refund_is_not_reused(self):
+        raw = raw_case()
+        other_refund = copy.deepcopy(raw["events"][5])
+        other_refund["eventId"] = "event-other-refund"
+        other_refund["parents"] = ["event-coverage"]
+        other_refund["recordedAt"] = "2026-10-08T11:00:00Z"
+        other_refund["fact"]["factId"] = "other-refund"
+        other_refund["fact"]["source"]["location"] = "page:2"
+        other_refund["fact"]["reviewId"] = "review-other-refund"
+        raw["events"].append(other_refund)
+        add_decision(raw, "decision-other", refund_fact_id="other-refund",
+                     refund_event_id="event-other-refund")
+        result = query(raw, head="decision-other")
+        self.assertEqual(result.status, "NO_CANDIDATE_IN_APPROVED_FACTS")
+        self.assertEqual(result.candidate_fact_ids, ())
+        self.assertEqual(result.remaining_minor, 90000)
+
+        other_refund["fact"]["amountMinor"] = "80000"
+        overallocated = query(raw, head="decision-other")
+        self.assertEqual(overallocated.status, "CONTRADICTORY_EVIDENCE")
+        self.assertIn("REFUND_OVERALLOCATED", overallocated.reason_codes)
+
+        other_refund["fact"]["amountMinor"] = "90000"
+        raw["accountRefs"].append({"accountRefId": "bank-b", "kind": "bank",
+                                   "institutionId": None, "holderKind": "student"})
+        other_bank = copy.deepcopy(raw["events"][6])
+        other_bank["eventId"] = "event-other-bank-credit"
+        other_bank["parents"] = ["event-coverage"]
+        other_bank["recordedAt"] = "2026-10-08T12:00:00Z"
+        other_bank["fact"]["factId"] = "other-bank-credit"
+        other_bank["fact"]["accountRefId"] = "bank-b"
+        other_bank["fact"]["source"] = {"kind": "manual", "entryId": "entry-other-bank"}
+        other_bank["fact"]["reviewId"] = "review-other-bank-credit"
+        raw["events"].append(other_bank)
+        add_decision(raw, "decision-other-bank", bank_fact_id="other-bank-credit",
+                     bank_event_id="event-other-bank-credit", refund_fact_id="other-refund",
+                     refund_event_id="event-other-refund")
+        unaffected = query(raw, head="decision-other-bank")
+        self.assertEqual(unaffected.status, "SUGGESTED")
+        self.assertEqual(unaffected.candidate_fact_ids, ("bank-credit",))
+
     def test_two_equal_credits_are_ambiguous_until_review(self):
         raw = raw_case()
         add_bank(raw)

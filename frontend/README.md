@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Scryer frontend
 
-## Getting Started
+This Next.js app provides a public introduction, an account-free **synthetic
+evidence demo**, and a local `/workspace` bank-CSV preview. The sample shows
+how a revised aid fact and a new school charge change a calculated
+school-account surplus. Its figures and source references come from the native
+C++ engine's versioned `demo` result.
 
-First, run the development server:
+The demo accepts no files and creates no account. The workspace uses the tested
+browser import worker to preview a generic bank CSV in memory, with signed or
+split amount columns, exact-cent candidate values, warnings, source positions,
+and shortened raw-row inspection. It does not approve entries, calculate a
+case, save a file, or contact the API. The worker's compiled ES modules are
+staged into `public/headless/` by `predev` and `prebuild`; those generated files
+are ignored by Git. A complete personal-case workspace, browser WebAssembly
+validation, production authentication, and hosted sync UI remain separate
+development milestones. **Use synthetic test files only in this build.**
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Local development
+
+From the repository root:
+
+```sh
+npm --prefix client ci
+npm --prefix frontend ci
+npm --prefix frontend run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000` for the introduction, `/demo` for the sample, and
+`/workspace` for the local CSV preview. `predev` and `prebuild` compile the
+headless browser import modules from `client/`.
+The development server requires permission to bind a local port. The release
+build is static and does not need a running service:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```sh
+npm --prefix frontend run lint
+npm --prefix frontend run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The build uses Next.js's Webpack mode because the default Turbopack build
+tries to bind a helper port in the restricted local test environment.
 
-## Learn More
+## Reproduce the sample
 
-To learn more about Next.js, take a look at the following resources:
+The demo snapshot is generated from `engine/build/scryer-native`, with the
+fictional source case defined in `tests/reference/fixtures/golden-case.json`.
+From the repository root:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```sh
+make -C engine cli
+node scripts/generate-demo-snapshot.mjs --check
+npm --prefix frontend run test:demo
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+To intentionally refresh the snapshot after a reviewed engine change, run
+`node scripts/generate-demo-snapshot.mjs`, then inspect the resulting diff and
+rerun `npm --prefix frontend run test:demo`. Exact money formatting uses
+decimal minor-unit strings and `BigInt`; it never passes financial amounts
+through JavaScript floating point.
 
-## Deploy on Vercel
+The receipt demonstrates internal reproducibility. It does not authenticate
+the fictional source files or establish that a school owes money.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The repository root's `./setup.sh` builds this frontend as a local Compose
+production image. The companion FastAPI container currently provides only
+legacy health routes; the demo does not send financial facts to it.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Keyboard and accessibility browser check
+
+Install the existing `client/` development dependencies so `playwright-core`
+is available, then point the test at an installed local Chrome binary:
+
+```sh
+npm --prefix client ci
+SCRYER_BROWSER_BIN='/path/to/Chrome' npm --prefix frontend run test:demo:browser
+SCRYER_BROWSER_BIN='/path/to/Chrome' npm --prefix frontend run test:workspace:browser
+```
+
+The gate builds production static pages and checks keyboard skip navigation,
+evidence disclosures and links, accessibility-tree names, and 320-pixel
+layout without opening a remote site. The workspace gate exercises the actual
+Next.js route and import worker with synthetic CSV files, including exact
+header mapping, split columns, bounded pagination, stale-request cancellation,
+error diagnostics, keyboard feedback, and no-upload/no-storage checks. Both
+require a Chrome executable and do not replace a human screen-reader test of
+the full product.
