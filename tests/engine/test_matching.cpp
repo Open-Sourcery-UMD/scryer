@@ -267,6 +267,71 @@ int main() {
     require(other_account_result.status == "MATCHED_ON_OTHER_ACCOUNT_BY_REVIEW");
     require(other_account_result.confirmed_allocations.empty());
 
+    // A deposit reviewed for another refund must not be suggested a second time.
+    auto shared_deposit_raw = fixture("matching-case");
+    auto second_refund = shared_deposit_raw["events"][5];
+    second_refund["eventId"] = "event-other-refund";
+    second_refund["parents"] = scryer::Json::array({"event-coverage"});
+    second_refund["recordedAt"] = "2026-10-08T11:00:00Z";
+    second_refund["fact"]["factId"] = "other-refund";
+    second_refund["fact"]["source"]["location"] = "page:2";
+    second_refund["fact"]["reviewId"] = "review-other-refund";
+    shared_deposit_raw["events"].push_back(second_refund);
+    auto other_confirm = shared_deposit_raw["events"][8];
+    other_confirm["eventId"] = "event-other-confirm";
+    other_confirm["parents"] = scryer::Json::array({"event-other-refund", "event-bank-credit"});
+    other_confirm["recordedAt"] = "2026-10-09T11:00:00Z";
+    other_confirm["decision"]["refundFactId"] = "other-refund";
+    other_confirm["decision"]["reviewId"] = "review-other-confirm";
+    shared_deposit_raw["events"].push_back(other_confirm);
+    const std::vector<std::string> other_confirm_head{"event-other-confirm"};
+    const auto shared_deposit = scryer::parse_case(shared_deposit_raw);
+    const auto already_used = scryer::suggest_refund_deposits(
+        shared_deposit, other_confirm_head, "issued-refund", "bank-a"
+    );
+    require(already_used.status == "NO_CANDIDATE_IN_APPROVED_FACTS");
+    require(already_used.candidate_fact_ids.empty());
+    require(already_used.remaining_minor == 90000);
+
+    shared_deposit_raw["events"][9]["fact"]["amountMinor"] = "80000";
+    const auto overallocated_other = scryer::parse_case(shared_deposit_raw);
+    const auto overallocated_other_result = scryer::suggest_refund_deposits(
+        overallocated_other, other_confirm_head, "issued-refund", "bank-a"
+    );
+    require(overallocated_other_result.status == "CONTRADICTORY_EVIDENCE");
+    require(std::find(overallocated_other_result.reason_codes.begin(), overallocated_other_result.reason_codes.end(),
+                      "REFUND_OVERALLOCATED") != overallocated_other_result.reason_codes.end());
+
+    // A review of another refund on another bank account must not consume this account's candidate.
+    shared_deposit_raw["events"][9]["fact"]["amountMinor"] = "90000";
+    shared_deposit_raw["accountRefs"].push_back({
+        {"accountRefId", "bank-b"}, {"kind", "bank"}, {"institutionId", nullptr},
+        {"holderKind", "student"}
+    });
+    auto other_bank_credit = shared_deposit_raw["events"][6];
+    other_bank_credit["eventId"] = "event-other-bank-credit";
+    other_bank_credit["parents"] = scryer::Json::array({"event-coverage"});
+    other_bank_credit["recordedAt"] = "2026-10-08T12:00:00Z";
+    other_bank_credit["fact"]["factId"] = "other-bank-credit";
+    other_bank_credit["fact"]["accountRefId"] = "bank-b";
+    other_bank_credit["fact"]["source"] = {{"kind", "manual"}, {"entryId", "entry-other-bank"}};
+    other_bank_credit["fact"]["reviewId"] = "review-other-bank-credit";
+    shared_deposit_raw["events"].push_back(other_bank_credit);
+    auto other_bank_confirm = other_confirm;
+    other_bank_confirm["eventId"] = "event-other-bank-confirm";
+    other_bank_confirm["parents"] = scryer::Json::array({"event-other-refund", "event-other-bank-credit"});
+    other_bank_confirm["recordedAt"] = "2026-10-09T12:00:00Z";
+    other_bank_confirm["decision"]["bankFactId"] = "other-bank-credit";
+    other_bank_confirm["decision"]["reviewId"] = "review-other-bank-confirm";
+    shared_deposit_raw["events"].push_back(other_bank_confirm);
+    const auto independent_bank = scryer::parse_case(shared_deposit_raw);
+    const std::vector<std::string> other_bank_head{"event-other-bank-confirm"};
+    const auto unaffected = scryer::suggest_refund_deposits(
+        independent_bank, other_bank_head, "issued-refund", "bank-a"
+    );
+    require(unaffected.status == "SUGGESTED");
+    require(unaffected.candidate_fact_ids == std::vector<std::string>{"bank-credit"});
+
     auto too_late_raw = fixture("matching-case");
     too_late_raw["events"][5]["fact"]["effectiveDate"] = "9999-12-31";
     const auto too_late = scryer::parse_case(too_late_raw);
