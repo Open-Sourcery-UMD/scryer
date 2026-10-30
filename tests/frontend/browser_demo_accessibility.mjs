@@ -102,13 +102,22 @@ test("evidence links and observation cards have distinct accessible names", asyn
   }
 });
 
-test("source inspection links land on expanded evidence", async (t) => {
+test("source inspection links reopen collapsed evidence at the correct target", async (t) => {
   const page = await openStaticPage(t, "/demo");
   for (const [name, id] of [
     ["Inspect revised grant source and approval", "fact-grant"],
     ["Inspect new school charge source and approval", "fact-extra-charge"],
   ]) {
-    await page.getByRole("link", { name, exact: true }).click();
-    assert.equal(await page.locator(`#${id}`).evaluate((element) => element.open), true, `${name} landed on hidden details`);
+    const row = page.locator(`#${id}`);
+    const target = `fact-source-${id.slice(5)}`;
+    const link = page.getByRole("link", { name, exact: true });
+    assert.equal(await link.getAttribute("href"), `#${target}`);
+    await row.locator("summary").focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await row.evaluate((element) => element.open), false);
+    await link.click();
+    assert.equal(await page.evaluate(() => location.hash), `#${target}`);
+    assert.equal(await row.evaluate((element) => element.open), true);
+    assert.equal(await page.locator(`#${target}`).isVisible(), true);
   }
 });

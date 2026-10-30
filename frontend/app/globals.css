@@ -165,6 +165,7 @@ button, a, summary { -webkit-tap-highlight-color: transparent; }
 .fact-symbol { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 7px; color: var(--accent); background: #1a453b; font-size: 20px; }
 .fact-amount { font-size: 14px; font-weight: 760; white-space: nowrap; }
 .fact-details { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 18px 23px 22px 65px; border-top: 1px solid #263c4f; background: #0e1a29; }
+.fact-details:target { scroll-margin-top: 24px; }
 .fact-details div { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 .fact-details span { color: #97adbf; font-size: 10px; text-transform: uppercase; letter-spacing: .1em; }
 .fact-details strong { overflow-wrap: anywhere; color: #eef5ff; font-size: 12px; font-weight: 620; }

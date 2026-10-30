@@ -86,7 +86,7 @@ export default function DemoPage() {
               <span className="card-kicker">REVIEWED CORRECTION</span>
               <h3>Revised grant</h3>
               <p>The approved grant changed from {formatUsdMinor(revisedGrant.beforeMinor)} to {formatUsdMinor(revisedGrant.afterMinor)}.</p>
-              <a href="#fact-grant">Inspect revised grant source and approval <ArrowRight size={15} aria-hidden="true" /></a>
+              <a href="#fact-source-grant">Inspect revised grant source and approval <ArrowRight size={15} aria-hidden="true" /></a>
             </div>
             <strong>{formatUsdMinor(revisedGrant.deltaMinor)}</strong>
           </article>
@@ -96,7 +96,7 @@ export default function DemoPage() {
               <span className="card-kicker">NEW REVIEWED FACT</span>
               <h3>New school charge</h3>
               <p>A reviewed charge lowers the calculated surplus by {formatUsdMinor(newCharge.deltaMinor.slice(1))}.</p>
-              <a href="#fact-extra-charge">Inspect new school charge source and approval <ArrowRight size={15} aria-hidden="true" /></a>
+              <a href="#fact-source-extra-charge">Inspect new school charge source and approval <ArrowRight size={15} aria-hidden="true" /></a>
             </div>
             <strong>{formatUsdMinor(newCharge.deltaMinor)}</strong>
           </article>
@@ -151,7 +151,7 @@ export default function DemoPage() {
                   <span><strong>{factNames[fact.factId] ?? fact.factId}</strong><small>{roleNames[fact.role] ?? fact.role} · approved evidence</small></span></span>
                 <span className="fact-amount">{formatUsdMinor(fact.contributionMinor)}</span>
               </summary>
-              <div className="fact-details">
+              <div className="fact-details" id={"fact-source-" + fact.factId}>
                 {fact.correctionEventId && <>
                   <div><span>Original source</span><strong>{fact.originalSourceRef.kind === "artifact" ? "Artifact" : fact.originalSourceRef.kind} · {fact.originalSourceRef.artifactId} · {fact.originalSourceRef.location}</strong></div>
                   <div><span>Original approval</span><strong>{fact.approvalReviewId}</strong></div>
