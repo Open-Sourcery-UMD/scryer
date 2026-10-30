@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { formatUsdMinor } from "../../frontend/lib/format-money.mts";
+import { formatUsdMinor } from "../../frontend/lib/format-money.mjs";
 
 test("formats signed minor units without rounding or losing large integers", () => {
   assert.equal(formatUsdMinor("0"), "$0.00");

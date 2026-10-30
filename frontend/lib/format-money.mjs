@@ -3,7 +3,8 @@ const wholeDollarFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-export function formatUsdMinor(value: string): string {
+/** @param {string} value @returns {string} */
+export function formatUsdMinor(value) {
   if (!/^(?:0|-?[1-9][0-9]*)$/.test(value)) {
     throw new Error("Invalid minor-unit amount");
   }

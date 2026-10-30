@@ -24,6 +24,8 @@ test("checked-in sample matches the native engine and its reviewed story", () =>
   assert.equal(snapshot.operation, "demo");
   assert.equal(snapshot.result.before.amountMinor, "150000");
   assert.equal(snapshot.result.after.amountMinor, "90000");
+  assert.equal(snapshot.result.before.status, "SUPPORTED_BY_UPLOADED_RECORDS");
+  assert.equal(snapshot.result.after.status, "SUPPORTED_BY_UPLOADED_RECORDS");
   assert.equal(snapshot.result.comparison.deltaMinor, "-60000");
   assert.deepEqual(
     snapshot.result.comparison.contributions.map((item) => [item.factId, item.deltaMinor]),
