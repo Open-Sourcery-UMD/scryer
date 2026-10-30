@@ -1,0 +1,318 @@
+{
+  "engineVersion": "native-0.1.0",
+  "operation": "demo",
+  "result": {
+    "after": {
+      "amountMinor": "90000",
+      "caseId": "case-golden",
+      "currency": "USD",
+      "factIds": [
+        "base-charge",
+        "extra-charge",
+        "grant",
+        "other-credit"
+      ],
+      "heads": [
+        "event-extra-charge"
+      ],
+      "limitationCodes": [
+        "NOT_ENTITLEMENT",
+        "SOURCE_SET_MAY_BE_INCOMPLETE"
+      ],
+      "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+      "termId": "2026-fall"
+    },
+    "bankObservation": {
+      "accountRefId": "bank-a",
+      "approvalEventId": "event-bank-credit",
+      "approvalReviewId": "review-bank-credit",
+      "contributionMinor": null,
+      "correctionEventIds": [],
+      "currentAmountMinor": "90000",
+      "currentCorrectionEventId": null,
+      "currentSourceRef": {
+        "artifactId": "bank-a",
+        "kind": "artifact",
+        "location": "row:1",
+        "observedAt": "2026-09-07T10:00:00Z",
+        "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "factId": "bank-credit",
+      "originalAmountMinor": "90000",
+      "originalSourceRef": {
+        "artifactId": "bank-a",
+        "kind": "artifact",
+        "location": "row:1",
+        "observedAt": "2026-09-07T10:00:00Z",
+        "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "role": "bank_credit_observed",
+      "termId": null
+    },
+    "before": {
+      "amountMinor": "150000",
+      "caseId": "case-golden",
+      "currency": "USD",
+      "factIds": [
+        "base-charge",
+        "grant",
+        "other-credit"
+      ],
+      "heads": [
+        "event-base-charge"
+      ],
+      "limitationCodes": [
+        "NOT_ENTITLEMENT",
+        "SOURCE_SET_MAY_BE_INCOMPLETE"
+      ],
+      "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+      "termId": "2026-fall"
+    },
+    "caseId": "case-golden",
+    "comparison": {
+      "after": {
+        "amountMinor": "90000",
+        "caseId": "case-golden",
+        "currency": "USD",
+        "factIds": [
+          "base-charge",
+          "extra-charge",
+          "grant",
+          "other-credit"
+        ],
+        "heads": [
+          "event-extra-charge"
+        ],
+        "limitationCodes": [
+          "NOT_ENTITLEMENT",
+          "SOURCE_SET_MAY_BE_INCOMPLETE"
+        ],
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "termId": "2026-fall"
+      },
+      "before": {
+        "amountMinor": "150000",
+        "caseId": "case-golden",
+        "currency": "USD",
+        "factIds": [
+          "base-charge",
+          "grant",
+          "other-credit"
+        ],
+        "heads": [
+          "event-base-charge"
+        ],
+        "limitationCodes": [
+          "NOT_ENTITLEMENT",
+          "SOURCE_SET_MAY_BE_INCOMPLETE"
+        ],
+        "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+        "termId": "2026-fall"
+      },
+      "contributions": [
+        {
+          "afterMinor": "-30000",
+          "beforeMinor": "0",
+          "deltaMinor": "-30000",
+          "factId": "extra-charge"
+        },
+        {
+          "afterMinor": "270000",
+          "beforeMinor": "300000",
+          "deltaMinor": "-30000",
+          "factId": "grant"
+        }
+      ],
+      "deltaMinor": "-60000",
+      "limitationCodes": [
+        "NOT_ENTITLEMENT",
+        "SOURCE_SET_MAY_BE_INCOMPLETE"
+      ],
+      "status": "SUPPORTED_BY_UPLOADED_RECORDS"
+    },
+    "receipt": {
+      "accountRefId": "school-a",
+      "amountMinor": "90000",
+      "caseId": "case-golden",
+      "currency": "USD",
+      "digest": "c7ee429b8b4b3a061f6f910db0df096dec61a27f73c3d03d173b65e307dde094",
+      "engineVersion": "native-0.1.0",
+      "facts": [
+        {
+          "aidItemId": null,
+          "approvalEventId": "event-base-charge",
+          "approvalRecordedAt": "2026-09-02T10:02:00Z",
+          "approvalReviewId": "review-base-charge",
+          "contributionMinor": "-500000",
+          "correctionEventId": null,
+          "correctionRecordedAt": null,
+          "correctionReviewId": null,
+          "currentAmountMinor": "500000",
+          "effectiveDate": "2026-08-20",
+          "factId": "base-charge",
+          "mappingVersion": null,
+          "originalAmountMinor": "500000",
+          "originalSourceRef": {
+            "artifactId": "bill-a",
+            "kind": "artifact",
+            "location": "row:1",
+            "observedAt": "2026-09-01T11:00:00Z",
+            "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+          },
+          "parserVersion": null,
+          "proposalId": null,
+          "proposedAmountMinor": null,
+          "role": "school_charge",
+          "sourceRef": {
+            "artifactId": "bill-a",
+            "kind": "artifact",
+            "location": "row:1",
+            "observedAt": "2026-09-01T11:00:00Z",
+            "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        },
+        {
+          "aidItemId": null,
+          "approvalEventId": "event-extra-charge",
+          "approvalRecordedAt": "2026-09-04T10:00:00Z",
+          "approvalReviewId": "review-extra-charge",
+          "contributionMinor": "-30000",
+          "correctionEventId": null,
+          "correctionRecordedAt": null,
+          "correctionReviewId": null,
+          "currentAmountMinor": "30000",
+          "effectiveDate": "2026-08-20",
+          "factId": "extra-charge",
+          "mappingVersion": null,
+          "originalAmountMinor": "30000",
+          "originalSourceRef": {
+            "artifactId": "bill-a",
+            "kind": "artifact",
+            "location": "row:2",
+            "observedAt": "2026-09-01T11:00:00Z",
+            "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+          },
+          "parserVersion": null,
+          "proposalId": null,
+          "proposedAmountMinor": null,
+          "role": "school_charge",
+          "sourceRef": {
+            "artifactId": "bill-a",
+            "kind": "artifact",
+            "location": "row:2",
+            "observedAt": "2026-09-01T11:00:00Z",
+            "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+          }
+        },
+        {
+          "aidItemId": null,
+          "approvalEventId": "event-grant",
+          "approvalRecordedAt": "2026-09-02T10:00:00Z",
+          "approvalReviewId": "review-grant",
+          "contributionMinor": "270000",
+          "correctionEventId": "event-grant-correction",
+          "correctionRecordedAt": "2026-09-03T10:00:00Z",
+          "correctionReviewId": "review-grant-correction",
+          "currentAmountMinor": "270000",
+          "effectiveDate": "2026-08-20",
+          "factId": "grant",
+          "mappingVersion": null,
+          "originalAmountMinor": "300000",
+          "originalSourceRef": {
+            "artifactId": "aid-a",
+            "kind": "artifact",
+            "location": "row:1",
+            "observedAt": "2026-09-01T10:00:00Z",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "parserVersion": null,
+          "proposalId": null,
+          "proposedAmountMinor": null,
+          "role": "school_credit",
+          "sourceRef": {
+            "artifactId": "aid-a",
+            "kind": "artifact",
+            "location": "row:1-revised",
+            "observedAt": "2026-09-01T10:00:00Z",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        },
+        {
+          "aidItemId": null,
+          "approvalEventId": "event-other-credit",
+          "approvalRecordedAt": "2026-09-02T10:01:00Z",
+          "approvalReviewId": "review-other-credit",
+          "contributionMinor": "350000",
+          "correctionEventId": null,
+          "correctionRecordedAt": null,
+          "correctionReviewId": null,
+          "currentAmountMinor": "350000",
+          "effectiveDate": "2026-08-20",
+          "factId": "other-credit",
+          "mappingVersion": null,
+          "originalAmountMinor": "350000",
+          "originalSourceRef": {
+            "artifactId": "aid-a",
+            "kind": "artifact",
+            "location": "row:2",
+            "observedAt": "2026-09-01T10:00:00Z",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          },
+          "parserVersion": null,
+          "proposalId": null,
+          "proposedAmountMinor": null,
+          "role": "school_credit",
+          "sourceRef": {
+            "artifactId": "aid-a",
+            "kind": "artifact",
+            "location": "row:2",
+            "observedAt": "2026-09-01T10:00:00Z",
+            "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        }
+      ],
+      "heads": [
+        "event-extra-charge"
+      ],
+      "institutionId": "institution-a",
+      "limitations": [
+        "NOT_ENTITLEMENT",
+        "SOURCE_AUTHENTICITY_NOT_VERIFIED",
+        "SOURCE_SET_MAY_BE_INCOMPLETE"
+      ],
+      "metric": "school_surplus",
+      "ruleVersion": "school-surplus-1",
+      "schemaVersion": "1",
+      "status": "SUPPORTED_BY_UPLOADED_RECORDS",
+      "termId": "2026-fall"
+    },
+    "refundObservation": {
+      "accountRefId": "school-a",
+      "approvalEventId": "event-refund-issued",
+      "approvalReviewId": "review-issued-refund",
+      "contributionMinor": null,
+      "correctionEventIds": [],
+      "currentAmountMinor": "90000",
+      "currentCorrectionEventId": null,
+      "currentSourceRef": {
+        "artifactId": "refund-a",
+        "kind": "artifact",
+        "location": "page:1",
+        "observedAt": "2026-09-06T10:00:00Z",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "factId": "issued-refund",
+      "originalAmountMinor": "90000",
+      "originalSourceRef": {
+        "artifactId": "refund-a",
+        "kind": "artifact",
+        "location": "page:1",
+        "observedAt": "2026-09-06T10:00:00Z",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "role": "refund_issued",
+      "termId": "2026-fall"
+    }
+  },
+  "schemaVersion": "1"
+}
