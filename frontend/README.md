@@ -52,6 +52,10 @@ through JavaScript floating point.
 The receipt demonstrates internal reproducibility. It does not authenticate
 the fictional source files or establish that a school owes money.
 
+The repository root's `./setup.sh` builds this frontend as a local Compose
+production image. The companion FastAPI container currently provides only
+legacy health routes; the demo does not send financial facts to it.
+
 ## Keyboard and accessibility browser check
 
 Install the existing `client/` development dependencies so `playwright-core`

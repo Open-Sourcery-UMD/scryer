@@ -6,13 +6,11 @@ services:
     environment:
       POSTGRES_DB: scryer
       POSTGRES_USER: scryer
-      POSTGRES_PASSWORD: scryer
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run setup.sh to create a local password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U scryer -d scryer"]
+      test: ["CMD-SHELL", "PGPASSWORD=\"$$POSTGRES_PASSWORD\" psql -h 127.0.0.1 -X -qAt -v ON_ERROR_STOP=1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\" -c 'SELECT 1' | grep -qx 1"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -28,20 +26,11 @@ services:
       dockerfile: Dockerfile.backend
     container_name: scryer-backend
     restart: unless-stopped
-    environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://scryer:scryer@postgres:5432/scryer}
-      API_PORT: ${API_PORT:-8000}
-      SECRET_KEY: ${SECRET_KEY:-replace-me}
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: "5432"
-      POSTGRES_DB: scryer
-      POSTGRES_USER: scryer
-      POSTGRES_PASSWORD: scryer
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "127.0.0.1:${API_PORT:-8000}:8000"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
       interval: 10s
@@ -59,14 +48,11 @@ services:
       dockerfile: Dockerfile
     container_name: scryer-frontend
     restart: unless-stopped
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
-      INTERNAL_API_URL: http://backend:8000
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000"]
       interval: 10s
