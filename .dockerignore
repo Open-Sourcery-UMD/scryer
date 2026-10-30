@@ -10,3 +10,6 @@ __pycache__
 **/.env*
 frontend/node_modules
 frontend/.next
+frontend/public/headless
+client/node_modules
+client/build

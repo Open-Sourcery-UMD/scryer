@@ -4,9 +4,9 @@ Scryer is an open-source project for explaining a student's financial-aid money 
 
 ## Current status
 
-**Pre-alpha, local synthetic development only.** The public frontend has an [account-free synthetic case](frontend/README.md) that explains a $1,500 to $900 school-account change using reviewed fictional records. The C++20 engine and independent Python reference model implement exact calculations and evidence receipts. The TypeScript client contains reviewed import, encrypted local storage, recovery, and ciphertext sync components under local tests. Browser WebAssembly validation, production authentication, full personal-case screens, validated real UMD formats, and public operation remain unfinished. Do not enter real financial records into this build.
+**Pre-alpha, local synthetic development only.** The public frontend has an [account-free synthetic case and local CSV preview](frontend/README.md). The sample explains a $1,500 to $900 school-account change using reviewed fictional records; the preview inspects unreviewed bank entries without saving or uploading them. The C++20 engine and independent Python reference model implement exact calculations and evidence receipts. The TypeScript client contains reviewed import, encrypted local storage, recovery, and ciphertext sync components under local tests. Browser WebAssembly validation, production authentication, full personal-case screens, validated real UMD formats, and public operation remain unfinished. Do not enter real financial records into this build.
 
-The repository's three-container Compose stack is a **local development scaffold**. Its FastAPI entrypoint currently has health routes only; it is not the encrypted sync API. Its PostgreSQL instance is private to the Compose network. The frontend shows the synthetic demo and does not connect to the database.
+The repository's three-container Compose stack is a **local development scaffold**. Its FastAPI entrypoint currently has health routes only; it is not the encrypted sync API. Its PostgreSQL instance is private to the Compose network. The frontend shows the synthetic demo and local CSV preview; neither connects to the database.
 
 ## Start the local scaffold
 

@@ -31,7 +31,7 @@ export default function Home() {
             <Link href="/demo" className="button button-primary">
               Try the synthetic case <ArrowRight size={18} aria-hidden="true" />
             </Link>
-            <a href="#how-it-works" className="button button-ghost">See how it works</a>
+            <Link href="/workspace" className="button button-ghost">Preview personal records</Link>
           </div>
           <p className="hero-footnote">No account, upload, or personal data needed for the sample.</p>
         </div>

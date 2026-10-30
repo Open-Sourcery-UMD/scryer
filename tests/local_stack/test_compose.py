@@ -61,6 +61,13 @@ class ComposeContractTests(unittest.TestCase):
         self.assertNotIn('CMD ["npm", "run", "dev"', frontend)
         self.assertIn('CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]', backend)
 
+    def test_frontend_build_context_includes_browser_import_source(self):
+        result = self.render({"POSTGRES_PASSWORD": "a" * 64})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        context = Path(json.loads(result.stdout)["services"]["frontend"]["build"]["context"])
+        self.assertEqual(context, ROOT)
+        self.assertTrue((context / "client/import/worker.ts").exists())
+
     def test_build_contexts_exclude_local_environment_files(self):
         root_ignore = (ROOT / ".dockerignore").read_text().splitlines()
         frontend_ignore = (ROOT / "frontend/.dockerignore").read_text().splitlines()

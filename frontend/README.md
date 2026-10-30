@@ -1,31 +1,40 @@
 # Scryer frontend
 
-This Next.js app currently provides a public introduction and an account-free
-**synthetic evidence demo**. The sample shows how a revised aid fact and a new
-school charge change a calculated school-account surplus. Its figures and
-source references come from the native C++ engine's versioned `demo` result.
+This Next.js app provides a public introduction, an account-free **synthetic
+evidence demo**, and a local `/workspace` bank-CSV preview. The sample shows
+how a revised aid fact and a new school charge change a calculated
+school-account surplus. Its figures and source references come from the native
+C++ engine's versioned `demo` result.
 
-The sample accepts no uploads and creates no account. The personal-case
-workspace, WebAssembly engine, production authentication, and hosted sync UI
-remain separate development milestones. Do not use this demo as evidence that
-Scryer is ready for real financial records.
+The demo accepts no files and creates no account. The workspace uses the tested
+browser import worker to preview a generic bank CSV in memory, with signed or
+split amount columns, exact-cent candidate values, warnings, source positions,
+and shortened raw-row inspection. It does not approve entries, calculate a
+case, save a file, or contact the API. The worker's compiled ES modules are
+staged into `public/headless/` by `predev` and `prebuild`; those generated files
+are ignored by Git. A complete personal-case workspace, browser WebAssembly
+validation, production authentication, and hosted sync UI remain separate
+development milestones. **Use synthetic test files only in this build.**
 
 ## Local development
 
-From `frontend/`:
+From the repository root:
 
 ```sh
-npm ci
-npm run dev
+npm --prefix client ci
+npm --prefix frontend ci
+npm --prefix frontend run dev
 ```
 
-Open `http://localhost:3000` for the introduction and `/demo` for the sample.
+Open `http://localhost:3000` for the introduction, `/demo` for the sample, and
+`/workspace` for the local CSV preview. `predev` and `prebuild` compile the
+headless browser import modules from `client/`.
 The development server requires permission to bind a local port. The release
 build is static and does not need a running service:
 
 ```sh
-npm run lint
-npm run build
+npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
 
 The build uses Next.js's Webpack mode because the default Turbopack build
@@ -64,9 +73,14 @@ is available, then point the test at an installed local Chrome binary:
 ```sh
 npm --prefix client ci
 SCRYER_BROWSER_BIN='/path/to/Chrome' npm --prefix frontend run test:demo:browser
+SCRYER_BROWSER_BIN='/path/to/Chrome' npm --prefix frontend run test:workspace:browser
 ```
 
 The gate builds production static pages and checks keyboard skip navigation,
 evidence disclosures and links, accessibility-tree names, and 320-pixel
-layout without opening a remote site. It requires a Chrome executable and
-does not replace a human screen-reader test of the full product.
+layout without opening a remote site. The workspace gate exercises the actual
+Next.js route and import worker with synthetic CSV files, including exact
+header mapping, split columns, bounded pagination, stale-request cancellation,
+error diagnostics, keyboard feedback, and no-upload/no-storage checks. Both
+require a Chrome executable and do not replace a human screen-reader test of
+the full product.
