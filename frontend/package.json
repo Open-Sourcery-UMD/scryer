@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test:demo": "make -C ../engine cli && npm run build && node --test ../tests/frontend/test_*.mjs"
+    "test:demo": "make -C ../engine cli && npm run build && node --test ../tests/frontend/test_*.mjs",
+    "test:demo:browser": "npm run build && node --test ../tests/frontend/browser_demo_accessibility.mjs"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",

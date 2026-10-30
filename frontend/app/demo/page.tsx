@@ -29,6 +29,7 @@ export default function DemoPage() {
   const newCharge = comparison.contributions.find((item) => item.factId === "extra-charge");
   const revisedGrant = comparison.contributions.find((item) => item.factId === "grant");
   if (!newCharge || !revisedGrant) throw new Error("Synthetic comparison is incomplete");
+  const explainedFactIds = new Set(comparison.contributions.map((item) => item.factId));
 
   return (
     <div className="demo-shell">
@@ -144,7 +145,7 @@ export default function DemoPage() {
         <p className="inspector-intro">The school-account calculation uses approved facts below. Open a row to inspect its source and review record. Refund and bank observations have separate evidence because they are not inputs to that calculation.</p>
         <div className="fact-list">
           {receipt.facts.map((fact) => (
-            <details className="fact-row" id={"fact-" + fact.factId} key={fact.factId} open={Boolean(fact.correctionEventId)}>
+            <details className="fact-row" id={"fact-" + fact.factId} key={fact.factId} open={explainedFactIds.has(fact.factId)}>
               <summary>
                 <span className="fact-main"><span className="fact-symbol">{fact.role === "school_credit" ? "+" : "−"}</span>
                   <span><strong>{factNames[fact.factId] ?? fact.factId}</strong><small>{roleNames[fact.role] ?? fact.role} · approved evidence</small></span></span>

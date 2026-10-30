@@ -27,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </a>
             </nav>
           </header>
-          <main id="main-content">{children}</main>
+          <main id="main-content" tabIndex={-1}>{children}</main>
           <footer className="site-footer">
             <div className="brand"><span className="brand-mark" aria-hidden="true">✦</span><span>Scryer</span></div>
             <p>Built by Open Sourcery at the University of Maryland.</p>

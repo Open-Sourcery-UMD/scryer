@@ -45,7 +45,7 @@
 ### Task 2: Repeatable local browser accessibility gate
 
 **Files:**
-- Create: `tests/frontend/test_demo_browser_accessibility.mjs`
+- Create: `tests/frontend/browser_demo_accessibility.mjs`
 - Modify: `frontend/package.json`
 - Modify: `frontend/README.md`
 - Modify: `docs/backend/status.md`, `docs/backend/verification.md`

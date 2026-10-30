@@ -51,3 +51,18 @@ through JavaScript floating point.
 
 The receipt demonstrates internal reproducibility. It does not authenticate
 the fictional source files or establish that a school owes money.
+
+## Keyboard and accessibility browser check
+
+Install the existing `client/` development dependencies so `playwright-core`
+is available, then point the test at an installed local Chrome binary:
+
+```sh
+npm --prefix client ci
+SCRYER_BROWSER_BIN='/path/to/Chrome' npm --prefix frontend run test:demo:browser
+```
+
+The gate builds production static pages and checks keyboard skip navigation,
+evidence disclosures and links, accessibility-tree names, and 320-pixel
+layout without opening a remote site. It requires a Chrome executable and
+does not replace a human screen-reader test of the full product.
