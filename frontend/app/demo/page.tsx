@@ -85,7 +85,7 @@ export default function DemoPage() {
               <span className="card-kicker">REVIEWED CORRECTION</span>
               <h3>Revised grant</h3>
               <p>The approved grant changed from {formatUsdMinor(revisedGrant.beforeMinor)} to {formatUsdMinor(revisedGrant.afterMinor)}.</p>
-              <a href="#fact-grant">Inspect source and approval <ArrowRight size={15} aria-hidden="true" /></a>
+              <a href="#fact-grant">Inspect revised grant source and approval <ArrowRight size={15} aria-hidden="true" /></a>
             </div>
             <strong>{formatUsdMinor(revisedGrant.deltaMinor)}</strong>
           </article>
@@ -95,7 +95,7 @@ export default function DemoPage() {
               <span className="card-kicker">NEW REVIEWED FACT</span>
               <h3>New school charge</h3>
               <p>A reviewed charge lowers the calculated surplus by {formatUsdMinor(newCharge.deltaMinor.slice(1))}.</p>
-              <a href="#fact-extra-charge">Inspect source and approval <ArrowRight size={15} aria-hidden="true" /></a>
+              <a href="#fact-extra-charge">Inspect new school charge source and approval <ArrowRight size={15} aria-hidden="true" /></a>
             </div>
             <strong>{formatUsdMinor(newCharge.deltaMinor)}</strong>
           </article>

@@ -71,3 +71,10 @@ test("a corrected amount shows both original and revised provenance", () => {
     assert.ok(grant[1].includes(phrase), `Missing corrected grant provenance: ${phrase}`);
   }
 });
+
+test("source inspection links identify their own changed fact", () => {
+  const html = rendered("demo.html");
+  assert.match(html, /Inspect revised grant source and approval/);
+  assert.match(html, /Inspect new school charge source and approval/);
+  assert.doesNotMatch(html, />Inspect source and approval\s*</);
+});
