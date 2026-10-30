@@ -8,6 +8,10 @@ test("formats signed minor units without rounding or losing large integers", () 
   assert.equal(formatUsdMinor("90000"), "$900.00");
   assert.equal(formatUsdMinor("-60000"), "-$600.00");
   assert.equal(formatUsdMinor("900719925474099300"), "$9,007,199,254,740,993.00");
+  assert.equal(formatUsdMinor("1"), "$0.01");
+  assert.equal(formatUsdMinor("-1"), "-$0.01");
+  assert.equal(formatUsdMinor("101"), "$1.01");
+  assert.equal(formatUsdMinor("900719925474099301"), "$9,007,199,254,740,993.01");
 });
 
 test("refuses noncanonical money strings", () => {

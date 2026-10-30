@@ -122,13 +122,15 @@ export default function DemoPage() {
           <div className="trail-item">
             <span className="trail-dot"><FileText size={18} aria-hidden="true" /></span>
             <div><span className="trail-label">Refund notice</span><h3>Issued refund</h3>
-              <p>A fictional refund notice says {formatUsdMinor(refundObservation.currentAmountMinor)} was issued to the student.</p></div>
+              <p>A fictional refund notice says {formatUsdMinor(refundObservation.currentAmountMinor)} was issued to the student.</p>
+              <a className="trail-link" href="#observation-refund">Inspect refund evidence <ArrowRight size={14} aria-hidden="true" /></a></div>
             <span className="trail-status">Source observed</span>
           </div>
           <div className="trail-item">
             <span className="trail-dot"><FileText size={18} aria-hidden="true" /></span>
             <div><span className="trail-label">Bank record</span><h3>Observed bank credit</h3>
-              <p>A fictional bank record shows a {formatUsdMinor(bankObservation.currentAmountMinor)} credit. Its relationship to the issued refund is not a confirmed match.</p></div>
+              <p>A fictional bank record shows a {formatUsdMinor(bankObservation.currentAmountMinor)} credit. Its relationship to the issued refund is not a confirmed match.</p>
+              <a className="trail-link" href="#observation-bank">Inspect bank evidence <ArrowRight size={14} aria-hidden="true" /></a></div>
             <span className="trail-status">Source observed</span>
           </div>
         </div>
@@ -139,23 +141,48 @@ export default function DemoPage() {
           <div><span className="eyebrow">AUDIT THE ANSWER</span><h2 id="inspector-heading">Source and calculation inspector</h2></div>
           <span className="receipt-badge"><LockKeyhole size={15} aria-hidden="true" /> Reproducible receipt</span>
         </div>
-        <p className="inspector-intro">Each amount below comes from an approved fact in the synthetic case. Open a row to see its source location and review record.</p>
+        <p className="inspector-intro">The school-account calculation uses approved facts below. Open a row to inspect its source and review record. Refund and bank observations have separate evidence because they are not inputs to that calculation.</p>
         <div className="fact-list">
           {receipt.facts.map((fact) => (
-            <details className="fact-row" id={"fact-" + fact.factId} key={fact.factId}>
+            <details className="fact-row" id={"fact-" + fact.factId} key={fact.factId} open={Boolean(fact.correctionEventId)}>
               <summary>
                 <span className="fact-main"><span className="fact-symbol">{fact.role === "school_credit" ? "+" : "−"}</span>
                   <span><strong>{factNames[fact.factId] ?? fact.factId}</strong><small>{roleNames[fact.role] ?? fact.role} · approved evidence</small></span></span>
                 <span className="fact-amount">{formatUsdMinor(fact.contributionMinor)}</span>
               </summary>
               <div className="fact-details">
-                <div><span>Source location</span><strong>{fact.sourceRef.artifactId} · {fact.sourceRef.location}</strong></div>
-                <div><span>Approval record</span><strong>{fact.correctionReviewId ?? fact.approvalReviewId}</strong></div>
+                {fact.correctionEventId && <>
+                  <div><span>Original source</span><strong>{fact.originalSourceRef.kind === "artifact" ? "Artifact" : fact.originalSourceRef.kind} · {fact.originalSourceRef.artifactId} · {fact.originalSourceRef.location}</strong></div>
+                  <div><span>Original approval</span><strong>{fact.approvalReviewId}</strong></div>
+                  <div><span>Original reviewed amount</span><strong>{formatUsdMinor(fact.originalAmountMinor)}</strong></div>
+                </>}
+                <div><span>{fact.correctionEventId ? "Revised source" : "Source location"}</span><strong>{fact.sourceRef.kind === "artifact" ? "Artifact" : fact.sourceRef.kind} · {fact.sourceRef.artifactId} · {fact.sourceRef.location}</strong></div>
+                <div><span>{fact.correctionEventId ? "Correction approval" : "Approval record"}</span><strong>{fact.correctionReviewId ?? fact.approvalReviewId}</strong></div>
                 <div><span>Current reviewed amount</span><strong>{formatUsdMinor(fact.currentAmountMinor)}</strong></div>
                 {fact.correctionEventId && <div><span>Correction event</span><strong>{fact.correctionEventId}</strong></div>}
               </div>
             </details>
           ))}
+        </div>
+        <div className="observation-grid" aria-label="Separate refund and bank evidence">
+          <article className="observation-card" id="observation-refund">
+            <span className="card-kicker">REFUND NOTICE · SEPARATE OBSERVATION</span>
+            <h3>Issued refund</h3>
+            <p>{formatUsdMinor(refundObservation.currentAmountMinor)} appears in the fictional refund notice.</p>
+            <div className="fact-details">
+              <div><span>Source location</span><strong>{refundObservation.currentSourceRef.kind === "artifact" ? "Artifact" : refundObservation.currentSourceRef.kind} · {refundObservation.currentSourceRef.artifactId} · {refundObservation.currentSourceRef.location}</strong></div>
+              <div><span>Approval record</span><strong>{refundObservation.approvalReviewId}</strong></div>
+            </div>
+          </article>
+          <article className="observation-card" id="observation-bank">
+            <span className="card-kicker">BANK RECORD · SEPARATE OBSERVATION</span>
+            <h3>Observed bank credit</h3>
+            <p>{formatUsdMinor(bankObservation.currentAmountMinor)} appears in the fictional bank record. No refund match is established.</p>
+            <div className="fact-details">
+              <div><span>Source location</span><strong>{bankObservation.currentSourceRef.kind === "artifact" ? "Artifact" : bankObservation.currentSourceRef.kind} · {bankObservation.currentSourceRef.artifactId} · {bankObservation.currentSourceRef.location}</strong></div>
+              <div><span>Approval record</span><strong>{bankObservation.approvalReviewId}</strong></div>
+            </div>
+          </article>
         </div>
         <div className="receipt-note">
           <div><strong>Calculation receipt</strong><p>Engine {receipt.engineVersion} · rule {receipt.ruleVersion}</p></div>
