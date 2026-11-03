@@ -252,5 +252,27 @@
     "prePushHook": "The earlier unconditional local-only hook remains installed; explicit one-command core.hooksPath override is used only for these authorized pushes."
   },
   "resolutionBasis": "Feature PR #43 was actually merged after all seven real CI jobs passed. D10 waived unavailable independent reviewers; D11 deferred outside sessions; D12 records lead adoption. No waived activity is reported as performed.",
-  "evidenceFollowUp": "A documentation-only follow-up records these already observed events; its CI/integration is enforced by the same active rules."
+  "evidenceFollowUp": "A documentation-only follow-up records these already observed events; its CI/integration is enforced by the same active rules.",
+  "dependencyUpdateAutomation": {
+    "activationObserved": true,
+    "initialUpdatePullRequestsObserved": [
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54
+    ],
+    "pythonUpdaterFirstRun": 41681719711,
+    "pythonUpdaterFirstJob": 126076820800,
+    "initialFailure": "Dependabot selected Python 3.15.2 and could not resolve the existing psycopg-binary 3.3.5 pin for that interpreter. The app itself and required scans passed on supported Python 3.12.",
+    "fix": "Explicit .python-version 3.12.15 selects the already tested supported interpreter. The three setup-python steps use the same version file. No dependency upgrade is auto-merged.",
+    "selectionMechanismSource": "https://github.com/dependabot/dependabot-core/blob/main/python/lib/dependabot/python/file_parser/python_requirement_parser.rb",
+    "nextUpdaterRunObserved": false,
+    "status": "supported_interpreter_configured"
+  }
 }
