@@ -37,7 +37,7 @@
     "eslint": "10.14.0",
     "eslint-plugin-jsx-a11y-x": "0.2.0",
     "eslint-plugin-react-hooks": "7.1.1",
-    "globals": "16.4.0",
+    "globals": "17.13.0",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
     "typescript": "^5",
