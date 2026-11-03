@@ -411,28 +411,32 @@
     },
     {
       "id": "J13",
-      "title": "Device deletion and account purge",
+      "title": "Local case, synced case and whole-account deletion",
       "start": "deletion",
       "successCriteria": [
-        "Distinguish local case/key wrappers from remote/account deletion.",
-        "Require confirmation and current account identity for remote request.",
-        "Keep pending or failed purge distinct from verified completion."
+        "Distinguish local case/key wrappers, one synced case and whole-account deletion.",
+        "Review current remote identity/head and acknowledge the exact selected single-case scope.",
+        "Keep offline, stale, awaiting/lost response and failed purge distinct from acknowledged completion.",
+        "Preserve local/archive copies and explain non-resurrection tombstones and exact idempotent retry."
       ],
       "paths": {
         "success": [
           "deletion",
-          "local-delete",
-          "local-deleted",
-          "case-empty"
+          "synced-delete",
+          "synced-delete-pending",
+          "synced-deleted",
+          "insight"
         ],
         "failureRecovery": [
           "deletion",
-          "account-delete",
-          "account-delete-pending",
-          "account-delete-error",
-          "account-delete-pending",
-          "account-deleted",
-          "welcome"
+          "synced-delete",
+          "synced-delete-stale",
+          "synced-delete",
+          "synced-delete-pending",
+          "synced-delete-unknown",
+          "synced-delete-pending",
+          "synced-deleted",
+          "insight"
         ]
       }
     }
@@ -3010,7 +3014,7 @@
       "title": "Choose the scope of deletion",
       "kind": "screen",
       "summary": [
-        "Local deletion, account deletion, logout, and login-password reset have different effects. Exported archives and independent originals require their own handling.",
+        "Local deletion, deletion of one synced case, whole-account deletion, logout, and login-password reset have different effects. Exported archives and independent originals require their own handling.",
         "These are target design choices. Every deletion button here changes only the synthetic screen."
       ],
       "actions": [
@@ -3018,6 +3022,12 @@
           "id": "local",
           "label": "Review deletion on this device",
           "to": "local-delete",
+          "kind": "next"
+        },
+        {
+          "id": "synced-case",
+          "label": "Review deletion of one synced case",
+          "to": "synced-delete",
           "kind": "next"
         },
         {
@@ -3050,6 +3060,11 @@
             "Local case delete",
             "This device case, cached originals, local case-key wrappers",
             "Account, remote ciphertext, other devices, archives"
+          ],
+          [
+            "One synced case delete",
+            "Selected case retained/staged server ciphertext; non-resurrection tombstone remains",
+            "Account, other cases, local/other-device copies, archives, originals"
           ],
           [
             "Account delete",
@@ -3133,6 +3148,226 @@
           "label": "Return to first run",
           "to": "welcome",
           "kind": "exit"
+        }
+      ]
+    },
+    {
+      "id": "synced-delete",
+      "journey": "J13",
+      "title": "Delete this one synced case?",
+      "kind": "confirmation",
+      "summary": [
+        "Target: with the current verified account identity, fetch and review the selected remote case and its current head before confirming. Send an empty-body DELETE with that exact If-Match head and a saved idempotency key. A changed head requires a new review and acknowledgement.",
+        "Only case-golden retained/staged server ciphertext is selected. The account, other cases, recovery envelope, local and other-device copies, exported archives, and independent originals remain. An opaque tombstone prevents stale uploads from resurrecting this case ID.",
+        "This prototype only illustrates the request; it cannot read or delete a remote case."
+      ],
+      "actions": [
+        {
+          "id": "request",
+          "label": "Simulate confirmed single-case delete request",
+          "to": "synced-delete-pending",
+          "kind": "next",
+          "requires": [
+            "synced-delete-confirmed"
+          ]
+        },
+        {
+          "id": "offline",
+          "label": "Simulate offline before request was sent",
+          "to": "synced-delete-offline",
+          "kind": "failure"
+        },
+        {
+          "id": "stale",
+          "label": "Simulate newer remote head refuses deletion",
+          "to": "synced-delete-stale",
+          "kind": "failure"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the synced case",
+          "to": "insight",
+          "kind": "cancel"
+        }
+      ],
+      "fields": [
+        {
+          "id": "synced-delete-confirmed",
+          "label": "I reviewed the selected remote case and current head; only its server ciphertext is selected, and account, other cases, local copies and archives remain.",
+          "type": "checkbox",
+          "value": false
+        }
+      ],
+      "table": {
+        "caption": "Selected synthetic remote deletion scope",
+        "columns": [
+          "Check",
+          "Illustrated selection"
+        ],
+        "rows": [
+          [
+            "Case",
+            "case-golden only"
+          ],
+          [
+            "Head",
+            "Current head freshly reviewed for this confirmation"
+          ],
+          [
+            "Account and other cases",
+            "Retained"
+          ],
+          [
+            "Local copies and archives",
+            "Retained"
+          ],
+          [
+            "Opaque tombstone",
+            "Retained for account life; stale recreation refused"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "synced-delete-pending",
+      "journey": "J13",
+      "title": "Single-case deletion is awaiting acknowledgement",
+      "kind": "pending",
+      "summary": [
+        "The request may be in flight or committed; no acknowledgement has arrived. This is not proof of deletion or a background purge job. Keep the exact case ID, empty request body, head precondition and idempotency key for retry.",
+        "The target UI must verify a receipt naming the selected case and reviewed deleted head with tombstone=true before showing success. Local data remains available and must not be silently removed."
+      ],
+      "actions": [
+        {
+          "id": "receipt",
+          "label": "Simulate matching server deletion receipt",
+          "to": "synced-deleted",
+          "kind": "next"
+        },
+        {
+          "id": "timeout",
+          "label": "Simulate lost server response",
+          "to": "synced-delete-unknown",
+          "kind": "failure"
+        },
+        {
+          "id": "stale",
+          "label": "Simulate server stale-head refusal",
+          "to": "synced-delete-stale",
+          "kind": "failure"
+        },
+        {
+          "id": "leave",
+          "label": "Leave awaiting acknowledgement; keep local copy",
+          "to": "insight",
+          "kind": "exit"
+        }
+      ]
+    },
+    {
+      "id": "synced-delete-offline",
+      "journey": "J13",
+      "title": "Single-case delete request was not sent",
+      "kind": "error",
+      "summary": [
+        "The connection was unavailable before sending. No request was sent by this attempt, so it has not established remote deletion. Keep the local case and show the unsent state.",
+        "After reconnecting, fetch the current remote head and review the scope again before a new confirmed request. Cancel safely without treating the case as remotely deleted."
+      ],
+      "actions": [
+        {
+          "id": "retry",
+          "label": "Reconnect and review current head again",
+          "to": "synced-delete",
+          "kind": "retry"
+        },
+        {
+          "id": "cancel",
+          "label": "Cancel unsent deletion; keep local copy",
+          "to": "insight",
+          "kind": "cancel"
+        }
+      ],
+      "requiresRecovery": true
+    },
+    {
+      "id": "synced-delete-stale",
+      "journey": "J13",
+      "title": "A newer remote head prevented this deletion",
+      "kind": "error",
+      "summary": [
+        "Target response: STALE_REVISION (412). This request did not delete the newer server case. Do not overwrite the new head precondition or reuse the old acknowledgement as consent to delete another device's changes.",
+        "Fetch and inspect the current remote case, preserve the local branch, then return to confirmation with a fresh scope acknowledgement and a new request identity. The prototype illustrates that review; it performs no fetch."
+      ],
+      "actions": [
+        {
+          "id": "retry",
+          "label": "Inspect latest remote case and confirm again",
+          "to": "synced-delete",
+          "kind": "recovery"
+        },
+        {
+          "id": "cancel",
+          "label": "Keep the newer synced case and local copy",
+          "to": "insight",
+          "kind": "cancel"
+        }
+      ],
+      "requiresRecovery": true
+    },
+    {
+      "id": "synced-delete-unknown",
+      "journey": "J13",
+      "title": "The server response was lost; deletion is unconfirmed",
+      "kind": "error",
+      "summary": [
+        "The request may already have committed. A timeout is not proof that the remote case still exists or that deletion succeeded. Keep the local copy and the unresolved request visible.",
+        "Retry the exact saved request with the same idempotency key and the same head precondition. Do not invent a new key or substitute a newer head. A matching retry receipt can confirm completion; an expired receipt or other refusal remains unresolved until checked.",
+        "Leaving this view does not cancel a request that reached the server. The prototype does not send a request."
+      ],
+      "actions": [
+        {
+          "id": "retry",
+          "label": "Retry the exact saved synthetic request",
+          "to": "synced-delete-pending",
+          "kind": "retry"
+        },
+        {
+          "id": "leave",
+          "label": "Leave unconfirmed; keep local copy",
+          "to": "insight",
+          "kind": "exit"
+        }
+      ],
+      "requiresRecovery": true
+    },
+    {
+      "id": "synced-deleted",
+      "journey": "J13",
+      "title": "One synced case removed — simulated receipt verified",
+      "kind": "success",
+      "summary": [
+        "Target completion: a verified receipt identifies case-golden, the reviewed deleted head and tombstone=true. Its live retained/staged server ciphertext has been removed. The opaque tombstone remains for account life to reject stale resurrection.",
+        "The account and other cases remain usable. Local and other-device copies, exported archives, independent originals and account recovery material remain; this is not whole-account deletion or physical backup-media erasure. Backup restoration must replay deletion decisions before serving traffic.",
+        "Keep the local copy marked remotely deleted. Do not silently re-upload it under the deleted case ID; restoring into a new case identity needs a separate deliberate review. This prototype deleted nothing."
+      ],
+      "actions": [
+        {
+          "id": "local",
+          "label": "Review deletion of remaining local copy",
+          "to": "local-delete",
+          "kind": "next"
+        },
+        {
+          "id": "back",
+          "label": "Return to retained local insight",
+          "to": "insight",
+          "kind": "back"
+        },
+        {
+          "id": "scope",
+          "label": "Compare deletion scopes again",
+          "to": "deletion",
+          "kind": "next"
         }
       ]
     },

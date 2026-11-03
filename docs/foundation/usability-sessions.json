@@ -48,7 +48,7 @@
       "Both sessions belong to distinct outside humans with consent and actual start/end timestamps.",
       "Every task has an observed outcome, help count, non-sensitive notes, and criterion results; skipped tasks remain visibly skipped.",
       "Both people can distinguish proposals from approved facts, source-backed explanation from entitlement, and unknown evidence from zero.",
-      "Both people can distinguish login from decryption recovery, local deletion from account purge, and pending sync/deletion from completion.",
+      "Both people can distinguish login from decryption recovery, device-copy deletion from single synced-case deletion and whole-account purge, and pending sync/deletion from completion.",
       "Any critical or major issue becomes an explicit design change and retest requirement; local automated tests do not waive it."
     ],
     "completionRule": "Keep status not-run and sessions empty until actual consented sessions occur. After observation, report actual results and unresolved issues. Issue 34 external acceptance remains pending until two outside human sessions and resulting fixes/retests are documented.",
@@ -251,8 +251,13 @@
           "J13"
         ],
         "startScreen": "deletion",
-        "prompt": "You want to remove a device copy. Later you want to stop using the sync account entirely. Compare what each action removes, what copies remain, and how you would know a deletion request had finished.",
+        "prompt": "You want to remove only one synced case while keeping the account and other cases. Try an offline request, a newer remote version, and a lost response. Then compare deleting the remaining device copy with deleting the whole account. Explain which copies remain and when completion is known.",
         "scenarios": [
+          "synced-case-only",
+          "Offline before sending",
+          "Stale remote head and renewed confirmation",
+          "Lost response and exact-request retry",
+          "Matching single-case receipt and tombstone",
           "Device copy confirmation",
           "Account reauthentication and scope",
           "Pending server purge",
@@ -260,16 +265,21 @@
           "Verified completion"
         ],
         "successCriteria": [
-          "Distinguish local case/key wrappers from server ciphertext, server envelopes, and login identity.",
-          "State that exported archives, independent originals, and other device copies may remain.",
-          "Recognize pending and failed purge as incomplete.",
-          "Find deletion retry and a signed-out exit without claiming success."
+          "Select one synced case without deleting the account, other cases, local copies or archives.",
+          "Explain that an offline request or stale-head refusal does not establish remote deletion and requires a current-head review.",
+          "Describe a lost response as unconfirmed, retry the saved request, and wait for a matching receipt before claiming success.",
+          "Explain that a tombstone blocks stale recreation of the deleted case ID while independent copies may remain.",
+          "Distinguish local case/key wrappers from server ciphertext, account envelopes and login identity.",
+          "Recognize pending/failed whole-account purge as incomplete and find retry and a signed-out safe exit."
         ],
         "observe": [
           "Scope words participant repeats",
+          "Whether local data or other cases are assumed erased by a single-case request",
+          "Whether a lost response is treated as success or proof of no deletion",
+          "Whether stale review requires renewed confirmation",
+          "Understanding of tombstones, surviving archives and account access",
           "Whether login reset or logout is assumed to erase records",
-          "Response to pending and failure states",
-          "Whether confirmation text changes intended choice"
+          "Response to pending and failure states"
         ]
       }
     ]

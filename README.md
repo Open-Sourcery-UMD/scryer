@@ -28,7 +28,7 @@ The target remains **public self-service signup and use with real student record
 
 The launch decision remains **no-go for public accounts and real records** until every public-release gate has evidence for the release revision. No local test, merged UI PR or native coverage measurement changes that decision by itself.
 
-The former monthly-budget direction in issues #33–#36 is superseded by the user-approved aid-evidence product. There is no implemented monthly income/expense budget, spending allowance, net-worth estimator, transfer classifier or category dashboard. Team adoption of the corresponding issue-acceptance changes must be recorded through normal review; the [acceptance inventory](docs/foundation/acceptance.json) preserves the original questions and the pending adoption checks. The older `S-01`–`S-78` inventory is a separate historical backend assignment and is not a numbering scheme for GitHub #32–#40.
+The former monthly-budget direction in issues #33–#36 is superseded by the user-approved aid-evidence product. There is no implemented monthly income/expense budget, spending allowance, net-worth estimator, transfer classifier or category dashboard. Team adoption of the corresponding issue-acceptance changes must be recorded through normal review; the [acceptance inventory](docs/foundation/acceptance.json) preserves the original questions and the pending adoption checks. [Proposed issue bodies](docs/foundation/issue-updates.json) make those changes reviewable; they have not been applied to GitHub. The older `S-01`–`S-78` inventory is a separate historical backend assignment and is not a numbering scheme for GitHub #32–#40.
 
 ### Complete target journey
 
@@ -41,7 +41,7 @@ The former monthly-budget direction in issues #33–#36 is superseded by the use
 7. Optionally sync ciphertext. Keep a local edit and prepared outbox on network failure, expired login, size/quota refusal or stale revision. Review local/remote evidence in the browser before any supported merge.
 8. Export a verified encrypted archive, preview and restore it safely, or delete a local case, synced case or account with the different retention effects explained.
 
-The [journey graph](docs/foundation/journeys.json), [navigable synthetic prototype](docs/foundation/prototype.html) and [usability protocol](docs/foundation/usability-sessions.json) cover successes, empty states, failures and recovery. The prototype is a design artifact. It does not implement accounts, financial validation or durable case operations. Two outsider sessions and the team's adoption are pending; automated navigation cannot stand in for either.
+The [journey graph](docs/foundation/journeys.json), [navigable synthetic prototype](docs/foundation/prototype.html) and [usability protocol](docs/foundation/usability-sessions.json) cover 67 states across 13 journeys, including successes, empty states, failures and recovery. Deleting one synced case has separate current-head confirmation, offline/stale refusal, lost-response retry and matching-receipt completion states. The prototype is a design artifact. It does not implement accounts, financial validation or durable case operations. Two outsider sessions and the team's adoption are pending; automated navigation cannot stand in for either.
 
 ## Try the current browser app
 
@@ -249,7 +249,7 @@ The [financial examples](docs/foundation/financial-examples.json) provide hand-c
 
 **`migrations/*.sql` plus `sync/migrate.py` are the sole PostgreSQL schema authority.** The runner sorts bounded versioned SQL, holds an advisory transaction lock, records SHA-256 checksums in the private migration table, and refuses changed applied files, unknown deployed versions, duplicate versions and out-of-order migrations. The application role cannot migrate. Add a new forward migration; do not edit an applied migration to make a test pass. Migration review must cover RLS, tenant lifecycle, upgrade behavior, recoverability and any required operator action.
 
-Issue #35 originally proposed SQLAlchemy + Alembic for a plaintext budgeting API. The accepted aid architecture uses explicit psycopg SQL for opaque sync and a checksum-enforced SQL runner. Adding Alembic or Prisma as a second migration owner would undermine that boundary. This is an intentional acceptance replacement requiring maintainer review, not a claim to have implemented the old ORM stack. FastAPI/Pydantic remains the typed HTTP boundary, Next.js remains the frontend, and PostgreSQL remains durable storage. The frontend uses its existing Tailwind/Radix components; the old NextUI label is not a current dependency claim.
+Issue #35 originally proposed SQLAlchemy + Alembic and FastAPI-owned financial rules/persistence. The accepted aid architecture uses browser-owned financial rules, explicit psycopg SQL for opaque sync and a checksum-enforced SQL runner. Adding Alembic or Prisma as a second migration owner would undermine that boundary. These rule/migration changes require maintainer adoption; they do not claim implementation of the old ORM stack. FastAPI/Pydantic remains the typed HTTP boundary, Next.js retains UI ownership, and PostgreSQL remains durable storage. The original issue specifies a Next.js UI, not the NextUI component library; the existing Tailwind/Radix frontend does not require a component-library amendment.
 
 Current migrations establish opaque accounts/cases/revisions/chunks/idempotency/recovery/devices/tombstones, unique provider identity, case-list indexing and restricted account deletion. Forced RLS is a defense in depth: signed transaction-local tenant context is derived after verified identity, and raw `SET account_id` is insufficient. It cannot protect plaintext against a compromised browser or undo an application authorization defect.
 
@@ -362,18 +362,33 @@ These commands retain the named PostgreSQL volume. `docker compose down -v` inte
 
 The [acceptance inventory](docs/foundation/acceptance.json) records local implementation, observed checks and externally controlled pending work separately. Evidence applies to the named checkout/toolchain and commands, not a future deployed revision.
 
-- **Observed in this foundation work:** eight JSON financial scenarios pass the seven-test Python/native suite with the native binary explicitly selected; order independence, receipt verification/tamper rejection, exact decimals and account-role rejection are included.
-- **Historical component evidence before this foundation change:** a native arm64 run recorded 93.11% source-line and 85.84% branch coverage against the unchanged 90%/85% gate; a separate generated tier compared 10,000 synthetic Python/native projections. Re-run the current gate before claiming the new revision has those measurements.
-- **Not established by these results:** WebAssembly/browser parity, maintained JWT-to-API integration, a complete saved personal-case UI, Docker restart persistence if its daemon-backed rehearsal has not succeeded, hosted public operation, real records, independent security review or external usability sessions.
+The [verification record](docs/foundation/verification.json) names the commands, checked revision, toolchain, metrics and limits for November 3, 2026. These are local observations:
 
-The integration audit reports PRs [#31](https://github.com/Open-Sourcery-UMD/scryer/pull/31), [#41](https://github.com/Open-Sourcery-UMD/scryer/pull/41) and [#42](https://github.com/Open-Sourcery-UMD/scryer/pull/42) merged. The foundation changes in this local worktree have not thereby been pushed, reviewed, merged or activated in GitHub. Remote merge state is time-specific; review the actual branch and candidate SHA before integrating.
+| Check | Observed result |
+| --- | --- |
+| Python and contracts | Ruff passes; mypy checks 26 source files; 145 reference, 21 foundation and 23 contributor-stack tests pass. The foundation run explicitly enables native comparison, with zero skips. |
+| Native semantics | Eight C++ unit executables, nine Python engine tests, seven financial-example tests and the five-test coverage CLI run pass. All 10,000 generated Python/native comparisons agree. |
+| Native source coverage | **93.11% lines / 85.84% branches**, above the unchanged 90% / 85% thresholds; this measures the selected native semantic sources, not the entire repository or browser WASM. |
+| Browser client | TypeScript checks, 43 Node tests and 38 Chrome tests pass. |
+| Frontend | Lint passes with zero warnings; optimized build, types and 14 unit/lint-policy tests pass. The final Chrome run passes 29 tests, including the expanded design prototype. |
+| Sync and identity components | 85 PostgreSQL/API tests, three Chrome-to-API/PostgreSQL journeys and one real local Keycloak PKCE test pass. The API journeys use fixture identity verification; the provider test does not wire a production JWT verifier into the API. |
+| Contributor Docker stack | A clean archive of `e814798` builds and serves the demo/API/database; real database loss changes readiness; a written marker survives stop/restart; repeated setup preserves the private environment file. The isolated rehearsal removes only its own resources. |
+| Dependency/secret checks | Python and both complete npm dependency audits report no known vulnerabilities; the candidate secret scan and synthetic scanner canary pass. This is dated scan evidence, not an independent security assessment. |
+
+Local host checks used Apple arm64, Python 3.14.3, Node 25.7.0 and Apple clang 21. The pinned container build exercised Python 3.12 and Node 24. Ubuntu/Node 24/Python 3.12 GitHub CI still needs its own observed run. The suite reports a Starlette/httpx test-client deprecation warning; dependency audit cache warnings did not prevent completion. No skipped or unavailable gate is counted as a pass.
+
+The final independent agent review covered immutable `9451c23..e814798`: no critical finding, two important documentation/design gaps and one provenance correction. The final fix pass adds synced-case deletion, separates foundation acceptance from later release implementation and corrects the Next.js label. An agent review is not the required approving human review.
+
+These results do not establish WebAssembly/browser parity, maintained JWT-to-API integration, a complete saved personal-case UI, hosted public operation, real-record handling, independent security assessment or external usability sessions.
+
+The read-only November 3 integration audit observed remote `main` at `4c1248e7095d56a632cb0768568d0b970ab8cd7e`, with PRs [#31](https://github.com/Open-Sourcery-UMD/scryer/pull/31), [#41](https://github.com/Open-Sourcery-UMD/scryer/pull/41) and [#42](https://github.com/Open-Sourcery-UMD/scryer/pull/42) merged. The current `main...codex/final-five-issues` comparison reports zero commits ahead and 87 behind. The foundation changes in this local worktree have not thereby been pushed, approved, merged or activated in GitHub. Remote state is time-specific; review the actual branch and candidate SHA before integrating.
 
 For issue #32, the immutable original baseline comparison is `fc43aefda41cc9e0a642e4894df890e658189e3d...453c2087399894ec2c89717e4d6f32b8d86dfafa` (the latter is `codex/final-five-issues`): two commits, 17 changed files, 430 insertions and 66 deletions. This is a local historical comparison, not a claim that the cached `origin/main` ref is current. Review findings and their current disposition are:
 
 | Original change | Review finding | Current disposition |
 | --- | --- | --- |
-| Compose, Dockerfiles and setup | Default database credentials, a public database port, fixed container names and a development frontend were unsuitable as a release baseline | Random private local secret, loopback-only app ports, private database, isolated project naming and production frontend build are in the current implementation; actual container rehearsal remains separately gated |
-| `/health` | A constant response proved process liveness without database availability | Keep liveness and add database-dependent `/ready`; tests/rehearsal must observe outage and recovery |
+| Compose, Dockerfiles and setup | Default database credentials, a public database port, fixed container names and a development frontend were unsuitable as a release baseline | Random private local secret, loopback-only app ports, private database, isolated project naming and production frontend build pass the clean committed Docker rehearsal |
+| `/health` | A constant response proved process liveness without database availability | Liveness and database-dependent `/ready` are distinct; real outage and recovery were observed in the rehearsal |
 | `SummaryCard` | Fixed net-worth/spend values were a UI scaffold, with no reviewed source completeness or exact-cent derivation | The aid app routes import neither legacy summary nor transaction component; those files are inactive scaffolding and their numbers are not product financial claims |
 | `TransactionTable` | Presentation/key changes did not implement import/review, classification or durable financial state | Current CSV preview explicitly shows proposals; the complete reviewed case UI remains pending |
 
@@ -407,7 +422,7 @@ CI is designed to run backend tests/lint/types, engine parity/coverage, client c
 
 [Dependabot configuration](.github/dependabot.yml) describes update review for Python, both npm projects, actions and Compose. A configuration file does not demonstrate that hosted dependency scans, security alerts, secret protection or required checks are active. The acceptance inventory leaves GitHub activation, a real failing-PR block and remote clean-checkout CI pending.
 
-A newcomer exercise is a human acceptance check: pick an issue, create a clean environment, run the app and appropriate checks, submit a substantive PR body and respond to review without live author help. Record the observed revision, commands, result and friction without real records. No newcomer exercise has been claimed from an automated test.
+A recommended newcomer field exercise is to pick an issue, create a clean environment, run the app and appropriate checks, submit a substantive PR body and respond to review without live author help. Record the observed revision, commands, result and friction without real records. No newcomer exercise has been claimed from an automated test. This recommendation is separate from issue #34's required two-outside-person design study.
 
 ## Decision records
 
@@ -427,19 +442,19 @@ All future architectural decisions belong in this README to preserve one reposit
 
 ## Foundation issue acceptance
 
-The [clause-level inventory](docs/foundation/acceptance.json) is the authoritative work ledger for this local foundation task. A file's existence is implementation evidence; passing a named check is execution evidence; maintainer adoption, independent review, outsider research, GitHub rules and hosted operation require their own observations.
+The [clause-level inventory](docs/foundation/acceptance.json) is the work ledger for this local foundation task. It distinguishes original foundation acceptance, proposed aid-product amendments, supplemental public-release requirements and recommended field validation. A file's existence is implementation evidence; passing a named check is execution evidence; maintainer adoption, independent review, outsider research and GitHub rules require their own observations. The ledger is not unilateral approval of amendments to GitHub issues.
 
 | GitHub issue | Local deliverable | Remaining acceptance controlled outside these artifacts |
 | --- | --- | --- |
 | [#32](https://github.com/Open-Sourcery-UMD/scryer/issues/32) integration baseline | Current product/build boundaries and explicit integration audit | Team names canonical branch; actual candidate review/merge and clean remote build |
 | [#33](https://github.com/Open-Sourcery-UMD/scryer/issues/33) product contract | User/mission, data/journey, current/target/self-host/out-of-scope and dated release contract | Maintainers adopt the aid-flow replacement for the earlier budgeting specification |
 | [#34](https://github.com/Open-Sourcery-UMD/scryer/issues/34) journey design | Screenflow graph, synthetic low-fidelity prototype, empty/error/recovery paths and study script | Two genuine outsider sessions, resulting revisions and team review; no invented session results |
-| [#35](https://github.com/Open-Sourcery-UMD/scryer/issues/35) architecture | Dataflow/local/target deployment diagrams, typed boundaries, SQL authority, decisions and Prisma retirement path | Maintainer acceptance of intentional NextUI/SQLAlchemy/Alembic replacements, legacy retirement and production integration |
-| [#36](https://github.com/Open-Sourcery-UMD/scryer/issues/36) financial rules | Signed-cent/date/knowledge/evidence/uncertainty contract and executable boundary examples | Adoption of aid-specific metrics instead of unsupported budget formulas; browser production parity |
-| [#37](https://github.com/Open-Sourcery-UMD/scryer/issues/37) privacy and risk | Asset/access/lifecycle/retention/export/deletion/log/backup decisions and accountable roles | Named operators accept roles, hosted retention/backups, qualified privacy and independent security reviews |
-| [#38](https://github.com/Open-Sourcery-UMD/scryer/issues/38) contribution | Issue forms, explicit PR body flow, ownership/review/decision standards and body validator | Human newcomer exercise and independently enforced review practice |
+| [#35](https://github.com/Open-Sourcery-UMD/scryer/issues/35) architecture | Dataflow/local/target deployment diagrams, typed boundaries, SQL authority, decisions and documented Prisma retirement path | Maintainer adoption of browser financial rules and SQL authority replacing the server-rule/SQLAlchemy/Alembic proposal; Next.js UI is retained |
+| [#36](https://github.com/Open-Sourcery-UMD/scryer/issues/36) financial rules | Signed-cent/date/knowledge/evidence/uncertainty contract and executable boundary examples | Maintainer adoption of aid-specific metrics instead of unsupported budget formulas |
+| [#37](https://github.com/Open-Sourcery-UMD/scryer/issues/37) privacy and risk | Asset/access/lifecycle/retention/export/deletion/log/backup decisions and accountable fallback coordinator | Human policy review and acceptance of accountable role assignments; deployed controls remain separate release work |
+| [#38](https://github.com/Open-Sourcery-UMD/scryer/issues/38) contribution | Issue forms, explicit PR body flow, ownership/review/decision standards and tested body validator | Actual independent review and enforcement; an unassisted newcomer exercise is recommended separately |
 | [#39](https://github.com/Open-Sourcery-UMD/scryer/issues/39) checks | Locks, local check groups, pinned-action CI aggregate and scan/update configuration | Successful remote clean-checkout CI, settings activation and observed failed-check merge prevention |
-| [#40](https://github.com/Open-Sourcery-UMD/scryer/issues/40) contributor stack | Safe local secret setup/bindings, production frontend, readiness and isolated restart rehearsal tooling | Real clean-machine/daemon-backed build/readiness/write/restart/read evidence; no inference from mocks |
+| [#40](https://github.com/Open-Sourcery-UMD/scryer/issues/40) contributor stack | Safe local secrets/bindings, production frontend and meaningful readiness; clean committed daemon-backed build/write/restart/read rehearsal passed | No remaining local engineering gate; include the verified change in normal team review/integration |
 
 Before public release, the release owner must assemble the exact revision, a complete reviewed personal-case journey, supported format evidence, native/WASM/Python parity, real JWT/account lifecycle evidence, accessible recovery/export/delete/conflict UX, measured performance/fuzzing and independent security results, approved real-record/privacy procedures, a consented pilot, and the actual $0 cash operations/backup/restore/incident/rollback record. Every failed or unavailable gate remains visible.
 
@@ -454,7 +469,7 @@ Before public release, the release owner must assemble the exact revision, a com
 | `sync/` | Opaque API, identity boundary, SQL store/migration runner and deletion reconciler |
 | `migrations/` | Sole PostgreSQL schema authority |
 | `docs/backend/contracts/` | Machine-readable case schema |
-| `docs/foundation/` | Plan, clause-level acceptance, executable financial examples, journeys/prototype and uncompleted usability protocol |
+| `docs/foundation/` | Plan, acceptance/evidence, proposed issue bodies, executable financial examples, journeys/prototype and uncompleted usability protocol |
 | `tests/`, `scripts/`, `.github/` | Synthetic verification, reproducible local gates and reviewed CI/contribution configuration |
 | `prisma/`, legacy top-level utilities | Historical scaffolding pending explicit retirement; no production financial authority |
 

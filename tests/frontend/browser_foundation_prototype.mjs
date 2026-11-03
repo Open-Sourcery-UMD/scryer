@@ -92,6 +92,33 @@ test("foundation wireframes run directly from a local file with synthetic, recov
     assert.match(await page.locator("#screen").innerText(), /Corrected school surplus\s+\$950\.00/);
   });
 
+  await t.test("one synced case needs renewed consent after staleness and an acknowledged retry receipt", async () => {
+    await openState(page, "deletion");
+    await page.getByRole("button", { name: "Review deletion of one synced case", exact: true }).click();
+    await page.getByRole("button", { name: "Simulate offline before request was sent", exact: true }).click();
+    assert.match(await page.locator("#screen").innerText(), /No request was sent/);
+    await page.getByRole("button", { name: "Reconnect and review current head again", exact: true }).click();
+    const confirmation = page.locator("#field-synced-delete-confirmed");
+    await confirmation.check();
+    await page.getByRole("button", { name: "Simulate newer remote head refuses deletion", exact: true }).click();
+    assert.match(await page.locator("#screen").innerText(), /STALE_REVISION \(412\)/);
+    await page.getByRole("button", { name: "Inspect latest remote case and confirm again", exact: true }).click();
+    assert.equal(await confirmation.isChecked(), false, "old consent cannot authorize deletion of a newer head");
+    const request = page.getByRole("button", { name: "Simulate confirmed single-case delete request", exact: true });
+    await request.click();
+    assert.equal(await page.locator("#screen").getAttribute("data-screen-id"), "synced-delete");
+    await confirmation.check();
+    await request.click();
+    await page.getByRole("button", { name: "Simulate lost server response", exact: true }).click();
+    assert.match(await page.locator("#screen").innerText(), /same idempotency key and the same head precondition/);
+    await page.getByRole("button", { name: "Retry the exact saved synthetic request", exact: true }).click();
+    await page.getByRole("button", { name: "Simulate matching server deletion receipt", exact: true }).click();
+    assert.equal(await page.locator("#screen").getAttribute("data-screen-id"), "synced-deleted");
+    assert.match(await page.locator("#screen").innerText(), /account and other cases remain usable/);
+    assert.match(await page.locator("#screen").innerText(), /Local and other-device copies, exported archives/);
+    assert.match(await page.locator("#screen").innerText(), /tombstone=true/);
+  });
+
   await t.test("keyboard transitions, previous view, and reset work without losing labels", async () => {
     await page.getByRole("button", { name: "Reset prototype", exact: true }).click();
     await page.getByRole("button", { name: "Choose local-only case", exact: true }).focus();

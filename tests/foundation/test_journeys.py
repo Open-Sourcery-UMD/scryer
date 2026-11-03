@@ -139,6 +139,37 @@ class JourneyContracts(unittest.TestCase):
             self.assertEqual(contribution["source"], fact["sourceRef"])
             self.assertEqual(contribution["reviewId"], fact["correctionReviewId"] or fact["approvalReviewId"])
 
+    def test_remote_case_deletion_preserves_scope_and_requires_an_acknowledged_receipt(self):
+        screens = {screen["id"]: screen for screen in self.document["screens"]}
+        required = {
+            "synced-delete", "synced-delete-pending", "synced-delete-offline",
+            "synced-delete-stale", "synced-delete-unknown", "synced-deleted",
+        }
+        self.assertLessEqual(required, screens.keys())
+        menu = screens["deletion"]
+        self.assertIn("synced-delete", {action["to"] for action in menu["actions"]})
+        confirmation = screens["synced-delete"]
+        request = next(action for action in confirmation["actions"] if action["to"] == "synced-delete-pending")
+        self.assertTrue(request["requires"], "destructive request must require a fresh acknowledgement")
+        for screen_id in ("synced-delete-offline", "synced-delete-stale", "synced-delete-unknown"):
+            self.assertTrue(screens[screen_id]["requiresRecovery"])
+            self.assertNotIn("synced-deleted", {action["to"] for action in screens[screen_id]["actions"]})
+        self.assertEqual(
+            {screen["id"] for screen in screens.values() for action in screen["actions"] if action["to"] == "synced-deleted"},
+            {"synced-delete-pending"},
+            "only the simulated server receipt can establish remote deletion",
+        )
+        self.assertIn("synced-delete", {action["to"] for action in screens["synced-delete-stale"]["actions"]})
+        retry_text = " ".join(screens["synced-delete-unknown"]["summary"]).lower()
+        self.assertIn("same idempotency key", retry_text)
+        self.assertIn("same head precondition", retry_text)
+        success_text = " ".join(screens["synced-deleted"]["summary"]).lower()
+        for boundary in ("account", "other cases", "local", "archives", "tombstone"):
+            self.assertIn(boundary, success_text)
+        task = next(task for task in self.sessions["protocol"]["tasks"] if task["id"] == "T08")
+        self.assertIn("synced-case-only", task["scenarios"])
+        self.assertTrue(any("response" in item.lower() for item in task["scenarios"]))
+
     def test_embedded_catalog_is_exact_and_prototype_has_no_external_dependencies(self):
         html = (FOUNDATION / "prototype.html").read_text()
         match = re.search(r'<script id="journey-data" type="application/json">\s*(.*?)\s*</script>', html, re.S)
@@ -148,7 +179,11 @@ class JourneyContracts(unittest.TestCase):
         self.assertIn("form-action 'none'", html)
         self.assertNotRegex(html, r'<(?:script|link|img)[^>]+(?:src|href)=')
         self.assertNotIn("innerHTML", html)
-        self.assertNotRegex(html, r"\b(?:localStorage|sessionStorage|indexedDB|fetch|XMLHttpRequest|WebSocket)\b")
+        executable_scripts = "\n".join(
+            body for attributes, body in re.findall(r"<script([^>]*)>(.*?)</script>", html, re.S)
+            if 'type="application/json"' not in attributes
+        )
+        self.assertNotRegex(executable_scripts, r"\b(?:localStorage|sessionStorage|indexedDB|fetch|XMLHttpRequest|WebSocket)\b")
         self.assertIn('aria-live="polite"', html)
 
     def test_external_sessions_remain_honestly_unrun_with_a_usable_protocol(self):
