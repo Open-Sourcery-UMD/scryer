@@ -2,13 +2,15 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "engines": { "node": ">=24" },
   "scripts": {
     "predev": "node scripts/stage-browser-client.mjs",
     "dev": "next dev",
     "prebuild": "node scripts/stage-browser-client.mjs",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings=0",
+    "typecheck": "tsc --noEmit",
     "test:demo": "make -C ../engine cli && npm run build && node --test ../tests/frontend/test_*.mjs",
     "test:demo:browser": "npm run build && node --test ../tests/frontend/browser_demo_accessibility.mjs",
     "test:workspace:browser": "npm run build && node --test ../tests/frontend/browser_workspace.mjs"
@@ -18,21 +20,33 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.576.0",
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "next": "16.4.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@eslint-react/eslint-plugin": "5.28.8",
+    "@next/eslint-plugin-next": "16.4.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.27",
-    "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint": "10.14.0",
+    "eslint-plugin-jsx-a11y-x": "0.2.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "16.4.0",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-eslint": "8.72.1"
+  },
+  "overrides": {
+    "@eslint/config-array@0.23.5": { "minimatch": "11.0.4" },
+    "@typescript-eslint/typescript-estree@8.72.1": { "minimatch": "11.0.4" },
+    "eslint@10.14.0": { "minimatch": "11.0.4" },
+    "eslint-plugin-jsx-a11y-x@0.2.0": { "minimatch": "11.0.4" }
   }
 }

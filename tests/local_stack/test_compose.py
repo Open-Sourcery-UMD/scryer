@@ -51,6 +51,10 @@ class ComposeContractTests(unittest.TestCase):
         self.assertEqual(services["backend"]["ports"][0]["published"], "8123")
         self.assertEqual(services["backend"]["ports"][0]["target"], 8000)
         self.assertEqual(services["frontend"]["ports"][0]["host_ip"], "127.0.0.1")
+        self.assertIn("DATABASE_URL", services["backend"]["environment"])
+        self.assertIn("/ready", " ".join(services["backend"]["healthcheck"]["test"]))
+        for service in services.values():
+            self.assertNotIn("container_name", service, "Project names must isolate contributor stacks")
 
     def test_images_build_frontend_for_release_and_fix_container_api_port(self):
         frontend = (ROOT / "frontend/Dockerfile").read_text()

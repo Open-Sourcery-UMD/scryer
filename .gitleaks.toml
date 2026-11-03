@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Two public derived test-vector keys; exact values only, never a file or directory exemption"
+regexTarget = "secret"
+regexes = [
+  '''^7f8c37ae5c0512550aa3950cd257275adf31e87e5b684731d91f51be51ea54a7$''',
+  '''^03ae9d67f0de88320da61778baaad7dea892ef7435d29f777113868e3a4e2867$''',
+]

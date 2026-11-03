@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Hand-calculated synthetic examples for issue 36, translated into the reviewed student-aid evidence product. A bank purchase, merchant refund or transfer is not an aid posting, income classification or budget calculation.",
+  "currency": "USD",
+  "execution": {
+    "reference": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/foundation -p 'test_financial_examples.py' -v",
+    "native": "SCRYER_FINANCIAL_NATIVE_BIN=$PWD/engine/build/scryer-native PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/foundation -p 'test_financial_examples.py' -v",
+    "caseConstruction": "Load the named repository fixture, assign the example ID as caseId, optionally retain only keepEventIds, then append the explicit account references, artifacts, proposals, aid items and events. Expectations below are independently stated amounts and evidence conclusions.",
+    "sourceRecords": "Contextual synthetic bank rows use signed cents. Case proposals use a nonnegative magnitude; credit/debit direction stays in the import candidate. No contextual row automatically becomes an approved fact."
+  },
+  "examples": [
+    {
+      "id": "school-bookstore-purchase",
+      "title": "A reviewed school-account bookstore charge changes the selected term total",
+      "legacyQuestion": "normal_purchase",
+      "budgetInference": {"supported": false, "reason": "A school-account charge is supported. Monthly category spending and a spending allowance are not implemented metrics."},
+      "sourceRecords": [{"account": "school-a", "date": "2026-09-02", "description": "Fictional school bookstore charge", "signedAmountMinor": "-4250"}],
+      "case": {
+        "fixture": "tests/reference/fixtures/golden-case.json",
+        "keepEventIds": ["event-grant", "event-other-credit", "event-base-charge"],
+        "appendEvents": [{
+          "eventId": "event-bookstore", "parents": ["event-base-charge"], "recordedAt": "2026-09-02T12:00:00Z", "kind": "approve_fact",
+          "fact": {"factId": "bookstore", "termId": "2026-fall", "accountRefId": "school-a", "currency": "USD", "role": "school_charge", "recipientKind": null, "amountMinor": "4250", "proposalId": null, "aidItemId": null, "effectiveDate": "2026-09-02", "source": {"kind": "artifact", "artifactId": "bill-a", "location": "row:bookstore"}, "reviewId": "review-bookstore"}
+        }]
+      },
+      "handCalculation": "650000 - 500000 = 150000 cents before; 650000 - 500000 - 4250 = 145750 cents after; delta -4250 cents.",
+      "checks": [
+        {"operation": "project", "query": {"heads": ["event-bookstore"], "termId": "2026-fall"}, "expected": {"status": "SUPPORTED_BY_UPLOADED_RECORDS", "amountMinor": "145750", "factIds": ["base-charge", "bookstore", "grant", "other-credit"], "limitationCodes": ["NOT_ENTITLEMENT", "SOURCE_SET_MAY_BE_INCOMPLETE"]}},
+        {"operation": "compare", "query": {"beforeHeads": ["event-base-charge"], "afterHeads": ["event-bookstore"], "termId": "2026-fall"}, "expected": {"deltaMinor": "-4250", "contributions": [{"factId": "bookstore", "beforeMinor": "0", "afterMinor": "-4250", "deltaMinor": "-4250"}]}}
+      ],
+      "safeConclusion": "The reviewed records support a $1,457.50 school-account surplus for this source set, not an entitlement to a refund or an available spending budget."
+    },
+    {
+      "id": "bank-purchase",
+      "title": "An ordinary bank debit stays an import proposal",
+      "legacyQuestion": "normal_purchase",
+      "budgetInference": {"supported": false, "reason": "The domain has no bank_debit expense or category-budget role. A bank purchase cannot be reclassified as a school charge."},
+      "sourceRecords": [{"account": "bank-a", "date": "2026-09-07", "description": "Fictional grocery purchase", "signedAmountMinor": "-4250"}],
+      "case": {
+        "fixture": "tests/reference/fixtures/golden-case.json",
+        "appendProposals": [{"proposalId": "proposal-bank-purchase", "artifactId": "bank-a", "sourceLocation": "row:purchase", "rawValue": "-42.50", "parserVersion": "bank-csv-1", "mappingVersion": "signed-example-1", "proposedAmountMinor": "4250"}]
+      },
+      "handCalculation": "The approved school facts still contribute 270000 + 350000 - 500000 - 30000 = 90000 cents. The unreviewed bank debit contributes no school cents.",
+      "checks": [{"operation": "project", "query": {"heads": ["event-bank-credit"], "termId": "2026-fall"}, "expected": {"amountMinor": "90000", "factIds": ["base-charge", "extra-charge", "grant", "other-credit"], "status": "SUPPORTED_BY_UPLOADED_RECORDS"}}],
+      "safeConclusion": "The preview may display a $42.50 debit. It does not calculate grocery spending, reduce a budget or change a school-account posting."
+    },
+    {
+      "id": "school-refund-and-deposit",
+      "title": "A school refund and a bank deposit remain separate from school surplus",
+      "legacyQuestion": "refund",
+      "budgetInference": {"supported": false, "reason": "An observed deposit is not evidence of recurring income or an allowance. Reviewed allocation is a reconciliation operation."},
+      "sourceRecords": [{"account": "school-a", "date": "2026-09-06", "description": "Fictional refund issued", "signedAmountMinor": "90000"}, {"account": "bank-a", "date": "2026-09-07", "description": "Fictional bank credit", "signedAmountMinor": "90000"}],
+      "case": {"fixture": "tests/reference/fixtures/matching-case.json"},
+      "handCalculation": "Before correction: 300000 + 350000 - 500000 = 150000. After: 270000 + 350000 - 500000 - 30000 = 90000. Delta is -60000, comprising -30000 grant correction and -30000 added charge. Issuance and observation add zero to school surplus; review allocates 90000 of a 90000 refund, leaving 0.",
+      "checks": [
+        {"operation": "project", "query": {"heads": ["event-confirm"], "termId": "2026-fall"}, "expected": {"amountMinor": "90000", "factIds": ["base-charge", "extra-charge", "grant", "other-credit"]}},
+        {"operation": "compare", "query": {"beforeHeads": ["event-base-charge"], "afterHeads": ["event-extra-charge"], "termId": "2026-fall"}, "expected": {"deltaMinor": "-60000", "contributions": [{"factId": "extra-charge", "beforeMinor": "0", "afterMinor": "-30000", "deltaMinor": "-30000"}, {"factId": "grant", "beforeMinor": "300000", "afterMinor": "270000", "deltaMinor": "-30000"}]}},
+        {"operation": "matching", "query": {"heads": ["event-coverage"], "refundFactId": "issued-refund", "bankAccountRefId": "bank-a"}, "expected": {"status": "SUGGESTED", "candidateFactIds": ["bank-credit"], "confirmedAllocations": [], "remainingMinor": "90000"}},
+        {"operation": "matching", "query": {"heads": ["event-confirm"], "refundFactId": "issued-refund", "bankAccountRefId": "bank-a"}, "expected": {"status": "MATCHED_BY_REVIEW", "candidateFactIds": [], "remainingMinor": "0", "confirmedAllocations": [{"bankFactId": "bank-credit", "bankAccountRefId": "bank-a", "allocatedMinor": "90000", "decisionEventId": "event-confirm"}]}}
+      ],
+      "safeConclusion": "The $900 refund-to-deposit allocation is confirmed by user review. The records do not establish that a refund was owed, that the documents are authentic or that $900 is safe to spend."
+    },
+    {
+      "id": "merchant-refund",
+      "title": "A merchant refund observed at the bank is not a school aid credit",
+      "legacyQuestion": "refund",
+      "budgetInference": {"supported": false, "reason": "Reversing category spending, deciding taxable income and netting purchases against refunds are outside the current aid metric."},
+      "sourceRecords": [{"account": "bank-a", "date": "2026-09-07", "description": "Fictional grocery refund", "signedAmountMinor": "4250"}],
+      "case": {
+        "fixture": "tests/reference/fixtures/golden-case.json",
+        "appendEvents": [{
+          "eventId": "event-merchant-refund", "parents": ["event-bank-credit"], "recordedAt": "2026-09-07T11:00:00Z", "kind": "approve_fact",
+          "fact": {"factId": "merchant-refund", "termId": null, "accountRefId": "bank-a", "currency": "USD", "role": "bank_credit_observed", "recipientKind": null, "amountMinor": "4250", "proposalId": null, "aidItemId": null, "effectiveDate": "2026-09-07", "source": {"kind": "artifact", "artifactId": "bank-a", "location": "row:merchant-refund"}, "reviewId": "review-merchant-refund"}
+        }]
+      },
+      "handCalculation": "The bank observation has magnitude 4250 cents. Only the school's reviewed posted movements enter the school metric, so 90000 + 0 = 90000 cents.",
+      "checks": [
+        {"operation": "project", "query": {"heads": ["event-merchant-refund"], "termId": "2026-fall"}, "expected": {"amountMinor": "90000", "factIds": ["base-charge", "extra-charge", "grant", "other-credit"]}},
+        {"operation": "compare", "query": {"beforeHeads": ["event-bank-credit"], "afterHeads": ["event-merchant-refund"], "termId": "2026-fall"}, "expected": {"deltaMinor": "0", "contributions": []}}
+      ],
+      "safeConclusion": "A reviewed $42.50 bank credit can be preserved as observed evidence. Its amount and date alone do not establish an aid match, income or a school charge reversal."
+    },
+    {
+      "id": "two-account-transfer",
+      "title": "Rows from both sides of an own-account transfer do not create aid or income",
+      "legacyQuestion": "two_account_transfer",
+      "budgetInference": {"supported": false, "reason": "There is no current transfer-pair classifier, household balance consolidation, monthly income or budget formula. Both imported rows remain proposals."},
+      "sourceRecords": [{"account": "bank-a", "date": "2026-09-07", "description": "Fictional transfer to savings", "signedAmountMinor": "-25000"}, {"account": "bank-b", "date": "2026-09-07", "description": "Fictional transfer from checking", "signedAmountMinor": "25000"}],
+      "case": {
+        "fixture": "tests/reference/fixtures/golden-case.json",
+        "appendAccountRefs": [{"accountRefId": "bank-b", "kind": "bank", "institutionId": null, "holderKind": "student"}],
+        "appendArtifacts": [{"artifactId": "transfer-bank-b", "sha256": "5555555555555555555555555555555555555555555555555555555555555555", "kind": "bank_transactions", "observedAt": "2026-09-07T10:00:00Z", "accountRefId": "bank-b"}],
+        "appendProposals": [
+          {"proposalId": "proposal-transfer-out", "artifactId": "bank-a", "sourceLocation": "row:transfer-out", "rawValue": "-250.00", "parserVersion": "bank-csv-1", "mappingVersion": "signed-example-1", "proposedAmountMinor": "25000"},
+          {"proposalId": "proposal-transfer-in", "artifactId": "transfer-bank-b", "sourceLocation": "row:transfer-in", "rawValue": "250.00", "parserVersion": "bank-csv-1", "mappingVersion": "signed-example-1", "proposedAmountMinor": "25000"}
+        ]
+      },
+      "handCalculation": "Contextual transfer legs are -25000 and +25000 cents, summing to 0 before fees. Neither unreviewed proposal is a school posting: the school source total remains 90000 cents. No opening or closing bank balance is computed.",
+      "checks": [{"operation": "project", "query": {"heads": ["event-bank-credit"], "termId": "2026-fall"}, "expected": {"amountMinor": "90000", "factIds": ["base-charge", "extra-charge", "grant", "other-credit"]}}],
+      "safeConclusion": "Showing both CSV rows does not double-count $250 as aid or income. This example makes no claim that Scryer can classify transfers or derive complete bank balances."
+    },
+    {
+      "id": "missing-income-evidence",
+      "title": "Pending aid with no posted movement produces no school surplus",
+      "legacyQuestion": "missing_income",
+      "budgetInference": {"supported": false, "reason": "No income observation is not evidence of zero income. Pending aid and work-study offers cannot supply a missing monthly income baseline."},
+      "sourceRecords": [{"account": "school-a", "date": "2026-08-20", "description": "Fictional pending aid snapshot", "signedAmountMinor": "650000"}],
+      "case": {
+        "fixture": "tests/reference/fixtures/golden-case.json",
+        "keepEventIds": [],
+        "appendAidItems": [{"aidItemId": "pending-aid", "institutionId": "institution-a", "termId": "2026-fall", "recipientKind": "student"}],
+        "appendEvents": [{
+          "eventId": "event-pending-only", "parents": [], "recordedAt": "2026-09-02T10:00:00Z", "kind": "approve_fact",
+          "fact": {"factId": "pending-only", "termId": "2026-fall", "accountRefId": null, "currency": "USD", "role": "aid_pending", "recipientKind": null, "amountMinor": "650000", "proposalId": null, "aidItemId": "pending-aid", "effectiveDate": "2026-08-20", "source": {"kind": "artifact", "artifactId": "aid-a", "location": "row:pending"}, "reviewId": "review-pending-only"}
+        }]
+      },
+      "handCalculation": "There are no approved school_credit or school_charge facts. The school metric is unknown (null), not 0 or 650000. The evidence-only lifecycle reports pending 650000 and posted sum 0, with PENDING_NOT_POSTED; the latter is only the sum of the selected linked posted observations.",
+      "checks": [
+        {"operation": "project", "query": {"heads": ["event-pending-only"], "termId": "2026-fall"}, "expected": {"status": "INSUFFICIENT_COVERAGE", "amountMinor": null, "factIds": [], "limitationCodes": ["NO_POSTED_SCHOOL_MOVEMENTS", "NOT_ENTITLEMENT"]}},
+        {"operation": "lifecycle", "query": {"heads": ["event-pending-only"], "termId": "2026-fall", "aidItemId": "pending-aid"}, "expected": {"status": "PENDING", "currentPendingMinor": "650000", "postedMinor": "0", "currentOfferMinor": null, "findingCodes": ["OFFER_NOT_OBSERVED", "PENDING_NOT_POSTED"], "nextActionCodes": ["CHECK_SCHOOL_POSTING"]}}
+      ],
+      "safeConclusion": "Add or review posting evidence. Scryer cannot calculate a spending allowance, declare missing income zero or assume pending aid has reached the school or bank."
+    },
+    {
+      "id": "partial-statement-month",
+      "title": "A partial statement month exposes exact missing dates",
+      "legacyQuestion": "partial_month",
+      "budgetInference": {"supported": false, "reason": "The aid engine does not prorate monthly spending or extrapolate income from a partial statement. Coverage is account-specific evidence, not an estimate."},
+      "sourceRecords": [{"account": "bank-a", "periodStart": "2026-09-10", "periodEndExclusive": "2026-09-21", "description": "Fictional reviewed statement period"}],
+      "case": {
+        "fixture": "tests/reference/fixtures/golden-case.json",
+        "appendArtifacts": [{"artifactId": "partial-bank-period", "sha256": "6666666666666666666666666666666666666666666666666666666666666666", "kind": "bank_statement", "observedAt": "2026-10-02T09:00:00Z", "accountRefId": "bank-a"}],
+        "appendEvents": [{
+          "eventId": "event-partial-coverage", "parents": ["event-bank-credit"], "recordedAt": "2026-10-02T10:00:00Z", "kind": "assert_coverage",
+          "coverage": {"coverageId": "partial-coverage", "accountRefId": "bank-a", "recordType": "bank_transactions", "startDate": "2026-09-10", "endDateExclusive": "2026-09-21", "basis": "source_asserted", "source": {"kind": "artifact", "artifactId": "partial-bank-period", "location": "statement-period"}, "reviewId": "review-partial-coverage"}
+        }]
+      },
+      "handCalculation": "For [2026-09-01, 2026-10-01), the only covered interval is [2026-09-10, 2026-09-21): 11 days. Missing intervals have 9 and 10 days respectively. No 30/11 multiplier is applied to any amount.",
+      "checks": [
+        {"operation": "coverage", "query": {"heads": ["event-partial-coverage"], "accountRefId": "bank-a", "startDate": "2026-09-01", "endDateExclusive": "2026-10-01"}, "expected": {"status": "INSUFFICIENT_COVERAGE", "coveredIntervals": [["2026-09-10", "2026-09-21"]], "missingIntervals": [["2026-09-01", "2026-09-10"], ["2026-09-21", "2026-10-01"]], "assertionIds": ["partial-coverage"], "limitationCodes": ["COVERAGE_GAP", "SOURCE_AUTHENTICITY_NOT_VERIFIED"]}},
+        {"operation": "project", "query": {"heads": ["event-partial-coverage"], "termId": "2026-fall"}, "expected": {"amountMinor": "90000", "status": "SUPPORTED_BY_UPLOADED_RECORDS"}}
+      ],
+      "safeConclusion": "Review the two missing periods for this bank account. A covered subperiod and an unchanged school source total cannot prove nonpayment, complete income, a bank balance or net worth."
+    },
+    {
+      "id": "unresolved-correction",
+      "title": "Concurrent corrections withhold a total until reviewed resolution",
+      "legacyQuestion": "correction",
+      "budgetInference": {"supported": false, "reason": "No budget should be inferred from contradictory aid evidence; event identifiers and latest device clocks are not conflict resolution."},
+      "sourceRecords": [],
+      "case": {"fixture": "tests/reference/fixtures/ambiguous-case.json"},
+      "handCalculation": "Two incomparable reviewed replacements of the same grant cannot be selected by file order. The selected snapshot returns a null amount with an unresolved-correction limitation.",
+      "checks": [{"operation": "project", "query": {"heads": ["event-grant-correction", "event-grant-correction-b"], "termId": "2026-fall"}, "expected": {"status": "CONTRADICTORY_EVIDENCE", "amountMinor": null, "limitationCodes": ["NOT_ENTITLEMENT", "UNRESOLVED_CORRECTION_CONFLICT"]}}],
+      "safeConclusion": "Preserve both corrections and request a reviewed superseding correction. Do not display a chosen amount or spending recommendation."
+    }
+  ],
+  "moneyExamples": [
+    {"id": "ten-cents", "sourceDecimal": "0.10", "expectedMinor": "10"},
+    {"id": "bank-debit", "sourceDecimal": "-42.50", "expectedMinor": "-4250"},
+    {"id": "accounting-parentheses", "sourceDecimal": "($1,234.56)", "expectedMinor": "-123456"},
+    {"id": "unsupported-precision", "sourceDecimal": "1.005", "expectedError": "UNSUPPORTED_PRECISION"},
+    {"id": "bad-grouping", "sourceDecimal": "1,23.45", "expectedError": "INVALID_MONEY"},
+    {"id": "overflow", "sourceDecimal": "92233720368547758.08", "expectedError": "MONEY_OVERFLOW"}
+  ]
+}

@@ -46,6 +46,7 @@ class SetupContractTests(unittest.TestCase):
         self.environment["MOCK_DAEMON_DOWN"] = "0"
         self.environment.pop("POSTGRES_PASSWORD", None)
         self.environment.pop("API_PORT", None)
+        self.environment.pop("FRONTEND_PORT", None)
 
     def run_setup(self):
         return subprocess.run(["sh", str(self.workspace / "setup.sh")],
@@ -140,6 +141,18 @@ class SetupContractTests(unittest.TestCase):
             (self.workspace / ".env").read_text(),
             r"^# local configuration\nPOSTGRES_PASSWORD=[0-9a-f]{64}\n$",
         )
+
+    def test_frontend_port_is_validated_and_used_for_readiness(self):
+        (self.workspace / ".env").write_text("FRONTEND_PORT=34123\n")
+        result = self.run_setup()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("34123", result.stdout)
+        (self.workspace / ".env").write_text("FRONTEND_PORT=0\nPOSTGRES_PASSWORD=" + "a" * 64 + "\n")
+        self.assertNotEqual(self.run_setup().returncode, 0)
+
+    def test_duplicate_frontend_port_is_rejected(self):
+        (self.workspace / ".env").write_text("FRONTEND_PORT=3000\nFRONTEND_PORT=3001\n")
+        self.assertNotEqual(self.run_setup().returncode, 0)
 
 
 if __name__ == "__main__":

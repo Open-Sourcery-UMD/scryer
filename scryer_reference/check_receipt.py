@@ -5,7 +5,7 @@ import hashlib
 import hmac
 import json
 import re
-from typing import Any
+from typing import Any, Literal
 
 from .model import Case, Event, ModelError, SourceRef, snapshot_events
 
@@ -108,7 +108,7 @@ def _source_matches(source: SourceRef, claimed: Any, case: Case) -> bool:
     if source.kind == "manual":
         return claimed == {"kind": "manual", "entryId": source.entry_id}
     artifacts = {artifact.artifact_id: artifact for artifact in case.artifacts}
-    artifact = artifacts.get(source.artifact_id)
+    artifact = artifacts.get(source.artifact_id) if source.artifact_id is not None else None
     if artifact is None:
         return False
     return claimed == {
@@ -120,7 +120,7 @@ def _source_matches(source: SourceRef, claimed: Any, case: Case) -> bool:
     }
 
 
-def _latest_correction(events: list[Event]) -> Event | None | bool:
+def _latest_correction(events: list[Event]) -> Event | None | Literal[False]:
     if not events:
         return None
     ids = {event.event_id for event in events}
@@ -216,7 +216,7 @@ def check_receipt(case: Case, receipt: dict[str, object]) -> CheckResult:
         latest = _latest_correction(corrections.get(fact_id, []))
         if latest is False:
             return _failed("CONTRADICTORY_EVIDENCE")
-        current_amount = fact.amount_minor
+        current_amount: int | None = fact.amount_minor
         current_source = fact.source
         correction_id: str | None = None
         correction_review_id: str | None = None

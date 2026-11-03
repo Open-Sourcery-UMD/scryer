@@ -1,0 +1,28 @@
+name: Reproducible defect
+description: Report a defect using synthetic data.
+title: "Bug: "
+body:
+  - type: markdown
+    attributes:
+      value: "Use synthetic examples only. Report suspected vulnerabilities privately through the repository's security advisory page."
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Expected and observed behavior
+      description: Explain the user action and what happened.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal synthetic reproduction
+      description: Include steps, revision, environment, and synthetic input. Redact secrets and personal information.
+    validations:
+      required: true
+  - type: textarea
+    id: recovery
+    attributes:
+      label: Impact and recovery
+      description: State whether data was lost, a result was misleading, or a safe workaround exists.
+    validations:
+      required: true

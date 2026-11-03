@@ -106,7 +106,7 @@ def _evaluate(case: Case, heads: tuple[str, ...], term_id: str) -> _Evaluation:
                 ),
                 contributions={},
             )
-        amount = fact.amount_minor
+        amount: int | None = fact.amount_minor
         source = fact.source
         if correction is not None:
             payload = correction.correction

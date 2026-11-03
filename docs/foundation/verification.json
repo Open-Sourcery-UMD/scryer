@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-03",
+  "status": "LOCAL_ENGINEERING_CHECKS_PASSED_EXTERNAL_ACCEPTANCE_PENDING",
+  "subject": {
+    "runtimeCommit": "e8147985a6b51458861935d2aaa6304c2b06dd66",
+    "reviewBaseCommit": "9451c23",
+    "finalFixScope": "Follow-up changes design JSON/HTML, its tests and foundation documentation/evidence only. No shipped application, engine, client, API, migrations, dependency locks, Docker or workflow content changed after runtimeCommit.",
+    "designArtifactSHA256": {
+      "docs/foundation/journeys.json": "5efe2e301b3704e1da9b8cd59154d9f786b8138f0becb6bdf331641a90f4a9ef",
+      "docs/foundation/prototype.html": "c8fb7528241b6cadc287a1462e548b80665181afb111ee02f641219c85992ff7",
+      "docs/foundation/usability-sessions.json": "92cfa0c71dc2f4d01a604159491e3bba5d6ef1248b130ab1a6b66a36589a3c6e",
+      "tests/foundation/test_journeys.py": "fa295e6e41b994600a2d5f31e2e826ea5330edd192218cf71225cb1899ea0b54",
+      "tests/frontend/browser_foundation_prototype.mjs": "3e7880282cc5469f9468b78a2fe296113f1250f71fa3c84d51b8bee134931cc5"
+    },
+    "revisionRule": "Use the final local Git commit containing this record together with runtimeCommit and the exact design hashes; the file cannot contain its own commit hash."
+  },
+  "environment": {
+    "host": "macOS 27.0.1 arm64",
+    "python": "3.14.3",
+    "node": "25.7.0",
+    "compiler": "Apple clang 21.0.0",
+    "dockerCLI": "29.2.1",
+    "containerRuntimes": {
+      "python": "3.12 (digest-pinned image)",
+      "node": "24 (digest-pinned image)",
+      "postgresql": "16 (digest-pinned image)"
+    },
+    "remoteCI": "Configured for Ubuntu 24.04, Python 3.12, Node 24 and LLVM 18; not run or claimed as passing by this local task."
+  },
+  "countingRule": "Counts belong to each named invocation. Native financial and other components run in multiple groups; do not sum these into a unique repository test count.",
+  "records": [
+    {
+      "id": "fast",
+      "commands": [
+        "SCRYER_FINANCIAL_NATIVE_BIN=\"$PWD/engine/build/scryer-native\" sh scripts/check.sh fast"
+      ],
+      "result": "passed",
+      "metrics": {
+        "ruff": "clean over configured supported source/scripts",
+        "mypySourceFiles": 26,
+        "referenceTests": 145,
+        "foundationTests": 21,
+        "localStackTests": 23,
+        "skipped": 0
+      },
+      "localLog": ".backend-artifacts/foundation/fast-final.log"
+    },
+    {
+      "id": "foundation-contracts",
+      "parentEvidence": "fast",
+      "result": "passed",
+      "metrics": {
+        "tests": 21,
+        "skipped": 0
+      },
+      "claim": "Financial Python/native examples, journey/recovery/deletion scope, PR text and required-job failure propagation. No external human evidence."
+    },
+    {
+      "id": "engine",
+      "commands": [
+        "sh scripts/check.sh engine"
+      ],
+      "result": "passed",
+      "metrics": {
+        "cppUnitExecutables": 8,
+        "pythonEngineTests": 9,
+        "financialExampleTests": 7,
+        "coverageCLITests": 5,
+        "generatedComparisons": 10000,
+        "generatedSkips": 0,
+        "generatedFamilies": 7,
+        "generatedSeconds": 25.117,
+        "generatedSeedStart": 0,
+        "sourceLineCoveragePercent": 93.11,
+        "sourceBranchCoveragePercent": 85.84,
+        "requiredLineCoveragePercent": 90,
+        "requiredBranchCoveragePercent": 85,
+        "coverageProfiles": 306
+      },
+      "localLog": ".backend-artifacts/foundation/engine.log",
+      "limits": "Native selected semantic sources on this arm64 toolchain. No WASM parity or performance/throughput target is inferred from differential-run duration."
+    },
+    {
+      "id": "financial-native",
+      "parentEvidence": "engine",
+      "result": "passed",
+      "metrics": {
+        "scenarios": 8,
+        "tests": 7,
+        "skipped": 0
+      },
+      "claim": "Hand-calculated reference/native examples, independent receipts, tamper rejection, order independence and source-role boundaries."
+    },
+    {
+      "id": "client",
+      "commands": [
+        "SCRYER_BROWSER_BIN=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" sh scripts/check.sh client"
+      ],
+      "result": "passed",
+      "metrics": {
+        "typecheck": "passed",
+        "nodeTests": 43,
+        "chromeTests": 38,
+        "skipped": 0
+      },
+      "localLog": ".backend-artifacts/foundation/client.log",
+      "limits": "Headless component behavior with explicit synthetic semantic-validation callbacks; not released browser C++ validation."
+    },
+    {
+      "id": "frontend",
+      "commands": [
+        "SCRYER_BROWSER_BIN=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" sh scripts/check.sh frontend"
+      ],
+      "result": "passed",
+      "metrics": {
+        "lintWarnings": 0,
+        "productionBuild": "passed",
+        "typecheck": "passed",
+        "unitAndLintPolicyTests": 14,
+        "chromeTestsAtRuntimeCommit": 28,
+        "skipped": 0
+      },
+      "localLog": ".backend-artifacts/foundation/frontend.log",
+      "limits": "Runtime source unchanged by final design fix; final browser invocation is separately recorded with 29 tests."
+    },
+    {
+      "id": "frontend-browser",
+      "commands": [
+        "SCRYER_BROWSER_BIN=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" node --test --test-concurrency=1 tests/frontend/browser_*.mjs"
+      ],
+      "result": "passed",
+      "metrics": {
+        "chromeTests": 29,
+        "skipped": 0
+      },
+      "localLog": ".backend-artifacts/foundation/frontend-browser-final.log"
+    },
+    {
+      "id": "prototype-browser",
+      "commands": [
+        "SCRYER_BROWSER_BIN=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" node --test tests/frontend/browser_foundation_prototype.mjs"
+      ],
+      "result": "passed",
+      "metrics": {
+        "nodeReportedTestsIncludingParent": 9,
+        "states": 67,
+        "journeys": 13,
+        "studyTasksPrepared": 8,
+        "actualOutsideHumanSessions": 0,
+        "skipped": 0
+      },
+      "localLog": ".backend-artifacts/foundation/prototype-final.log",
+      "claim": "Every catalog action, acknowledgement, keyboard/reset, 390-pixel layout, exact insight and local/synced/account deletion design checks pass in Chrome. No network traffic/storage or real account actions."
+    },
+    {
+      "id": "sync",
+      "commands": [
+        "SCRYER_BROWSER_BIN=\"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome\" sh scripts/check.sh sync"
+      ],
+      "result": "passed",
+      "metrics": {
+        "postgresqlAndApiTests": 85,
+        "chromeApiPostgresJourneys": 3,
+        "realKeycloakPKCEChromeTests": 1,
+        "skipped": 0
+      },
+      "localLog": ".backend-artifacts/foundation/sync-integration.log",
+      "claim": "Synthetic disposable PostgreSQL/API restore-after-device-retirement, ciphertext conflicts and reviewed branch join/stale queue; real local provider browser PKCE with two users and wrong-verifier rejection. Owned synthetic resources cleaned.",
+      "limits": "API tests use fixture verifiers; the separate real provider component is not maintained JWT-to-API integration."
+    },
+    {
+      "id": "containers",
+      "commands": [
+        ".venv/bin/python scripts/verify-local-stack.py --revision e8147985a6b51458861935d2aaa6304c2b06dd66"
+      ],
+      "result": "passed",
+      "sourceCommit": "e8147985a6b51458861935d2aaa6304c2b06dd66",
+      "project": "scryer-verify-31a7e445913f",
+      "assertions": [
+        "Clean committed archive builds frontend/API/PostgreSQL and serves the demo.",
+        "Real SQL marker written before stopping.",
+        "Database outage returns readiness 503 while liveness remains 200.",
+        "Complete down/up without deleting volumes retains the SQL marker.",
+        "Repeated setup preserves exact .env bytes.",
+        "Cleanup is restricted to this validated disposable project.",
+        "Post-rehearsal Docker inventory contains no container/volume owned by this rehearsal project; other projects were not addressed by cleanup."
+      ],
+      "localLog": ".backend-artifacts/foundation/container-rehearsal.log",
+      "privateRuntimeLog": ".backend-artifacts/foundation/scryer-verify-31a7e445913f.log",
+      "limits": "Local contributor scaffold, not a hosted sync/public-account deployment. No assistant entered an OS admin credential or approved the Docker administrator prompt."
+    },
+    {
+      "id": "dependencies",
+      "result": "passed",
+      "operations": [
+        "Installed Python development lock with hash checking.",
+        "Installed frontend and client from npm lockfiles with npm ci; checked frontend peer dependency tree.",
+        "Production runtime lock installed and frontend npm ci/build run in the clean pinned containers."
+      ],
+      "limits": "Local host tests use newer Python/Node than configured CI; remote supported-toolchain execution remains pending."
+    },
+    {
+      "id": "security",
+      "commands": [
+        "sh scripts/check.sh security"
+      ],
+      "result": "passed",
+      "metrics": {
+        "scannerCanaryTests": 1,
+        "knownPythonDependencyVulnerabilities": 0,
+        "knownClientNpmVulnerabilities": 0,
+        "knownFrontendNpmVulnerabilities": 0,
+        "candidateSecretFindings": 0,
+        "candidateFilesScanned": 267
+      },
+      "localLog": ".backend-artifacts/foundation/security-final.log",
+      "limits": "Dated advisory checks of complete locked dependencies and final candidate-only secret scan; not historic Git scanning or independent security assessment."
+    },
+    {
+      "id": "workflow",
+      "commands": [
+        ".backend-artifacts/tools/actionlint -shellcheck= .github/workflows/ci.yml",
+        ".venv/bin/python -c \"import pathlib, yaml; [yaml.load(path.read_text(), Loader=yaml.BaseLoader) for path in pathlib.Path('.github').rglob('*.yml')]\""
+      ],
+      "result": "passed",
+      "claim": "Pinned actions, least privilege, safe event-body input and required-result aggregation inspected. Local failure tests reject unsuccessful/missing required results.",
+      "limits": "No remote CI run, protection activation or failed-PR merge block is fabricated."
+    },
+    {
+      "id": "baseline-audit",
+      "result": "reviewed_read_only",
+      "mainCommit": "4c1248e7095d56a632cb0768568d0b970ab8cd7e",
+      "comparison": {
+        "base": "main",
+        "head": "codex/final-five-issues",
+        "aheadBy": 0,
+        "behindBy": 87
+      },
+      "historicalRange": "fc43aefda41cc9e0a642e4894df890e658189e3d...453c2087399894ec2c89717e4d6f32b8d86dfafa",
+      "mergedPRsObserved": [
+        31,
+        41,
+        42
+      ],
+      "limits": "Time-specific read-only observation. The local foundation candidate was not pushed or merged."
+    },
+    {
+      "id": "agent-review",
+      "result": "reviewed_with_local_fixes",
+      "immutableRange": "9451c23..e8147985a6b51458861935d2aaa6304c2b06dd66",
+      "criticalFindings": 0,
+      "importantFindings": 2,
+      "minorFindings": 1,
+      "findingsAndFixes": [
+        {
+          "finding": "Missing synced single-case deletion design",
+          "fix": "Added confirmation, pending, offline, stale, lost-response retry and acknowledged success, scope/retention explanation, graph/browser tests and study task."
+        },
+        {
+          "finding": "Foundation acceptance inflated with later implementation requirements",
+          "fix": "Moved five requirements to supplemental public-release classification, retained their incomplete status and genuine human/remote foundation gates."
+        },
+        {
+          "finding": "NextUI label incorrectly attributed to original architecture issue",
+          "fix": "Corrected to Next.js UI and limited proposed architecture changes to financial-rule ownership and schema/migration authority."
+        }
+      ],
+      "limits": "Read-only independent agent review plus one local fix pass. No human approval, re-review or public-release verdict is claimed."
+    },
+    {
+      "id": "artifact-contracts",
+      "result": "passed",
+      "claim": "Foundation JSON parses; evidence references and issue/artifact paths resolve; original and supplemental clauses are classified; prototype embed equals catalog; README relative file links resolve; three Mermaid diagrams and sole README Markdown policy retained.",
+      "limits": "Structural/source review does not prove human approval or deployed behavior."
+    }
+  ],
+  "warnings": [
+    "Starlette/httpx TestClient deprecation is visible; tests pass with the pinned HTTP client.",
+    "pip-audit cache-deserialization warnings were visible but the advisory scan completed with no known vulnerabilities."
+  ],
+  "pendingExternalFoundationAcceptance": [
+    "Maintainers adopt the aid-specific issue/architecture/formula amendments and choose main as canonical branch.",
+    "Two actual consenting outside-human design sessions, documented observations, resulting design revisions and needed retests.",
+    "Independent write-access human review, authorized integration, remote clean-checkout CI and verified review/Required checks enforcement.",
+    "Named role acceptance and maintainer privacy/contribution policy review."
+  ],
+  "publicRelease": "NO_GO_PUBLIC_ACCOUNTS_AND_REAL_RECORDS. See acceptance.json publicReleaseGates; complete UI, WASM, maintained JWT, formats, human/accessibility/security/privacy and actual $0 hosted operations remain separately tracked.",
+  "recordScope": "Historical local foundation verification before remote activation and the subsequent maintainer waivers. Current acceptance status is activation.json; historical pending entries below are not the current ledger.",
+  "supersededStatusBy": "docs/foundation/activation.json"
+}

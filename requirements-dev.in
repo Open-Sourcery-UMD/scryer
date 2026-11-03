@@ -1,0 +1,7 @@
+-r requirements.in
+httpx==0.28.1
+mypy>=1.15,<2
+ruff>=0.11,<1
+pip-audit>=2.9,<3
+PyYAML>=6,<7
+types-PyYAML>=6,<7

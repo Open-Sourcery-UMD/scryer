@@ -97,7 +97,7 @@ def _timeout(value: float) -> float:
     return float(value)
 
 
-def _token(value: str) -> str:
+def _token(value: object) -> str:
     if not isinstance(value, str) or not TOKEN.fullmatch(value):
         raise ProviderError("PROVIDER_TOKEN_INVALID")
     return value

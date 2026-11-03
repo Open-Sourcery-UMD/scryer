@@ -1,7 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
-    container_name: scryer-postgres
+    image: postgres:16-alpine@sha256:0cefaabd882e42bcb2a2f3dc56d3ce4770560ba62fd7f197f1a2e008fd5731ab
     restart: unless-stopped
     environment:
       POSTGRES_DB: scryer
@@ -25,15 +24,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: scryer-backend
     restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://scryer:${POSTGRES_PASSWORD:?Run setup.sh to create a local password}@postgres:5432/scryer
     depends_on:
       postgres:
         condition: service_healthy
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready')"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -47,13 +47,12 @@ services:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-    container_name: scryer-frontend
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${FRONTEND_PORT:-3000}:3000"
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000"]
       interval: 10s

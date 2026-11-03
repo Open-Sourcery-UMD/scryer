@@ -1,4 +1,5 @@
 type Transaction = {
+  id: string;
   date: string;
   merchant: string;
   category: string;
@@ -7,30 +8,35 @@ type Transaction = {
 
 const transactions: Transaction[] = [
   {
+    id: "synthetic-purchase-1",
     date: "2026-04-01",
     merchant: "Whole Foods",
     category: "Groceries",
     amount: -82.47,
   },
   {
+    id: "synthetic-income-1",
     date: "2026-04-02",
     merchant: "Payroll Deposit",
     category: "Income",
     amount: 2450.0,
   },
   {
+    id: "synthetic-purchase-2",
     date: "2026-04-02",
     merchant: "Metro Transit",
     category: "Transportation",
     amount: -15.0,
   },
   {
+    id: "synthetic-purchase-3",
     date: "2026-04-03",
     merchant: "Netflix",
     category: "Subscriptions",
     amount: -18.99,
   },
   {
+    id: "synthetic-income-2",
     date: "2026-04-03",
     merchant: "Freelance Client",
     category: "Income",
@@ -65,9 +71,9 @@ export default function TransactionTable() {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((transaction, index) => (
+            {transactions.map((transaction) => (
               <tr
-                key={`${transaction.date}-${transaction.merchant}-${index}`}
+                key={transaction.id}
                 className="border-t border-border transition-colors hover:bg-accent"
               >
                 <td className="px-4 py-3 text-sm text-muted-foreground">

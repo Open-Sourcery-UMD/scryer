@@ -1,0 +1,195 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-03",
+  "baseCommit": "9451c23",
+  "goal": "Deliver the locally implementable acceptance work for GitHub issues 32 through 40 without claiming human approval, external usability research, remote CI results, or public release readiness.",
+  "design": {
+    "product": "Reviewed, source-linked student-aid reconciliation, with synthetic-only execution until the separate public-release gates pass.",
+    "architecture": "Retain the C++ semantic core, independent Python oracle, browser plaintext/encryption boundary, and opaque FastAPI/PostgreSQL sync. Keep checksum-verified SQL migrations as the single schema authority. Consolidate human-readable contracts in README.md and use structured JSON/YAML for traceability and automation.",
+    "alternatives": [
+      {
+        "approach": "Restore the old budgeting architecture",
+        "decision": "Rejected: contradicts the accepted trust-centered aid-tracing product and would move financial plaintext into the API."
+      },
+      {
+        "approach": "Close issues based on existing component tests",
+        "decision": "Rejected: tests do not prove human review, public operation, or restart persistence."
+      },
+      {
+        "approach": "Finish the foundation work and explicitly record externally controlled acceptance",
+        "decision": "Selected: preserves working components while making the remaining evidence reproducible and honest."
+      }
+    ]
+  },
+  "constraints": [
+    "The initial local-only stage was completed. Subsequent explicit lead authorization permits candidate publication/PR integration and CI/reviewer ruleset enforcement; no real records, deployments or unrelated GitHub changes.",
+    "README.md remains the only repository-owned Markdown file.",
+    "Only synthetic records, fixtures, accounts, and disposable databases are permitted.",
+    "Never fabricate team approval or two external usability sessions.",
+    "Do not change core financial semantics to satisfy obsolete budgeting requirements.",
+    "Keep the 90 percent native source-line and 85 percent branch coverage thresholds.",
+    "Dependency downloads may obtain public build/test tools; no project records or secrets are uploaded."
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Foundation contract and acceptance inventory",
+      "issues": [
+        32,
+        33,
+        35,
+        36,
+        37
+      ],
+      "files": [
+        "README.md",
+        "docs/foundation/acceptance.json",
+        "docs/foundation/financial-examples.json"
+      ],
+      "deliverable": "Current product/release contract, architecture and deployment diagrams, migration decisions, checked examples, data lifecycle, risk owners, and explicit release/signoff gates.",
+      "verification": "Run executable financial examples against the independent reference; validate all inventory paths and README links.",
+      "localStatus": "implemented_and_verified",
+      "externalAcceptance": "See acceptance.json; human/remote evidence is not represented by this local status."
+    },
+    {
+      "id": 2,
+      "title": "Complete journey design and external-test protocol",
+      "issues": [
+        34
+      ],
+      "files": [
+        "docs/foundation/journeys.json",
+        "docs/foundation/prototype.html",
+        "docs/foundation/usability-sessions.json",
+        "README.md"
+      ],
+      "deliverable": "Navigable synthetic wireframes and success/failure/recovery flows for the whole target product; a two-person research script with no invented results.",
+      "verification": "Validate graph reachability, terminal/retry paths, and inspect the prototype in a real browser.",
+      "localStatus": "implemented_and_verified",
+      "externalAcceptance": "See acceptance.json; human/remote evidence is not represented by this local status."
+    },
+    {
+      "id": 3,
+      "title": "Contribution ownership and review standards",
+      "issues": [
+        38
+      ],
+      "files": [
+        ".github/CODEOWNERS",
+        ".github/ISSUE_TEMPLATE/",
+        ".github/PULL_REQUEST_TEMPLATE/contribution.txt",
+        "scripts/check_pr_description.py",
+        "README.md"
+      ],
+      "deliverable": "Issue forms, usable PR body template, ownership and review criteria, and tested PR-body validation without evaluating untrusted text.",
+      "verification": "Reject empty/placeholder PR sections; accept substantive descriptions; prove shell-looking input remains inert.",
+      "localStatus": "implemented_and_verified",
+      "externalAcceptance": "See acceptance.json; human/remote evidence is not represented by this local status."
+    },
+    {
+      "id": 4,
+      "title": "Dependency locks and CI gates",
+      "issues": [
+        39
+      ],
+      "files": [
+        "requirements.in",
+        "requirements.txt",
+        "requirements-dev.in",
+        "requirements-dev.txt",
+        "pyproject.toml",
+        ".github/workflows/ci.yml",
+        ".github/dependabot.yml",
+        "scripts/check.sh",
+        "scripts/verify-native-coverage.sh",
+        "scripts/scan_secrets.py"
+      ],
+      "deliverable": "Hashed Python locks, retained npm locks, backend lint/types/tests, client/frontend checks, native coverage/parity, dependency/secret scanning, and a stable required-check aggregator.",
+      "verification": "Run the local equivalents; validate workflow syntax and pinning; intentionally fail a gate to verify nonzero propagation.",
+      "localStatus": "implemented_and_verified",
+      "externalAcceptance": "See acceptance.json; human/remote evidence is not represented by this local status."
+    },
+    {
+      "id": 5,
+      "title": "Contributor stack and persistence rehearsal",
+      "issues": [
+        40
+      ],
+      "files": [
+        "docker-compose.yml",
+        "Dockerfile.backend",
+        "frontend/Dockerfile",
+        "setup.sh",
+        "main.py",
+        "scripts/verify-local-stack.py",
+        "tests/local_stack/"
+      ],
+      "deliverable": "Database-aware API readiness, isolated Compose project names and ports, safe secrets, and an automated build/start/write/restart/read rehearsal with cleanup confined to its own synthetic project.",
+      "verification": "Observe readiness failure without a database; run setup contracts; run the real Docker rehearsal from a clean candidate snapshot when the daemon is available.",
+      "localStatus": "implemented_and_verified",
+      "externalAcceptance": "See acceptance.json; human/remote evidence is not represented by this local status."
+    },
+    {
+      "id": 6,
+      "title": "Clean-snapshot verification and final review",
+      "issues": [
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "files": [
+        "docs/foundation/acceptance.json",
+        "README.md"
+      ],
+      "deliverable": "Reproducible evidence, local commits, reviewer findings addressed, and a precise list of human/GitHub activation checks.",
+      "verification": "Run the foundation and relevant regression gates, review the final immutable diff, and verify a clean worktree.",
+      "localStatus": "implemented_and_verified",
+      "externalAcceptance": "See acceptance.json; human/remote evidence is not represented by this local status."
+    }
+  ],
+  "reviewFocus": [
+    "PR text and issue content must be treated as data, never shell code.",
+    "A missing dependency, unavailable database, skipped CI job, or missing human session must not be reported as success.",
+    "Docker rehearsal cleanup must not address an existing contributor project or volume.",
+    "Recovery, stale conflicts, missing source coverage, and incomplete history must have a visible safe exit.",
+    "Public-signup and real-record ambitions must not be silently downgraded to the synthetic demo."
+  ],
+  "review": {
+    "immutableCommit": "e8147985a6b51458861935d2aaa6304c2b06dd66",
+    "criticalFindings": 0,
+    "importantFindings": 2,
+    "minorFindings": 1,
+    "fixPass": "Single final pass adds missing synced-case deletion, separates supplemental release work and corrects Next.js provenance. No re-review or human approval is implied."
+  },
+  "subsequentAuthorizedWork": {
+    "source": "Lead requests resolving remaining acceptance and explicit D10/D11 instructions",
+    "tasks": [
+      {
+        "id": "A1",
+        "title": "Record maintainer adoption, reviewer waiver and research deferral",
+        "status": "implemented"
+      },
+      {
+        "id": "A2",
+        "title": "Publish main-synchronized candidate and pass real GitHub CI",
+        "status": "in_progress"
+      },
+      {
+        "id": "A3",
+        "title": "Apply both main rulesets and prove a failing PR cannot merge",
+        "status": "in_progress"
+      },
+      {
+        "id": "A4",
+        "title": "Integrate verified foundation changes and record exact remote evidence",
+        "status": "not_started"
+      }
+    ]
+  }
+}

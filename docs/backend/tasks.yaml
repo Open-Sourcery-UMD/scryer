@@ -626,7 +626,7 @@
         "S-64",
         "S-66"
       ],
-      "scope": "Real local identity provider, PostgreSQL migrations/RLS, token validation, CAS/idempotent opaque revisions, quotas, deletion and lifecycle jobs.",
+      "scope": "Opaque sync with verified identities, PostgreSQL migrations/RLS, bounded revisions, quotas, deletion and lifecycle jobs.",
       "files": [
         "main.py",
         "sync/",

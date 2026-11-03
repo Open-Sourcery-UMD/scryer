@@ -1,0 +1,1344 @@
+{
+  "schemaVersion": 2,
+  "asOf": "2026-11-03",
+  "baseCommit": "9451c23",
+  "scope": "Foundation issues #32–#40 under the lead-adopted aid-product contract, explicit reviewer waiver D10 and future-research deferral D11. Authorized remote CI and protection verification are recorded in activation.json; no real records or public-release approval.",
+  "overallStatus": "MAINTAINER_DECISIONS_RECORDED_REMOTE_CI_AND_ENFORCEMENT_IN_PROGRESS",
+  "allIssueAcceptanceComplete": false,
+  "releaseContract": {
+    "deadline": "2026-12-31",
+    "target": "Public self-service signup and real student-record reconciliation with a complete reviewed, encrypted, recoverable journey.",
+    "cashHostingBudgetUSD": "0",
+    "currentDecision": "NO_GO_PUBLIC_ACCOUNTS_AND_REAL_RECORDS",
+    "syntheticDemoSatisfiesPublicTarget": false
+  },
+  "statusMeaning": {
+    "implementationStatus": "Describes artifacts/component availability. It does not assert a check ran or a person approved.",
+    "evidenceStatus": "Describes observations or who/what must still supply them. available_local is not executed verification.",
+    "verified_local": "A named synthetic command actually passed; its scope and limits are recorded.",
+    "pending_human": "An actual person must perform/review/adopt the work. No session, approval or ownership acceptance is invented.",
+    "pending_github": "Repository settings, remote CI, PR review/merge or activation require separate observed GitHub evidence.",
+    "pending_environment": "A real external tool/service is missing; a mocked or skipped run is not a pass.",
+    "reviewed_local": "An agent inspected the contract/source/diff; this is not independent human signoff or deployed behavior.",
+    "verified_local_pending_github": "The local command/configuration passed; actual GitHub activation and remote execution are still pending.",
+    "verified_local_pending_human": "The local artifact/check passed; an actual person must still adopt or evaluate it.",
+    "adopted_by_lead_instruction": "The lead directed adoption in this chat; no independent or line-by-line review is asserted.",
+    "waived_by_maintainer": "The lead explicitly removed this foundation requirement. This is not passing evidence for the waived activity.",
+    "deferred_by_maintainer": "The lead moved this activity to future research. The activity has not occurred."
+  },
+  "accountability": {
+    "fallback": "@yudhiishvs",
+    "verifiedCapability": "Repository admin verified by the root integration audit on 2026-11-03.",
+    "rolesAreAcceptedAssignments": false,
+    "independentReview": "Waived by the lead under D10; no independent human approval is recorded. Actual public-release independent security/privacy gates remain separate.",
+    "foundationCoordinatorAcceptedByInstruction": true
+  },
+  "remoteObservation": {
+    "source": "Root integration audit supplied to this task",
+    "mergedPullRequests": [
+      31,
+      41,
+      42
+    ],
+    "foundationPushed": true,
+    "foundationMerged": false,
+    "branchProtectionAppliedByTask": true,
+    "note": "Publication explicitly authorized after the initial local-only stage. Live main rulesets apply the lead reviewer waiver and require GitHub Actions-bound CI with no bypass; actual failed-probe merge rejection is recorded in activation.json. Foundation integration awaits successful remote CI.",
+    "date": "2026-11-03",
+    "mainCommit": "4c1248e7095d56a632cb0768568d0b970ab8cd7e",
+    "comparison": {
+      "base": "main",
+      "head": "codex/final-five-issues",
+      "status": "behind",
+      "aheadBy": 0,
+      "behindBy": 87,
+      "mergeBase": "453c2087399894ec2c89717e4d6f32b8d86dfafa"
+    },
+    "foundationPullRequest": 43
+  },
+  "localVerification": [
+    {
+      "evidenceArtifact": "docs/foundation/verification.json",
+      "note": "Named commands, metrics, toolchain, checked revisions and limits. This replaces stale in-progress observations; duplicate component counts must not be summed as unique tests."
+    }
+  ],
+  "issues": [
+    {
+      "number": 32,
+      "title": "Integration baseline and accurate README",
+      "overall": "local_baseline_verified_human_branch_review_and_remote_integration_pending",
+      "checks": [
+        {
+          "id": "32.1",
+          "criterion": "Compare current main with codex/final-five-issues and review Docker, health-check, summary-card and transaction-table changes.",
+          "implementationStatus": "audit_available",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Historical two-commit change read; main/codex comparison observed via read-only GitHub API; immutable e814798 foundation reviewed and the three reported local gaps addressed."
+          },
+          "accountableRole": "lead_developer",
+          "remaining": "No foundation blocker; maintainer adoption D12, review waiver D10 and research deferral D11 apply. Original activity/test scope remains explicitly recorded.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "baseline-audit",
+            "agent-review"
+          ]
+        },
+        {
+          "id": "32.2",
+          "criterion": "The team names one integration branch.",
+          "implementationStatus": "canonical_branch_proposed",
+          "evidenceStatus": "adopted_by_lead_instruction",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "proposedCanonicalBranch": "main",
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "32.3",
+          "criterion": "A clean checkout builds and accepted changes pass normal review and merge practice.",
+          "implementationStatus": "tooling_available",
+          "evidenceStatus": "verified_local_pending_github",
+          "artifacts": [
+            "scripts/check.sh",
+            ".github/workflows/ci.yml",
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Clean archive of e814798 built with real Docker and passed setup, readiness, outage, write/restart/read and repeat-setup checks."
+          },
+          "accountableRole": "lead_developer",
+          "remaining": "Remote CI and authorized PR integration are being verified; the independent-review requirement was waived under D10.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "containers",
+            "agent-review"
+          ]
+        },
+        {
+          "id": "32.4",
+          "criterion": "README accurately distinguishes current behavior, target behavior and remaining release work.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/acceptance.json",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Local verification passed within the named evidence scope; no human or remote evidence is implied."
+          },
+          "accountableRole": "lead_developer",
+          "remaining": "No foundation blocker; maintainer adoption D12, review waiver D10 and research deferral D11 apply. Original activity/test scope remains explicitly recorded.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "agent-review"
+          ]
+        }
+      ]
+    },
+    {
+      "number": 33,
+      "title": "Product specification and complete journey",
+      "overall": "complete_under_maintainer_amended_foundation_scope",
+      "checks": [
+        {
+          "id": "33.1",
+          "criterion": "Document primary user, mission, supported data, demo/self-host behavior and out-of-scope claims.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "reviewed_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
+          },
+          "accountableRole": "product_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "agent-review"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "33.2",
+          "criterion": "Document observable December 31, 2026 completion and the $0 cash hosting requirement.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "reviewed_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
+          },
+          "accountableRole": "release_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "agent-review"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "33.3",
+          "criterion": "Check in import → review/correction → insight → budget → export/delete journey and have the team adopt it.",
+          "implementationStatus": "aid_contract_replaces_budget_stage",
+          "evidenceStatus": "adopted_by_lead_instruction",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/journeys.json",
+            "docs/foundation/prototype.html",
+            "docs/foundation/issue-updates.json",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "product_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        }
+      ]
+    },
+    {
+      "number": 34,
+      "title": "Screenflows, low-fidelity prototype and outsider sessions",
+      "overall": "complete_under_maintainer_amended_foundation_scope",
+      "checks": [
+        {
+          "id": "34.1",
+          "criterion": "Specify first-run/account/import/mapping/duplicate/correction/dashboard/export/delete successes, empty and failed states.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "docs/foundation/journeys.json",
+            "docs/foundation/prototype.html",
+            "tests/foundation/test_journeys.py",
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "67 target states and 13 journeys pass reachability/recovery contracts and real-Chrome action/acknowledgement/navigation/reflow checks, including local, synced-case and account deletion."
+          },
+          "accountableRole": "product_lead",
+          "remaining": "No foundation blocker; maintainer adoption D12, review waiver D10 and research deferral D11 apply. Original activity/test scope remains explicitly recorded.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "foundation-contracts",
+            "prototype-browser"
+          ]
+        },
+        {
+          "id": "34.2",
+          "criterion": "Include the earlier budget flow without pretending to implement unsupported formulas.",
+          "implementationStatus": "aid_evidence_replacement",
+          "evidenceStatus": "adopted_by_lead_instruction",
+          "artifacts": [
+            "docs/foundation/journeys.json",
+            "README.md",
+            "docs/foundation/issue-updates.json",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "product_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "34.3",
+          "criterion": "Test the prototype with two outsiders before further personal-case implementation and record findings.",
+          "implementationStatus": "future_research_protocol_available",
+          "evidenceStatus": "deferred_by_maintainer",
+          "artifacts": [
+            "docs/foundation/usability-sessions.json",
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "research_lead",
+          "remaining": "No foundation blocker. Two real outside-user sessions remain unrun future research under D11.",
+          "classification": "foundation_issue_acceptance",
+          "resolution": {
+            "decisionRef": "docs/foundation/activation.json#D11",
+            "activityPerformed": false
+          }
+        }
+      ]
+    },
+    {
+      "number": 35,
+      "title": "Architecture, typed boundaries, migration authority and Prisma retirement",
+      "overall": "complete_under_maintainer_amended_foundation_scope",
+      "checks": [
+        {
+          "id": "35.1",
+          "criterion": "Provide architecture, dataflow, local deployment and target deployment diagrams with component responsibilities.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "reviewed_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
+          },
+          "accountableRole": "architecture_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "agent-review"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "35.2",
+          "criterion": "Define typed frontend/API/engine boundaries and bounded imports with exact rules and durable storage.",
+          "implementationStatus": "implemented_local_components",
+          "evidenceStatus": "reviewed_local",
+          "artifacts": [
+            "README.md",
+            "docs/backend/contracts/case-v1.schema.json",
+            "client/import/types.ts",
+            "engine/include/scryer/api.hpp",
+            "sync/api.py",
+            "sync/protocol.py",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
+          },
+          "accountableRole": "architecture_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "agent-review"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "35.3",
+          "criterion": "Retain Next.js UI and deliberately resolve the original FastAPI financial-rules/persistence and SQLAlchemy/Alembic requirements.",
+          "implementationStatus": "intentional_architecture_replacement",
+          "evidenceStatus": "adopted_by_lead_instruction",
+          "artifacts": [
+            "README.md",
+            "sync/migrate.py",
+            "migrations/0001_sync.sql",
+            "frontend/package.json",
+            "docs/foundation/issue-updates.json",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "architecture_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "35.4",
+          "criterion": "Record decisions, rejected alternatives, invariants and verification.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "reviewed_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
+          },
+          "accountableRole": "architecture_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "agent-review"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "35.5",
+          "criterion": "Document how Prisma will be retired under a single schema authority without silently migrating floating plaintext financial data.",
+          "implementationStatus": "retirement_plan_written",
+          "evidenceStatus": "reviewed_local",
+          "artifacts": [
+            "README.md",
+            "prisma/schema.prisma",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Reviewed five-step caller/data inventory, synthetic-only removal path, explicit legacy-state stop and final single-authority acceptance in README."
+          },
+          "accountableRole": "database_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "agent-review"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        }
+      ]
+    },
+    {
+      "number": 36,
+      "title": "Financial and time semantics with executable examples",
+      "overall": "complete_under_maintainer_amended_foundation_scope",
+      "checks": [
+        {
+          "id": "36.1",
+          "criterion": "Specify signed integer cents, source dates/import observation/review time, corrections and evidence uncertainty.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/financial-examples.json",
+            "tests/foundation/test_financial_examples.py",
+            "scryer_reference/money.py",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [
+            "SCRYER_FINANCIAL_NATIVE_BIN=\"$PWD/engine/build/scryer-native\" PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/foundation -p test_financial_examples.py -q"
+          ],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "passed",
+            "tests": 7,
+            "skipped": 0,
+            "scope": "Independent Python hand-calculated examples plus native expectations, receipts/tampering, order invariance and role boundaries."
+          },
+          "accountableRole": "domain_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "evidenceRefs": [
+            "financial-native"
+          ],
+          "classification": "foundation_issue_acceptance",
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "36.2",
+          "criterion": "Check expected normal purchases, refunds, both imported transfer accounts, missing income and partial months.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "docs/foundation/financial-examples.json",
+            "tests/foundation/test_financial_examples.py",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [
+            "SCRYER_FINANCIAL_NATIVE_BIN=\"$PWD/engine/build/scryer-native\" PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/foundation -p test_financial_examples.py -q"
+          ],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "passed",
+            "examples": 8,
+            "tests": 7,
+            "skipped": 0
+          },
+          "accountableRole": "domain_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "evidenceRefs": [
+            "financial-native"
+          ],
+          "classification": "foundation_issue_acceptance",
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "36.3",
+          "criterion": "Define income/expense/refund/transfer/opening/category/budget formulas for the approved product.",
+          "implementationStatus": "aid_formula_supersedes_budget_formulas",
+          "evidenceStatus": "adopted_by_lead_instruction",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/financial-examples.json",
+            "docs/foundation/issue-updates.json",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "domain_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "36.4",
+          "criterion": "Never infer complete bank balance or net worth from incomplete history.",
+          "implementationStatus": "contract_and_examples_available",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/financial-examples.json",
+            "tests/foundation/test_financial_examples.py",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "domain_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "evidenceRefs": [
+            "financial-native"
+          ],
+          "classification": "foundation_issue_acceptance",
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        }
+      ]
+    },
+    {
+      "number": 37,
+      "title": "Privacy lifecycle, release risks and accountable ownership",
+      "overall": "complete_under_maintainer_amended_foundation_scope",
+      "checks": [
+        {
+          "id": "37.1",
+          "criterion": "Document locations, access and lifecycle for CSV bytes, normalized values, secrets, logs, backups and demo fixtures.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "reviewed_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
+          },
+          "accountableRole": "privacy_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "agent-review"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "37.2",
+          "criterion": "Decide raw-byte retention and explain encrypted export, restore and deletion effects.",
+          "implementationStatus": "implemented_local_contract_and_components",
+          "evidenceStatus": "reviewed_local",
+          "artifacts": [
+            "README.md",
+            "client/export/archive.ts",
+            "client/storage/repository.ts",
+            "sync/deletion_worker.py",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
+          },
+          "accountableRole": "recovery_lead",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "agent-review"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "37.3",
+          "criterion": "Assign upload/auth/access/logging/backups/demo risks to accountable owners with mitigations.",
+          "implementationStatus": "role_and_fallback_table_written",
+          "evidenceStatus": "adopted_by_lead_instruction",
+          "artifacts": [
+            "README.md",
+            ".github/CODEOWNERS",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        }
+      ]
+    },
+    {
+      "number": 38,
+      "title": "Contribution workflow, ownership and review",
+      "overall": "complete_under_maintainer_amended_foundation_scope",
+      "checks": [
+        {
+          "id": "38.1",
+          "criterion": "Document issue selection, local run, branch/PR/review expectations and decision records.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "reviewed_local",
+          "artifacts": [
+            "README.md",
+            ".github/ISSUE_TEMPLATE/bug.yml",
+            ".github/ISSUE_TEMPLATE/engineering.yml",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
+          },
+          "accountableRole": "lead_developer",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "agent-review"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "38.2",
+          "criterion": "Provide issue/PR templates, ownership and required what/how-tested/user-impact content.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            ".github/CODEOWNERS",
+            ".github/PULL_REQUEST_TEMPLATE/contribution.txt",
+            "scripts/check_pr_description.py",
+            "tests/foundation/test_review_gates.py",
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Local verification passed within the named evidence scope; no human or remote evidence is implied."
+          },
+          "accountableRole": "lead_developer",
+          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "foundation-contracts",
+            "agent-review"
+          ],
+          "maintainerResolution": {
+            "decisionRef": "docs/foundation/activation.json#D12",
+            "status": "adopted_by_lead_instruction"
+          }
+        },
+        {
+          "id": "38.3",
+          "criterion": "Reject placeholder PR evidence and treat shell-looking PR input as inert data.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "scripts/check_pr_description.py",
+            "tests/foundation/test_review_gates.py",
+            ".github/workflows/ci.yml",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Required-section checks reject empty/placeholder/duplicate descriptions; shell-looking text is treated as inert input, and workflow event-body handling uses a file."
+          },
+          "accountableRole": "security_lead",
+          "remaining": "",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "foundation-contracts",
+            "agent-review"
+          ]
+        },
+        {
+          "id": "38.4",
+          "criterion": "Enable a newcomer to select an issue, run the app, prepare a substantive PR and follow review without live author guidance.",
+          "implementationStatus": "guide_templates_and_clean_rehearsal_verified",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Guide, issue forms, PR template/validator and clean setup/restart rehearsal supplied and checked. This establishes local tooling, not human usability."
+          },
+          "accountableRole": "lead_developer",
+          "remaining": "No foundation blocker; maintainer adoption D12, review waiver D10 and research deferral D11 apply. Original activity/test scope remains explicitly recorded.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "containers",
+            "foundation-contracts"
+          ]
+        },
+        {
+          "id": "38.5",
+          "criterion": "Independent reviewers approve affected boundaries and the lead cannot approve their own changes.",
+          "implementationStatus": "lead_owned_pr_and_ci_policy",
+          "evidenceStatus": "waived_by_maintainer",
+          "artifacts": [
+            "README.md",
+            ".github/CODEOWNERS",
+            ".github/branch-protection.json",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "No independent approval is claimed. Actual required-CI enforcement is still being verified.",
+          "classification": "foundation_issue_acceptance",
+          "resolution": {
+            "decisionRef": "docs/foundation/activation.json#D10",
+            "independentApprovalOccurred": false
+          }
+        }
+      ]
+    },
+    {
+      "number": 39,
+      "title": "Reproducible checks, dependency locking and merge gates",
+      "overall": "local_gates_verified_remote_ci_and_enforcement_pending",
+      "checks": [
+        {
+          "id": "39.1",
+          "criterion": "Run backend tests/lint/types, client checks, frontend lint/build, native coverage/parity and container builds on PRs.",
+          "implementationStatus": "tooling_available",
+          "evidenceStatus": "verified_local_pending_github",
+          "artifacts": [
+            "scripts/check.sh",
+            ".github/workflows/ci.yml",
+            "scripts/verify-native-coverage.sh",
+            "pyproject.toml",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Local verification passed within the named evidence scope; no human or remote evidence is implied."
+          },
+          "accountableRole": "ci_lead",
+          "remaining": "Actual remote CI, required-context application binding and enforcement probe are being completed in activation.json.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "fast",
+            "engine",
+            "client",
+            "frontend",
+            "frontend-browser",
+            "sync",
+            "containers",
+            "workflow"
+          ]
+        },
+        {
+          "id": "39.2",
+          "criterion": "Pin Python dependencies and retain frontend/client locks.",
+          "implementationStatus": "hash_locks_and_npm_locks_verified",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "requirements.in",
+            "requirements.txt",
+            "requirements-dev.in",
+            "requirements-dev.txt",
+            "frontend/package-lock.json",
+            "client/package-lock.json",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Python hash-locked installation and npm ci completed; pinned production dependencies built from a clean committed snapshot."
+          },
+          "accountableRole": "ci_lead",
+          "remaining": "",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "dependencies",
+            "containers"
+          ]
+        },
+        {
+          "id": "39.3",
+          "criterion": "Add dependency and secret scanning plus dependency update configuration.",
+          "implementationStatus": "tooling_available",
+          "evidenceStatus": "verified_local_pending_github",
+          "artifacts": [
+            "scripts/scan_secrets.py",
+            ".github/workflows/ci.yml",
+            ".github/dependabot.yml",
+            "scripts/check.sh",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Local verification passed within the named evidence scope; no human or remote evidence is implied."
+          },
+          "accountableRole": "security_lead",
+          "remaining": "Actual remote CI, required-context application binding and enforcement probe are being completed in activation.json.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "security",
+            "workflow"
+          ]
+        },
+        {
+          "id": "39.4",
+          "criterion": "Any required failed, missing, skipped or cancelled job blocks Required checks.",
+          "implementationStatus": "aggregate_and_policy_available",
+          "evidenceStatus": "verified_local_pending_github",
+          "artifacts": [
+            "scripts/check_ci_results.py",
+            "tests/foundation/test_review_gates.py",
+            ".github/workflows/ci.yml",
+            ".github/branch-protection.json",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Local failure-propagation regression rejects each missing, failed, skipped or cancelled required job; prepared protection payload is not active enforcement."
+          },
+          "accountableRole": "ci_lead",
+          "remaining": "Actual remote CI, required-context application binding and enforcement probe are being completed in activation.json.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "foundation-contracts",
+            "workflow"
+          ]
+        },
+        {
+          "id": "39.5",
+          "criterion": "Use pinned actions and safe ordinary PR processing.",
+          "implementationStatus": "pinned_configuration_reviewed",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            ".github/workflows/ci.yml",
+            "scripts/check_pr_description.py",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Actionlint and YAML parsing passed; immutable review checked ordinary PR processing, pinned revisions, read-only token permission and no credential persistence."
+          },
+          "accountableRole": "security_lead",
+          "remaining": "Actual remote CI, required-context application binding and enforcement probe are being completed in activation.json.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "workflow",
+            "agent-review"
+          ]
+        }
+      ]
+    },
+    {
+      "number": 40,
+      "title": "Safe local stack, readiness and persistent restart",
+      "overall": "complete_under_maintainer_amended_foundation_scope",
+      "checks": [
+        {
+          "id": "40.1",
+          "criterion": "Remove default production-like secrets and unsafe public bindings.",
+          "implementationStatus": "implemented_and_rehearsed_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "setup.sh",
+            "docker-compose.yml",
+            "tests/local_stack/test_setup.py",
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Private random .env, secret drift/missing-volume-env refusal, loopback app ports and private database verified by contracts and real clean rehearsal."
+          },
+          "accountableRole": "operations_lead",
+          "remaining": "",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "fast",
+            "containers",
+            "security"
+          ]
+        },
+        {
+          "id": "40.2",
+          "criterion": "Build the production frontend and provide meaningful database-dependent API readiness.",
+          "implementationStatus": "implemented_and_rehearsed_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "frontend/Dockerfile",
+            "Dockerfile.backend",
+            "docker-compose.yml",
+            "main.py",
+            "tests/local_stack/",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Production frontend built and served; real database loss produced /ready 503 while /health stayed live; recovery restored readiness."
+          },
+          "accountableRole": "operations_lead",
+          "remaining": "",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "fast",
+            "containers",
+            "frontend"
+          ]
+        },
+        {
+          "id": "40.3",
+          "criterion": "Document a clean-machine frontend/API/database setup with safe stop/restart behavior.",
+          "implementationStatus": "implemented_and_rehearsed_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "README.md",
+            "setup.sh",
+            "scripts/verify-local-stack.py",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "README commands were followed by the clean committed rehearsal with isolated project/ports and repeated setup."
+          },
+          "accountableRole": "operations_lead",
+          "remaining": "No foundation blocker; maintainer adoption D12, review waiver D10 and research deferral D11 apply. Original activity/test scope remains explicitly recorded.",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "artifact-contracts",
+            "containers"
+          ]
+        },
+        {
+          "id": "40.4",
+          "criterion": "Prove a real build/start/write/restart/read cycle retains database data.",
+          "implementationStatus": "implemented_and_rehearsed_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "scripts/verify-local-stack.py",
+            "tests/local_stack/",
+            "docker-compose.yml",
+            "README.md",
+            "docs/foundation/activation.json"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "Real Docker setup/write/stop/restart/read passed and marker persisted. Repeated setup preserved .env; isolated test resources were cleaned without altering pre-existing projects."
+          },
+          "accountableRole": "operations_lead",
+          "remaining": "",
+          "classification": "foundation_issue_acceptance",
+          "evidenceRefs": [
+            "containers"
+          ]
+        }
+      ]
+    }
+  ],
+  "publicReleaseGates": [
+    {
+      "id": "R01",
+      "criterion": "Complete reviewed and encrypted personal-case UI, including correction/source traversal and recovery/export/delete",
+      "accountableRole": "client_lead",
+      "status": "pending_implementation",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false,
+      "supplementalRequirementRefs": [
+        "33.4"
+      ]
+    },
+    {
+      "id": "R02",
+      "criterion": "C++ WASM build and native/browser/Python release-corpus parity",
+      "accountableRole": "engine_lead",
+      "status": "pending_implementation",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false,
+      "supplementalRequirementRefs": [
+        "36.5"
+      ]
+    },
+    {
+      "id": "R03",
+      "criterion": "Supported real UMD aid/bill/refund layouts with safe manual fallback",
+      "accountableRole": "import_lead",
+      "status": "pending_format_evidence",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false
+    },
+    {
+      "id": "R04",
+      "criterion": "Maintained JWT verifier, real-token API isolation and public signup/session abuse controls",
+      "accountableRole": "identity_lead",
+      "status": "pending_implementation",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false
+    },
+    {
+      "id": "R05",
+      "criterion": "Visible stale conflict/recovery/device and account-deletion lifecycle with deployed worker",
+      "accountableRole": "client_sync_lead",
+      "status": "pending_implementation",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false
+    },
+    {
+      "id": "R07",
+      "criterion": "Human screen-reader and full-journey accessibility evidence",
+      "accountableRole": "accessibility_lead",
+      "status": "pending_human",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false,
+      "supplementalRequirementRefs": [
+        "34.4"
+      ]
+    },
+    {
+      "id": "R08",
+      "criterion": "Qualified privacy handling review and consented real-record pilot",
+      "accountableRole": "privacy_lead",
+      "status": "pending_human",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false,
+      "supplementalRequirementRefs": [
+        "37.5"
+      ]
+    },
+    {
+      "id": "R09",
+      "criterion": "Independent security assessment and incident/rollback rehearsal",
+      "accountableRole": "security_lead",
+      "status": "pending_human_and_operations",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false
+    },
+    {
+      "id": "R10",
+      "criterion": "$0 cash actual hosting capacity and independent backup arrangement, with expiry/capacity limits",
+      "accountableRole": "operations_lead",
+      "status": "pending_operations",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false
+    },
+    {
+      "id": "R11",
+      "criterion": "Tested hosted backup restoration, deletion replay, retention and recovery objectives",
+      "accountableRole": "backup_lead",
+      "status": "pending_operations",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false,
+      "supplementalRequirementRefs": [
+        "37.4"
+      ]
+    },
+    {
+      "id": "R12",
+      "criterion": "Measured performance, extended fuzzing and release coverage gates",
+      "accountableRole": "engine_ci_lead",
+      "status": "native_coverage_and_10000_case_parity_passed_other_release_evidence_pending",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false,
+      "evidenceRefs": [
+        "engine"
+      ]
+    },
+    {
+      "id": "R13",
+      "criterion": "Human maintainer approval of the exact release revision and amended foundation acceptance",
+      "accountableRole": "lead_developer",
+      "status": "pending_human",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": false
+    },
+    {
+      "id": "R14",
+      "criterion": "Successful remote clean-checkout CI and verified review/Required checks enforcement",
+      "accountableRole": "ci_lead",
+      "status": "pending_github",
+      "complete": false,
+      "classification": "public_release",
+      "foundationCheckRequired": true
+    },
+    {
+      "id": "R15",
+      "criterion": "Real Docker build/readiness/write/restart/read local rehearsal",
+      "accountableRole": "operations_lead",
+      "status": "verified_local",
+      "complete": true,
+      "classification": "public_release",
+      "foundationCheckRequired": true,
+      "evidenceRefs": [
+        "containers"
+      ]
+    }
+  ],
+  "historicalInventory": {
+    "paths": [
+      "docs/backend/requirements.yaml",
+      "docs/backend/tasks.yaml"
+    ],
+    "note": "The historical S-01–S-78 assignment is distinct from GitHub #32–#40. Former Markdown paths in those inventories refer to Git history at 02252f6, not current documentation or proof of completion."
+  },
+  "updateRule": "Add exact candidate revision, command/toolchain/outcome and reviewer or session evidence when available. Never change a pending human/GitHub/operations criterion to verified because a related local file or test exists.",
+  "integrationBaseline": {
+    "comparison": "fc43aefda41cc9e0a642e4894df890e658189e3d...453c2087399894ec2c89717e4d6f32b8d86dfafa",
+    "kind": "Immutable local historical baseline, not a fresh remote-main observation",
+    "commits": [
+      "2bb77d6",
+      "453c208"
+    ],
+    "filesChanged": 17,
+    "insertions": 430,
+    "deletions": 66,
+    "reviewedAreas": [
+      "Docker/Compose/setup safety and production frontend",
+      "Liveness versus database readiness",
+      "SummaryCard hard-coded net-worth scaffold",
+      "TransactionTable presentation versus real import/review state"
+    ],
+    "findingsLocation": "README.md#verification-evidence-and-its-limits",
+    "independentMaintainerReviewComplete": false
+  },
+  "localEngineeringComplete": true,
+  "classification": {
+    "foundationIssueChecks": "Original foundation deliverables and explicitly proposed aid-product amendments. Documentation review does not approve the amendments.",
+    "supplementalReleaseRequirements": "Later implementation, human or hosted-operation requirements; preserved as pending public-release gates rather than extra completion clauses for foundation issues.",
+    "recommendedFieldValidation": "Useful additional evidence, distinguished from required two-outsider research in issue #34.",
+    "issueUpdates": "docs/foundation/issue-updates.json contains proposed bodies for #33–#36. They are not applied or approved by this task."
+  },
+  "supplementalReleaseRequirements": [
+    {
+      "id": "33.4",
+      "criterion": "Complete the saved, reviewed, recoverable personal-case interface.",
+      "implementationStatus": "partial_components_only",
+      "evidenceStatus": "pending_implementation",
+      "artifacts": [
+        "README.md",
+        "client/import/review.ts",
+        "client/storage/repository.ts"
+      ],
+      "verificationCommands": [],
+      "observed": null,
+      "accountableRole": "client_lead",
+      "remaining": "Connect review, C++ WASM validation, corrections, encrypted persistence, recovery, sync and deletion to the actual frontend. Current /workspace stops at proposals.",
+      "classification": "supplemental_public_release",
+      "originalFoundationIssue": 33,
+      "publicReleaseGate": "R01"
+    },
+    {
+      "id": "34.4",
+      "criterion": "Demonstrate human screen-reader usability for the release flow.",
+      "implementationStatus": "automated_component_checks_only",
+      "evidenceStatus": "pending_human",
+      "artifacts": [
+        "README.md",
+        "tests/frontend/browser_demo_accessibility.mjs"
+      ],
+      "verificationCommands": [],
+      "observed": null,
+      "accountableRole": "accessibility_lead",
+      "remaining": "Run a human screen-reader session against the complete candidate; automated role/label assertions are insufficient.",
+      "classification": "supplemental_public_release",
+      "originalFoundationIssue": 34,
+      "publicReleaseGate": "R07"
+    },
+    {
+      "id": "36.5",
+      "criterion": "Use the same production semantics in the browser and prove release parity.",
+      "implementationStatus": "native_and_python_only",
+      "evidenceStatus": "pending_implementation",
+      "artifacts": [
+        "engine/src/api.cpp",
+        "README.md"
+      ],
+      "verificationCommands": [],
+      "observed": null,
+      "accountableRole": "engine_lead",
+      "remaining": "Build C++ for WASM and execute the release corpus through the real browser boundary; injected test validators are not that evidence.",
+      "classification": "supplemental_public_release",
+      "originalFoundationIssue": 36,
+      "publicReleaseGate": "R02"
+    },
+    {
+      "id": "37.4",
+      "criterion": "Publish concrete hosted retention, log access/expiry, backup schedule and independent restoration evidence.",
+      "implementationStatus": "not_implemented",
+      "evidenceStatus": "pending_operations",
+      "artifacts": [
+        "README.md"
+      ],
+      "verificationCommands": [],
+      "observed": null,
+      "accountableRole": "operations_lead",
+      "remaining": "Select the actual $0 cash hosting and independent backup arrangement; state retention/expiry/capacity and rehearse recovery/deletion/rollback before signup. No hosted compliance claim is made.",
+      "classification": "supplemental_public_release",
+      "originalFoundationIssue": 37,
+      "publicReleaseGate": "R11"
+    },
+    {
+      "id": "37.5",
+      "criterion": "Permit real financial records only after approved handling and independent review.",
+      "implementationStatus": "release_block_explicit",
+      "evidenceStatus": "pending_human_and_operations",
+      "artifacts": [
+        "README.md",
+        "docs/foundation/usability-sessions.json"
+      ],
+      "verificationCommands": [],
+      "observed": null,
+      "accountableRole": "release_lead",
+      "remaining": "Qualified privacy review, consented real-record pilot and independent security assessment are pending. Synthetic automation grants no real-record permission.",
+      "classification": "supplemental_public_release",
+      "originalFoundationIssue": 37,
+      "publicReleaseGate": "R08"
+    }
+  ],
+  "recommendedFieldValidation": [
+    {
+      "id": "V01",
+      "relatedIssue": 38,
+      "criterion": "Observe an actual unassisted newcomer issue → clean environment → checks → substantive PR → review exercise.",
+      "status": "pending_human",
+      "complete": false,
+      "artifacts": [
+        "README.md"
+      ],
+      "note": "Recommended validation of the contributor workflow, not invented evidence or a new mandatory outsider-study clause. Issue #34 still requires two actual outsiders."
+    }
+  ],
+  "allOriginalIssueActivitiesPerformed": false,
+  "acceptanceBasis": "Maintainer-amended foundation acceptance, not a claim that waived reviews or deferred sessions occurred.",
+  "activationEvidence": "docs/foundation/activation.json",
+  "futureResearch": [
+    {
+      "id": "R06",
+      "criterion": "Two actual consenting outsider prototype sessions and reviewed findings",
+      "accountableRole": "research_lead",
+      "status": "deferred_by_maintainer",
+      "complete": false,
+      "classification": "future_usability_research",
+      "foundationCheckRequired": false,
+      "decisionRef": "docs/foundation/activation.json#D11"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-03",
+  "status": "ADOPTED_BY_LEAD_INSTRUCTION_NOT_APPLIED_TO_ISSUE_BODIES",
+  "purpose": "Lead-adopted body amendments for the approved aid-evidence foundation direction. Exact original waived/deferred activities remain explicit; issue bodies are not automatically edited by creating this file.",
+  "issues": [
+    {
+      "number": 33,
+      "title": "Write and approve the Scryer v1 product contract",
+      "body": "Description: Document Scryer as a student-aid evidence reconciliation app: primary user, mission, supported aid/school/refund/bank evidence, exact supported claims, synthetic demo and self-host behavior, non-goals and the complete review → correction → source-linked explanation → encrypted save/recovery → optional sync → export/delete journey. Replace the earlier budget stage with supported aid reconciliation; do not imply budgets, net worth or entitlement. Keep December 31, 2026 public self-service signup with real records and $0 required cash hosting as the observable release target, with explicit blocking gates.\n\nDone when: the contract is checked into README.md with current-versus-target capabilities, measurable completion, supported data/non-goals and the complete journey, and maintainers approve the amended contract through normal review. Writing this contract does not require or certify the later public deployment.\n\nDepends on: #32."
+    },
+    {
+      "number": 34,
+      "title": "Map the user journeys and failure states",
+      "body": "Description: Specify first-run/local-versus-sync accounts, unlock/recovery, supported/unsupported import, column/money mapping, duplicates, review/approval, corrections, source-linked insights, unknown coverage, offline/stale/conflicting sync, encrypted export/restore and separate local-case/synced-case/account deletion. Include empty, waiting, error, retry and safe-exit states. The aid-evidence insight replaces the former budget/dashboard stage.\n\nDone when: README.md links a complete reachable screenflow graph and navigable low-fidelity prototype; risky actions explain exact scope and require fresh review; automated graph/browser checks cover the designed states, destructive confirmations and safe recovery. The lead moved two consenting outside-person sessions to future usability research under decision D11 on November 3, 2026; no sessions or observations are claimed.\n\nDepends on: #33, #36, #37."
+    },
+    {
+      "number": 35,
+      "title": "Record the architecture and service boundaries",
+      "body": "Description: Record Next.js owning the user interface, bounded browser import workers producing unreviewed proposals, a C++20 exact semantic core with independent Python oracle, browser-owned plaintext/encryption/local storage, FastAPI authenticating and persisting opaque ciphertext, and PostgreSQL providing durable tenant-isolated storage. Define typed boundaries and local/target deployment and dataflow diagrams. Replace server-side plaintext financial rules and the proposed SQLAlchemy/Alembic authority with browser semantic validation and one checksum-verified SQL migration runner using explicit psycopg transactions. Document how inactive Prisma scaffolding will be inventoried and retired safely.\n\nDone when: README.md contains the diagrams, component responsibilities, invariants, rejected alternatives, migration authority and step-by-step Prisma retirement plan; maintainers adopt the intentional financial-rule/migration changes. Next.js UI is retained; no NextUI component-library requirement is asserted. Physical legacy cleanup, WASM integration, hosted operation and complete product implementation remain separately tracked work.\n\nDepends on: #32, #33, #36, #37."
+    },
+    {
+      "number": 36,
+      "title": "Specify financial invariants and formulas",
+      "body": "Description: Specify exact signed integer-cent transport, nonnegative approved fact magnitudes and role-derived signs, checked arithmetic, dates/observation/review knowledge, correction/branch rules, source/recipient provenance and visible unknown coverage. Define school-credit-minus-school-charge surplus, exact change attribution and separate aid lifecycle/refund/bank-match observations. Explicitly reject unsupported income/expense budgets, categories, transfer classification, opening balances and net-worth inference.\n\nDone when: README.md and hand-calculated executable examples agree for normal purchases, school/merchant refunds, both imported transfer accounts, missing income evidence, partial months and conflicting corrections; Python and native C++ agree; incomplete history never becomes a complete balance/net-worth or entitlement claim. Maintainers adopt these aid-specific formulas in place of the obsolete budgeting formulas. Browser/WASM release parity is separately tracked.\n\nDepends on: #33."
+    }
+  ],
+  "decisionRef": "docs/foundation/activation.json#D12"
+}

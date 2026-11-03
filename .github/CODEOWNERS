@@ -1,0 +1,5 @@
+# Lead developer verified as repository admin on 2026-11-03.
+# Roles and review policy are in README.md#contribution-and-review-contract.
+# Independent approval is waived by lead instruction D10 while reviewers are unavailable.
+# Required CI remains enforced without a bypass; CODEOWNERS is not a human approval.
+* @yudhiishvs

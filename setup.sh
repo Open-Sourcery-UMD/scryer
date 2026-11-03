@@ -27,9 +27,10 @@ validate_env_format() {
   awk '
     /^[[:space:]]*($|#)/ { next }
     /^API_PORT=[0-9]+$/ { api++; next }
+    /^FRONTEND_PORT=[0-9]+$/ { frontend++; next }
     /^POSTGRES_PASSWORD=[0-9a-f]+$/ { secret++; next }
     { invalid = 1; exit }
-    END { if (invalid || api > 1 || secret > 1) exit 1 }
+    END { if (invalid || api > 1 || frontend > 1 || secret > 1) exit 1 }
   ' .env
 }
 
@@ -42,9 +43,10 @@ if [ -e .env ] && [ ! -f .env ]; then
   exit 1
 fi
 if [ -f .env ] && ! validate_env_format; then
-  echo ".env must contain only comments, API_PORT=digits, and one canonical POSTGRES_PASSWORD=hex entry." >&2
+  echo ".env must contain only comments, API_PORT=digits, FRONTEND_PORT=digits, and one canonical POSTGRES_PASSWORD=hex entry." >&2
   exit 1
 fi
+
 if [ "${POSTGRES_PASSWORD+x}" = x ] && { [ ! -f .env ] || ! grep -q '^POSTGRES_PASSWORD=' .env; }; then
   echo "Set POSTGRES_PASSWORD in .env before using a shell override; setup.sh will not store an unexpected shell secret." >&2
   exit 1
@@ -94,6 +96,13 @@ if ! printf '%s\n' "$api_port" | grep -Eq '^[1-9][0-9]{0,4}$' || [ "$api_port" -
   exit 1
 fi
 
+file_frontend_port=$(sed -n 's/^FRONTEND_PORT=//p' .env | tail -n 1)
+frontend_port=${FRONTEND_PORT:-${file_frontend_port:-3000}}
+if ! printf '%s\n' "$frontend_port" | grep -Eq '^[1-9][0-9]{0,4}$' || [ "$frontend_port" -gt 65535 ]; then
+  echo "FRONTEND_PORT must be a valid numeric local port." >&2
+  exit 1
+fi
+
 echo "Checking local Compose configuration..."
 $compose_cmd config --quiet
 
@@ -109,9 +118,9 @@ attempt=0
 max_attempts=30
 while [ "$attempt" -lt "$max_attempts" ]; do
   if $compose_cmd exec -T postgres sh -ec 'PGPASSWORD="$POSTGRES_PASSWORD" psql -h postgres -X -qAt -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM pg_hba_file_rules WHERE type LIKE '\''host%'\'' AND auth_method = '\''trust'\'')"' 2>/dev/null | grep -qx 1 && \
-    curl -fsS "http://127.0.0.1:${api_port}/health" >/dev/null 2>&1 && \
-    curl -fsS "http://127.0.0.1:3000" >/dev/null 2>&1; then
-    echo "Scryer is ready at http://127.0.0.1:3000"
+    curl -fsS "http://127.0.0.1:${api_port}/ready" >/dev/null 2>&1 && \
+    curl -fsS "http://127.0.0.1:${frontend_port}" >/dev/null 2>&1; then
+    echo "Scryer is ready at http://127.0.0.1:${frontend_port}"
     exit 0
   fi
 

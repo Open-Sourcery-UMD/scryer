@@ -4,7 +4,7 @@ import hashlib
 import json
 from typing import Any
 
-from .model import Case, ModelError, SourceRef, snapshot_events
+from .model import Case, Event, ModelError, SourceRef, snapshot_events
 from .projection import _current_correction, project_school_surplus
 
 _SUPPORTED_REFERENCE_ENGINES = frozenset({"reference-0.1.0", "reference-0.2.0"})
@@ -65,7 +65,7 @@ def make_school_surplus_receipt(
     snapshot = snapshot_events(case, heads)
     approvals = {event.fact.fact_id: event for event in snapshot if event.fact is not None}
     proposals = {proposal.proposal_id: proposal for proposal in case.proposals}
-    corrections: dict[str, list] = {}
+    corrections: dict[str, list[Event]] = {}
     for event in snapshot:
         if event.correction is not None:
             corrections.setdefault(event.correction.fact_id, []).append(event)
@@ -77,7 +77,7 @@ def make_school_surplus_receipt(
         if fact is None:
             raise ModelError("INVALID_EVENT_STATE")
         current = _current_correction(corrections.get(fact_id, []))
-        amount = fact.amount_minor
+        amount: int | None = fact.amount_minor
         source = fact.source
         correction_id: str | None = None
         correction_review_id: str | None = None
