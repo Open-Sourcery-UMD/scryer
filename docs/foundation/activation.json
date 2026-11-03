@@ -49,30 +49,36 @@
       "id": 13019585,
       "name": "protect main",
       "payload": ".github/rulesets/main-ci.json",
-      "status": "prepared",
+      "status": "applied_and_read_back",
       "ciApplication": {
         "id": 15368,
         "slug": "github-actions",
         "verifiedVia": "GET /apps/github-actions"
       },
-      "bypassActors": []
+      "bypassActors": [],
+      "effectiveOn": "refs/heads/main"
     },
     {
       "id": 13560058,
       "name": "main protection",
       "payload": ".github/rulesets/main-review-exception.json",
-      "status": "prepared",
-      "note": "Existing rule preserved with approving review count zero under D10; independent approval is not claimed."
+      "status": "applied_and_read_back",
+      "note": "Existing rule preserved with approving review count zero under D10; independent approval is not claimed.",
+      "effectiveOn": "refs/heads/main"
     }
   ],
   "publication": {
-    "branch": "backend-local",
+    "branch": "foundation-integration",
     "baseBranch": "main",
     "initialRemoteMain": "4c1248e7095d56a632cb0768568d0b970ab8cd7e",
-    "status": "prepared_not_pushed"
+    "status": "pushed_pr_open",
+    "localWorkBranch": "backend-local",
+    "headSha": "1fe6d70841d01c7b309f25e0a8deb7e5f59a38eb",
+    "pullRequest": 43,
+    "url": "https://github.com/Open-Sourcery-UMD/scryer/pull/43"
   },
   "ci": {
-    "status": "not_run",
+    "status": "first_run_found_portability_failure_fix_in_progress",
     "requiredContext": "Required checks",
     "requiredJobs": [
       "policy",
@@ -82,15 +88,54 @@
       "containers",
       "security"
     ],
-    "appId": 15368
+    "appId": 15368,
+    "firstRunId": 41667059376,
+    "firstRunUrl": "https://github.com/Open-Sourcery-UMD/scryer/actions/runs/41667059376",
+    "portabilityFix": {
+      "symptom": "Keycloak did not become ready on Ubuntu; local Docker Desktop passed.",
+      "rootCause": "The realm bind mount was 0600 owned by native Linux runner uid 1001, while Keycloak runs as uid 1000. Docker Desktop maps the bind owner and hid the unreadable mount.",
+      "reproduction": "A synthetic native-Linux file in a network-disabled disposable container was unreadable at uid 1000 with uid 1001 ownership and 0600, then readable at 0644.",
+      "fix": "Only the read-only mounted synthetic realm file is 0644 inside a private host directory kept 0700; unmounted admin/user secrets remain 0600. A nonroot read preflight fails immediately without printing credentials.",
+      "localRerun": "passed_85_api_tests_3_browser_sync_journeys_1_real_provider_pkce_test"
+    },
+    "cleanBuildFix": {
+      "symptom": "Four native parity tests failed with FileNotFoundError on clean Ubuntu runner.",
+      "rootCause": "scripts/check.sh built units and CLI but omitted the four case/projection/receipt/evidence probe targets; previously generated local binaries hid the missing dependency.",
+      "fix": "Build all four probe targets explicitly before the Python parity tests.",
+      "firstFailedRunId": 41667059376,
+      "firstFailedJobId": 126025097099,
+      "localRerun": "passed_rebuilt_four_probes_and_all_9_engine_python_tests"
+    }
   },
   "enforcementProbe": {
-    "status": "not_run",
-    "criterion": "A disposable, intentionally failing PR is rejected by actual GitHub merge enforcement; probe closed without merging or altering main."
+    "status": "passed_server_refused_failing_required_check",
+    "criterion": "A disposable, intentionally failing PR is rejected by actual GitHub merge enforcement; probe closed without merging or altering main.",
+    "pullRequest": 44,
+    "url": "https://github.com/Open-Sourcery-UMD/scryer/pull/44",
+    "headSha": "f97afbc7e1fffd6aadb15e9a58924e9ec10e4c2c",
+    "branch": "ci-enforcement-probe-20261103-531c59f2",
+    "sourceChangesBeyondCandidate": 0,
+    "parent": "1fe6d70841d01c7b309f25e0a8deb7e5f59a38eb",
+    "tree": "afdd3f1484f161a53d9d99be5c590d5e46e2b473",
+    "number": 44,
+    "mergeHTTPStatus": "405",
+    "mergeMessage": "Repository rule violations found\n\nRequired status check \"Required checks\" is failing.\n\n",
+    "requiredCheck": "failure",
+    "requiredCheckAppId": 15368,
+    "baseWasCurrent": true,
+    "sourceTreeIdenticalToCandidate": true,
+    "runId": 41667380776,
+    "closedWithoutMerging": true,
+    "branchDeleted": true
   },
   "originalHumanChecksPerformed": {
     "outsideUserSessions": 0,
     "independentHumanApproval": false
   },
-  "publicReleaseDecision": "NO_GO_PUBLIC_ACCOUNTS_AND_REAL_RECORDS"
+  "publicReleaseDecision": "NO_GO_PUBLIC_ACCOUNTS_AND_REAL_RECORDS",
+  "publishingAuthorization": {
+    "source": "Direct user approval in this chat",
+    "verbatimInstruction": "Yes, publish and enforce CI",
+    "prePushHook": "The earlier unconditional local-only hook remains installed; explicit one-command core.hooksPath override is used only for these authorized pushes."
+  }
 }

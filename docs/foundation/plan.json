@@ -22,7 +22,7 @@
     ]
   },
   "constraints": [
-    "Work locally in the existing backend-local worktree; do not push, merge, close issues, or change GitHub settings.",
+    "The initial local-only stage was completed. Subsequent explicit lead authorization permits candidate publication/PR integration and CI/reviewer ruleset enforcement; no real records, deployments or unrelated GitHub changes.",
     "README.md remains the only repository-owned Markdown file.",
     "Only synthetic records, fixtures, accounts, and disposable databases are permitted.",
     "Never fabricate team approval or two external usability sessions.",

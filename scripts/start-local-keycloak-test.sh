@@ -69,6 +69,18 @@ for file in realm.json admin.env users.json; do
   chmod 600 "$state_dir/$file"
 done
 
+# Native Linux bind mounts preserve the host uid (the CI runner is not uid 1000).
+# Keycloak must read this one mounted file; the host directory stays private at
+# 0700, and unmounted admin.env/users.json stay 0600. Docker Desktop maps the uid
+# and can hide this portability failure.
+chmod 644 "$state_dir/realm.json"
+if ! docker run --pull=never --rm --network none --entrypoint /bin/sh \
+  --mount "type=bind,source=$state_dir/realm.json,target=/tmp/scryer-realm.json,readonly" \
+  "$image" -c 'test -r /tmp/scryer-realm.json'; then
+  echo 'The nonroot Keycloak image cannot read its synthetic realm mount' >&2
+  exit 2
+fi
+
 docker run --pull=never --rm -d --name "$name" \
   --label org.opencontainers.image.title=scryer-local-oidc-test \
   --label "org.scryer.test-run-id=${SCRYER_TEST_RUN_ID:-manual}" \

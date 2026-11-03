@@ -16,7 +16,8 @@ case ${1:-fast} in
     "$python_bin" -m unittest discover -s tests/local_stack -p 'test_*.py' -q
     ;;
   engine)
-    make -C engine test-money test-json test-case test-projection test-receipt test-coverage test-matching test-lifecycle cli
+    make -C engine test-money test-json test-case test-projection test-receipt test-coverage test-matching test-lifecycle \
+      case-probe projection-probe receipt-probe evidence-probe cli
     "$python_bin" -m unittest discover -s tests/engine -p 'test_*.py' -q
     SCRYER_FINANCIAL_NATIVE_BIN="$project_root/engine/build/scryer-native" \
       "$python_bin" -m unittest discover -s tests/foundation -p test_financial_examples.py -q

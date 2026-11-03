@@ -40,10 +40,10 @@
       41,
       42
     ],
-    "foundationPushed": false,
+    "foundationPushed": true,
     "foundationMerged": false,
-    "branchProtectionAppliedByTask": false,
-    "note": "Merge state is time-specific and is not evidence that the local foundation candidate has been reviewed or that all issue criteria are complete.",
+    "branchProtectionAppliedByTask": true,
+    "note": "Publication explicitly authorized after the initial local-only stage. Live main rulesets apply the lead reviewer waiver and require GitHub Actions-bound CI with no bypass; actual failed-probe merge rejection is recorded in activation.json. Foundation integration awaits successful remote CI.",
     "date": "2026-11-03",
     "mainCommit": "4c1248e7095d56a632cb0768568d0b970ab8cd7e",
     "comparison": {
@@ -53,7 +53,8 @@
       "aheadBy": 0,
       "behindBy": 87,
       "mergeBase": "453c2087399894ec2c89717e4d6f32b8d86dfafa"
-    }
+    },
+    "foundationPullRequest": 43
   },
   "localVerification": [
     {
