@@ -1,5 +1,5 @@
 # Direct dependencies of the supported HTTP and encrypted-sync components.
 # Regenerate requirements.txt using the command in README.md; do not edit the lock.
 fastapi==0.141.1
-psycopg[binary]==3.3.5
+psycopg[binary]==3.3.6
 uvicorn==0.52.4
