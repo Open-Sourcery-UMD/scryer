@@ -173,23 +173,24 @@
       {
         "id": "A1",
         "title": "Record maintainer adoption, reviewer waiver and research deferral",
-        "status": "implemented"
+        "status": "complete"
       },
       {
         "id": "A2",
         "title": "Publish main-synchronized candidate and pass real GitHub CI",
-        "status": "in_progress"
+        "status": "complete"
       },
       {
         "id": "A3",
         "title": "Apply both main rulesets and prove a failing PR cannot merge",
-        "status": "in_progress"
+        "status": "complete"
       },
       {
         "id": "A4",
         "title": "Integrate verified foundation changes and record exact remote evidence",
-        "status": "not_started"
+        "status": "complete"
       }
-    ]
+    ],
+    "completionEvidence": "docs/foundation/activation.json"
   }
 }
