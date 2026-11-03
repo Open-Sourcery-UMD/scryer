@@ -33,7 +33,7 @@ test("foundation wireframes run directly from a local file with synthetic, recov
     assert.equal(await page.locator("#screen").getAttribute("data-screen-id"), "welcome");
     assert.equal(await page.getByText("DESIGN PROTOTYPE · SYNTHETIC ONLY", { exact: true }).count(), 1);
     assert.match(await page.locator("aside").innerText(), /unreviewed, unsaved synthetic bank-CSV preview/);
-    assert.match(await page.locator("aside").innerText(), /Two outside participants are still required/);
+    assert.match(await page.locator("aside").innerText(), /Outside sessions are deferred to future research by the maintainer/);
     assert.equal(await page.locator("input[type=file]").count(), 0);
     assert.equal(await page.locator("form").count(), 0);
     assert.equal(await page.locator("a[download]").count(), 0);

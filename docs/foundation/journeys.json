@@ -3543,7 +3543,7 @@
   ],
   "acceptance": {
     "design": "Local graph and browser verification required.",
-    "humanGate": "Two outside human sessions must be run; usability-sessions.json deliberately starts empty.",
+    "humanGate": "The lead deferred two actual outside-human sessions to future research under activation.json D11. No sessions are claimed; the prepared protocol remains available.",
     "productionGate": "These screens do not implement or certify production account, parser, approval, storage, sync, export, recovery, or deletion behavior."
   }
 }

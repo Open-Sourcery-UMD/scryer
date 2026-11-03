@@ -3,10 +3,10 @@
   "issue": 34,
   "preparedAt": "2026-11-03",
   "status": "not-run",
-  "gate": "pending-two-outside-human-sessions",
+  "gate": "future-research-not-foundation-blocker",
   "requiredOutsideParticipants": 2,
   "eligibility": "At least two actual people outside the project team. AI agents, developers reviewing their own work, browser tests, and simulated personas do not count.",
-  "reasonNotRun": "No outside participants have been recruited or observed in this local implementation. No interviews, consent, feedback, or results are invented.",
+  "reasonNotRun": "The lead explicitly moved these sessions to future usability research on 2026-11-03. No participants have been recruited or observed; no consent, feedback or results are invented.",
   "artifact": "docs/foundation/prototype.html",
   "journeyCatalog": "docs/foundation/journeys.json",
   "sessions": [],
@@ -51,7 +51,7 @@
       "Both people can distinguish login from decryption recovery, device-copy deletion from single synced-case deletion and whole-account purge, and pending sync/deletion from completion.",
       "Any critical or major issue becomes an explicit design change and retest requirement; local automated tests do not waive it."
     ],
-    "completionRule": "Keep status not-run and sessions empty until actual consented sessions occur. After observation, report actual results and unresolved issues. Issue 34 external acceptance remains pending until two outside human sessions and resulting fixes/retests are documented.",
+    "completionRule": "Keep status not-run and sessions empty until actual consented sessions occur. Future research completion requires two real outside-human sessions and documented observations/fixes/retests. The lead deferred this research; it no longer blocks foundation issue #34 under decision D11.",
     "tasks": [
       {
         "id": "T01",
@@ -336,5 +336,7 @@
     "Real login credentials or tokens",
     "Recovery secrets or encryption keys",
     "School or bank account identifiers"
-  ]
+  ],
+  "foundationResolution": "deferred_by_maintainer",
+  "decisionRef": "docs/foundation/activation.json#D11"
 }

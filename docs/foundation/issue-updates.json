@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "date": "2026-11-03",
-  "status": "PROPOSED_NOT_APPLIED_OR_TEAM_APPROVED",
-  "purpose": "Paste-ready issue body amendments for the user-approved aid-evidence direction. Preserve original issue scope and required human evidence while removing obsolete budgeting/server-plaintext assumptions. No GitHub writes were made.",
+  "status": "ADOPTED_BY_LEAD_INSTRUCTION_NOT_APPLIED_TO_ISSUE_BODIES",
+  "purpose": "Lead-adopted body amendments for the approved aid-evidence foundation direction. Exact original waived/deferred activities remain explicit; issue bodies are not automatically edited by creating this file.",
   "issues": [
     {
       "number": 33,
@@ -12,7 +12,7 @@
     {
       "number": 34,
       "title": "Map the user journeys and failure states",
-      "body": "Description: Specify first-run/local-versus-sync accounts, unlock/recovery, supported/unsupported import, column/money mapping, duplicates, review/approval, corrections, source-linked insights, unknown coverage, offline/stale/conflicting sync, encrypted export/restore and separate local-case/synced-case/account deletion. Include empty, waiting, error, retry and safe-exit states. The aid-evidence insight replaces the former budget/dashboard stage.\n\nDone when: README.md links a complete reachable screenflow graph and navigable low-fidelity prototype; risky actions explain exact scope and require fresh review; two actual consenting people outside implementation test the design and observations, design fixes and necessary retests are recorded before further full personal-case UI implementation. Automation cannot replace these sessions. Existing component development is not retroactively claimed to follow the study.\n\nDepends on: #33, #36, #37."
+      "body": "Description: Specify first-run/local-versus-sync accounts, unlock/recovery, supported/unsupported import, column/money mapping, duplicates, review/approval, corrections, source-linked insights, unknown coverage, offline/stale/conflicting sync, encrypted export/restore and separate local-case/synced-case/account deletion. Include empty, waiting, error, retry and safe-exit states. The aid-evidence insight replaces the former budget/dashboard stage.\n\nDone when: README.md links a complete reachable screenflow graph and navigable low-fidelity prototype; risky actions explain exact scope and require fresh review; automated graph/browser checks cover the designed states, destructive confirmations and safe recovery. The lead moved two consenting outside-person sessions to future usability research under decision D11 on November 3, 2026; no sessions or observations are claimed.\n\nDepends on: #33, #36, #37."
     },
     {
       "number": 35,
@@ -24,5 +24,6 @@
       "title": "Specify financial invariants and formulas",
       "body": "Description: Specify exact signed integer-cent transport, nonnegative approved fact magnitudes and role-derived signs, checked arithmetic, dates/observation/review knowledge, correction/branch rules, source/recipient provenance and visible unknown coverage. Define school-credit-minus-school-charge surplus, exact change attribution and separate aid lifecycle/refund/bank-match observations. Explicitly reject unsupported income/expense budgets, categories, transfer classification, opening balances and net-worth inference.\n\nDone when: README.md and hand-calculated executable examples agree for normal purchases, school/merchant refunds, both imported transfer accounts, missing income evidence, partial months and conflicting corrections; Python and native C++ agree; incomplete history never becomes a complete balance/net-worth or entitlement claim. Maintainers adopt these aid-specific formulas in place of the obsolete budgeting formulas. Browser/WASM release parity is separately tracked.\n\nDepends on: #33."
     }
-  ]
+  ],
+  "decisionRef": "docs/foundation/activation.json#D12"
 }

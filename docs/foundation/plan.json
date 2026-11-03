@@ -166,5 +166,30 @@
     "importantFindings": 2,
     "minorFindings": 1,
     "fixPass": "Single final pass adds missing synced-case deletion, separates supplemental release work and corrects Next.js provenance. No re-review or human approval is implied."
+  },
+  "subsequentAuthorizedWork": {
+    "source": "Lead requests resolving remaining acceptance and explicit D10/D11 instructions",
+    "tasks": [
+      {
+        "id": "A1",
+        "title": "Record maintainer adoption, reviewer waiver and research deferral",
+        "status": "implemented"
+      },
+      {
+        "id": "A2",
+        "title": "Publish main-synchronized candidate and pass real GitHub CI",
+        "status": "in_progress"
+      },
+      {
+        "id": "A3",
+        "title": "Apply both main rulesets and prove a failing PR cannot merge",
+        "status": "in_progress"
+      },
+      {
+        "id": "A4",
+        "title": "Integrate verified foundation changes and record exact remote evidence",
+        "status": "not_started"
+      }
+    ]
   }
 }

@@ -285,5 +285,7 @@
     "Independent write-access human review, authorized integration, remote clean-checkout CI and verified review/Required checks enforcement.",
     "Named role acceptance and maintainer privacy/contribution policy review."
   ],
-  "publicRelease": "NO_GO_PUBLIC_ACCOUNTS_AND_REAL_RECORDS. See acceptance.json publicReleaseGates; complete UI, WASM, maintained JWT, formats, human/accessibility/security/privacy and actual $0 hosted operations remain separately tracked."
+  "publicRelease": "NO_GO_PUBLIC_ACCOUNTS_AND_REAL_RECORDS. See acceptance.json publicReleaseGates; complete UI, WASM, maintained JWT, formats, human/accessibility/security/privacy and actual $0 hosted operations remain separately tracked.",
+  "recordScope": "Historical local foundation verification before remote activation and the subsequent maintainer waivers. Current acceptance status is activation.json; historical pending entries below are not the current ledger.",
+  "supersededStatusBy": "docs/foundation/activation.json"
 }

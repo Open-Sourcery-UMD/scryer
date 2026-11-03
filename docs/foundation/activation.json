@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-03",
+  "timezone": "America/New_York",
+  "repository": "Open-Sourcery-UMD/scryer",
+  "maintainer": "@yudhiishvs",
+  "maintainerCapability": "Authenticated GitHub identity and repository admin permission verified read-only on 2026-11-03.",
+  "status": "AWAITING_REMOTE_CI_AND_RULESET_VERIFICATION",
+  "scopeChange": "The lead requested resolving the remaining foundation checks, authorized reviewer waiver, and explicitly moved outside sessions to future research. This authorizes publishing the reviewed foundation candidate and verifying GitHub CI/protection; the earlier local-only restriction does not apply to these requested remote steps. Public real-record release remains blocked.",
+  "policyDecisions": [
+    {
+      "id": "D10",
+      "decision": "Independent pre-merge approving reviews are waived while the previous reviewers are unavailable.",
+      "source": "Direct maintainer instruction in this chat",
+      "verbatimInstruction": "I will bypass the reviewers. They left.",
+      "status": "waived_by_maintainer",
+      "independentApprovalOccurred": false,
+      "controlsRetained": [
+        "Pull-request workflow",
+        "All required automated jobs must succeed",
+        "Strict up-to-date main check",
+        "No deletion or force push",
+        "Required conversation resolution"
+      ],
+      "reconsider": "Revisit independent review when reviewers become available."
+    },
+    {
+      "id": "D11",
+      "decision": "Move the two outside-user design sessions from foundation acceptance to future usability research.",
+      "source": "Direct maintainer answer in this chat",
+      "verbatimInstruction": "Move sessions to future research",
+      "status": "deferred_by_maintainer",
+      "sessionsOccurred": 0,
+      "futureProtocol": "docs/foundation/usability-sessions.json",
+      "limits": "Automated browser tests remain automated evidence. No participant, consent, observation or usability outcome is invented."
+    },
+    {
+      "id": "D12",
+      "decision": "Adopt the checked-in aid-evidence foundation contract and intentional issue #33–#36 amendments; use main as canonical integration branch and the lead as accountable coordinator.",
+      "source": "Lead request to resolve maintainer adoption plus previously approved aid-evidence direction; ordinary implementation choice of repository default main.",
+      "verbatimInstruction": "Make them not pending",
+      "referenceRevision": "feebc23",
+      "status": "adopted_by_lead_instruction",
+      "limits": "Records adoption by instruction, not a claimed line-by-line human inspection, independent approval, or approval for public real-record release."
+    }
+  ],
+  "rulesets": [
+    {
+      "id": 13019585,
+      "name": "protect main",
+      "payload": ".github/rulesets/main-ci.json",
+      "status": "prepared",
+      "ciApplication": {
+        "id": 15368,
+        "slug": "github-actions",
+        "verifiedVia": "GET /apps/github-actions"
+      },
+      "bypassActors": []
+    },
+    {
+      "id": 13560058,
+      "name": "main protection",
+      "payload": ".github/rulesets/main-review-exception.json",
+      "status": "prepared",
+      "note": "Existing rule preserved with approving review count zero under D10; independent approval is not claimed."
+    }
+  ],
+  "publication": {
+    "branch": "backend-local",
+    "baseBranch": "main",
+    "initialRemoteMain": "4c1248e7095d56a632cb0768568d0b970ab8cd7e",
+    "status": "prepared_not_pushed"
+  },
+  "ci": {
+    "status": "not_run",
+    "requiredContext": "Required checks",
+    "requiredJobs": [
+      "policy",
+      "python",
+      "engine-client",
+      "frontend",
+      "containers",
+      "security"
+    ],
+    "appId": 15368
+  },
+  "enforcementProbe": {
+    "status": "not_run",
+    "criterion": "A disposable, intentionally failing PR is rejected by actual GitHub merge enforcement; probe closed without merging or altering main."
+  },
+  "originalHumanChecksPerformed": {
+    "outsideUserSessions": 0,
+    "independentHumanApproval": false
+  },
+  "publicReleaseDecision": "NO_GO_PUBLIC_ACCOUNTS_AND_REAL_RECORDS"
+}
