@@ -459,6 +459,7 @@ def _fact(
     elif role in {"school_credit", "school_charge", "refund_issued", "balance_snapshot"}:
         if account is None or account.kind != "school":
             raise ModelError("ACCOUNT_KIND_MISMATCH")
+        assert term_id is not None  # These roles require a term above.
         if account_id != terms[term_id].school_account_ref_id:
             raise ModelError("TERM_ACCOUNT_MISMATCH")
     elif account is not None:
@@ -476,7 +477,7 @@ def _fact(
             raise ModelError("AID_ITEM_TERM_MISMATCH")
     source = _source(value["source"], set(artifacts))
     if role in {"aid_gross_disbursement", "aid_fee_withheld"}:
-        artifact = artifacts.get(source.artifact_id)
+        artifact = artifacts.get(source.artifact_id) if source.artifact_id is not None else None
         if (
             account_id is not None
             or aid_item_id is None
@@ -777,14 +778,13 @@ def load_case_json(document: str) -> Case:
     coverage_approvals = {event.coverage.coverage_id: event.event_id for event in ordered if event.coverage is not None}
     if sum(event.coverage is not None for event in ordered) != len(coverage_approvals):
         raise ModelError("DUPLICATE_COVERAGE_ID")
+    # _event creates exactly one payload for each supported event kind.
     reviews = [
-        event.fact.review_id if event.fact is not None else
-        event.correction.review_id if event.correction is not None else
-        event.coverage.review_id if event.coverage is not None else
-        event.retraction.review_id if event.retraction is not None else
-        event.decision.review_id if event.decision is not None else
-        event.resolution.review_id
+        payload.review_id
         for event in ordered
+        for payload in (event.fact, event.correction, event.coverage,
+                        event.retraction, event.decision, event.resolution)
+        if payload is not None
     ]
     if len(reviews) != len(set(reviews)):
         raise ModelError("DUPLICATE_REVIEW_ID")
@@ -808,7 +808,7 @@ def load_case_json(document: str) -> Case:
                 ):
                     raise ModelError("SOURCE_ACCOUNT_MISMATCH")
             if facts_by_id[event.correction.fact_id].role in {"aid_gross_disbursement", "aid_fee_withheld"}:
-                artifact = artifacts_by_id.get(source.artifact_id)
+                artifact = artifacts_by_id.get(source.artifact_id) if source.artifact_id is not None else None
                 if artifact is None or artifact.kind != "aid_disbursement_statement" or artifact.account_ref_id is not None:
                     raise ModelError("INVALID_AID_DISBURSEMENT_SOURCE")
                 if artifact.observed_at > event.recorded_at:
@@ -825,6 +825,7 @@ def load_case_json(document: str) -> Case:
                 raise ModelError("MISSING_FACT")
             if refund.role != "refund_issued" or bank.role != "bank_credit_observed":
                 raise ModelError("MATCH_ROLE_MISMATCH")
+            assert bank.account_ref_id is not None  # Validated bank facts require an account.
             bank_account = accounts_by_id[bank.account_ref_id]
             recipient_match = (
                 refund.recipient_kind != "unknown"
@@ -835,7 +836,7 @@ def load_case_json(document: str) -> Case:
             if decision.action == "confirm" and not recipient_match and evidence is None:
                 raise ModelError("MATCH_RECIPIENT_EVIDENCE_REQUIRED")
             if evidence is not None:
-                artifact = artifacts_by_id.get(evidence.artifact_id)
+                artifact = artifacts_by_id.get(evidence.artifact_id) if evidence.artifact_id is not None else None
                 if (
                     artifact is None
                     or artifact.kind != "recipient_instruction"

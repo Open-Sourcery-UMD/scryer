@@ -63,14 +63,14 @@ export default function WorkspacePage() {
   const [pageIndex, setPageIndex] = useState(0);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const request = useRef<AbortController | null>(null);
-  const generation = useRef(0);
+  const requestRef = useRef<AbortController | null>(null);
+  const generationRef = useRef(0);
 
-  useEffect(() => () => request.current?.abort(), []);
+  useEffect(() => () => requestRef.current?.abort(), []);
 
   function clearPreview(nextFile: File | null) {
-    request.current?.abort();
-    generation.current++;
+    requestRef.current?.abort();
+    generationRef.current++;
     setBusy(false);
     setPreview(null);
     setPageIndex(0);
@@ -80,10 +80,10 @@ export default function WorkspacePage() {
 
   async function runPreview() {
     if (!file || busy) return;
-    const current = ++generation.current;
+    const current = ++generationRef.current;
     const controller = new AbortController();
-    request.current?.abort();
-    request.current = controller;
+    requestRef.current?.abort();
+    requestRef.current = controller;
     setBusy(true);
     setPreview(null);
     setNotice("");
@@ -108,7 +108,7 @@ export default function WorkspacePage() {
         { accountRefId: "bank-local-preview", observedAt },
         mapping,
         { signal: controller.signal });
-      if (controller.signal.aborted || generation.current !== current) {
+      if (controller.signal.aborted || generationRef.current !== current) {
         batch.sourceBytes.fill(0);
         return;
       }
@@ -121,9 +121,9 @@ export default function WorkspacePage() {
       setPageIndex(0);
       setPreview(next);
     } catch (error) {
-      if (!controller.signal.aborted && generation.current === current) setNotice(messageFor(error));
+      if (!controller.signal.aborted && generationRef.current === current) setNotice(messageFor(error));
     } finally {
-      if (generation.current === current) setBusy(false);
+      if (generationRef.current === current) setBusy(false);
     }
   }
 

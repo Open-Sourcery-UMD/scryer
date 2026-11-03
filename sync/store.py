@@ -198,6 +198,7 @@ def register_device(conn: Connection, account_id: str, idempotency_key: str,
         counts = conn.execute("SELECT count(*), count(*) FILTER (WHERE revoked_at IS NULL) "
                               "FROM scryer.devices WHERE account_id=%s",
                               (account_id,)).fetchone()
+        assert counts is not None  # Aggregate queries return one row, even for an empty set.
         if counts[0] >= DEVICE_TOTAL_LIMIT or counts[1] >= DEVICE_ACTIVE_LIMIT:
             raise StoreError("DEVICE_LIMIT_REACHED")
         conn.execute("INSERT INTO scryer.devices(account_id, device_id) VALUES (%s,%s)",
@@ -415,7 +416,7 @@ def list_cases(conn: Connection, account_id: str, limit: int,
              "r.account_id=c.account_id AND r.case_id=c.case_id AND "
              "r.revision_id=c.head_revision) FROM scryer.cases c "
              "WHERE c.account_id=%s AND c.deleted_at IS NULL ")
-    parameters = [account_id]
+    parameters: list[str | datetime | int] = [account_id]
     if after is not None:
         timestamp, case_id = after
         _id(case_id)
@@ -511,12 +512,14 @@ def delete_case(conn: Connection, account_id: str, case_id: str,
         raise StoreError("CASE_DELETED")
     if row[0] != expected:
         raise StoreError("STALE_REVISION", 412)
-    retained = conn.execute("SELECT coalesce(sum(octet_length(ciphertext)),0) "
-                            "FROM scryer.case_revisions WHERE account_id=%s AND case_id=%s",
-                            (account_id, case_id)).fetchone()[0]
-    staged = conn.execute("SELECT coalesce(sum(octet_length(body)),0) "
-                          "FROM scryer.staged_chunks WHERE account_id=%s AND case_id=%s",
-                          (account_id, case_id)).fetchone()[0]
+    retained_row = conn.execute("SELECT coalesce(sum(octet_length(ciphertext)),0) "
+                                "FROM scryer.case_revisions WHERE account_id=%s AND case_id=%s",
+                                (account_id, case_id)).fetchone()
+    staged_row = conn.execute("SELECT coalesce(sum(octet_length(body)),0) "
+                              "FROM scryer.staged_chunks WHERE account_id=%s AND case_id=%s",
+                              (account_id, case_id)).fetchone()
+    assert retained_row is not None and staged_row is not None
+    retained, staged = retained_row[0], staged_row[0]
     if used < retained + staged:
         raise StoreError("CORRUPT_QUOTA", 500)
     conn.execute("DELETE FROM scryer.case_revisions WHERE account_id=%s AND case_id=%s",
@@ -545,8 +548,10 @@ def delete_account(conn: Connection, account_id: str, idempotency_key: str,
     if confirmation != account_id:
         raise StoreError("ACCOUNT_CONFIRMATION_MISMATCH", 412)
     digest = request_digest("DELETE", "/v1/account", b"", confirmation)
-    outcome = conn.execute("SELECT scryer.begin_account_deletion(%s,%s,%s)",
-                           (account_id, idempotency_key, digest)).fetchone()[0]
+    outcome_row = conn.execute("SELECT scryer.begin_account_deletion(%s,%s,%s)",
+                               (account_id, idempotency_key, digest)).fetchone()
+    assert outcome_row is not None  # This scalar SELECT always returns one row.
+    outcome = outcome_row[0]
     receipt = {"kind": "account-deletion", "accountId": account_id,
                "status": "deleting"}
     if outcome in ("created", "retry"):

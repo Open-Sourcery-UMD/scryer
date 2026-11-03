@@ -1,0 +1,15 @@
+Related issue:
+
+## Summary
+<!-- Describe the concrete problem, trigger, and resulting behavior. -->
+
+## User impact
+<!-- Which user-visible behavior changes? For internal work, explain the operational effect. -->
+
+## Validation
+<!-- Name the exact commands and observed results. State any checks not run and why. -->
+
+## Risks and recovery
+<!-- Explain data/privacy/schema risks and how to recover or revert. For none, explain why. -->
+
+<!-- Use synthetic fixtures. Never attach real financial records, credentials, or recovery material. -->

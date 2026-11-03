@@ -3,7 +3,7 @@ set -eu
 
 project_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 state_dir="$project_root/.backend-artifacts/keycloak-auth-test"
-image='quay.io/keycloak/keycloak:26.7.3'
+image='quay.io/keycloak/keycloak:26.7.3@sha256:29be7252db0a106f1cd2ac17b9a56ff2668073da645638a38b9fc67deeb2d6c4'
 name='scryer-keycloak-auth-test'
 umask 077
 mkdir -p "$state_dir"
@@ -71,6 +71,7 @@ done
 
 docker run --pull=never --rm -d --name "$name" \
   --label org.opencontainers.image.title=scryer-local-oidc-test \
+  --label "org.scryer.test-run-id=${SCRYER_TEST_RUN_ID:-manual}" \
   --publish 127.0.0.1:8081:8080 \
   --env-file "$state_dir/admin.env" \
   --mount "type=bind,source=$state_dir/realm.json,target=/opt/keycloak/data/import/realm.json,readonly" \

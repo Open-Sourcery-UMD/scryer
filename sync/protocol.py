@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import base64
+import binascii
 from dataclasses import dataclass
 import hashlib
 import hmac
 import json
 import re
-from typing import Any, Sequence
+from typing import Any, NoReturn, Sequence
 
 
 ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9_-]{0,63}\Z")
@@ -84,7 +85,7 @@ def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
-def _bad_constant(_value: str) -> None:
+def _bad_constant(_value: str) -> NoReturn:
     raise ProtocolError("INVALID_WIRE")
 
 
@@ -118,7 +119,7 @@ def _b64(value: object, minimum: int, maximum: int) -> bytes:
         raise ProtocolError("CASE_TOO_LARGE", 413)
     try:
         decoded = base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
-    except (ValueError, base64.binascii.Error):
+    except (ValueError, binascii.Error):
         raise ProtocolError("INVALID_WIRE") from None
     if len(decoded) > maximum:
         raise ProtocolError("CASE_TOO_LARGE", 413)
@@ -149,6 +150,8 @@ def parse_device_registration(body: bytes) -> str:
 
 
 def parse_device_id(value: object) -> str:
+    if not isinstance(value, str):
+        raise ProtocolError("INVALID_WIRE")
     _b64(value, 16, 16)
     return value
 

@@ -26,7 +26,9 @@ def begin_tenant_transaction(conn: Connection, account_id: str,
         raise ValueError("INVALID_CONTEXT_KEY")
     if conn.info.transaction_status != TransactionStatus.INTRANS:
         raise RuntimeError("TENANT_TRANSACTION_REQUIRED")
-    txid = str(conn.execute("SELECT txid_current()").fetchone()[0])
+    row = conn.execute("SELECT txid_current()").fetchone()
+    assert row is not None  # This scalar SELECT always returns one row.
+    txid = str(row[0])
     signature = hmac.new(context_key, f"{account_id}\n{txid}".encode("ascii"),
                          hashlib.sha256).hexdigest()
     conn.execute("SELECT set_config('scryer.account_id', %s, true)", (account_id,))

@@ -1,0 +1,926 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-03",
+  "baseCommit": "9451c23",
+  "scope": "Locally authorized foundation work for GitHub issues #32\u2013#40; no push/merge/issue closure/settings changes and no real records.",
+  "overallStatus": "LOCAL_FOUNDATION_CANDIDATE_NOT_PUBLIC_RELEASE",
+  "allIssueAcceptanceComplete": false,
+  "releaseContract": {
+    "deadline": "2026-12-31",
+    "target": "Public self-service signup and real student-record reconciliation with a complete reviewed, encrypted, recoverable journey.",
+    "cashHostingBudgetUSD": "0",
+    "currentDecision": "NO_GO_PUBLIC_ACCOUNTS_AND_REAL_RECORDS",
+    "syntheticDemoSatisfiesPublicTarget": false
+  },
+  "statusMeaning": {
+    "implementationStatus": "Describes artifacts/component availability. It does not assert a check ran or a person approved.",
+    "evidenceStatus": "Describes observations or who/what must still supply them. available_local is not executed verification.",
+    "verified_local": "A named synthetic command actually passed; its scope and limits are recorded.",
+    "pending_human": "An actual person must perform/review/adopt the work. No session, approval or ownership acceptance is invented.",
+    "pending_github": "Repository settings, remote CI, PR review/merge or activation require separate observed GitHub evidence.",
+    "pending_environment": "A real external tool/service is missing; a mocked or skipped run is not a pass."
+  },
+  "accountability": {
+    "fallback": "@yudhiishvs",
+    "verifiedCapability": "Repository admin verified by the root integration audit on 2026-11-03.",
+    "rolesAreAcceptedAssignments": false,
+    "independentReview": "The author/lead cannot independently approve their own work; another qualified reviewer must supply that evidence."
+  },
+  "remoteObservation": {
+    "source": "Root integration audit supplied to this task",
+    "mergedPullRequests": [
+      31,
+      41,
+      42
+    ],
+    "foundationPushed": false,
+    "foundationMerged": false,
+    "branchProtectionAppliedByTask": false,
+    "note": "Merge state is time-specific and is not evidence that the local foundation candidate has been reviewed or that all issue criteria are complete.",
+    "date": "2026-11-03",
+    "mainCommit": "4c1248e7095d56a632cb0768568d0b970ab8cd7e",
+    "comparison": {
+      "base": "main",
+      "head": "codex/final-five-issues",
+      "status": "behind",
+      "aheadBy": 0,
+      "behindBy": 87,
+      "mergeBase": "453c2087399894ec2c89717e4d6f32b8d86dfafa"
+    }
+  },
+  "localVerification": [
+    {
+      "id": "financial-fast",
+      "date": "2026-11-03",
+      "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/foundation -p 'test_financial_examples.py' -q",
+      "result": "passed_with_explicit_optional_native_skip",
+      "tests": 7,
+      "skipped": 1,
+      "claim": "Python examples and independent receipt/role checks only."
+    },
+    {
+      "id": "financial-native",
+      "date": "2026-11-03",
+      "command": "SCRYER_FINANCIAL_NATIVE_BIN=\"$PWD/engine/build/scryer-native\" PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/foundation -p 'test_financial_examples.py' -q",
+      "result": "passed",
+      "tests": 7,
+      "skipped": 0,
+      "claim": "The same eight hand-calculated cases checked against Python and the selected local native executable; not WASM parity."
+    },
+    {
+      "id": "foundation-contracts",
+      "date": "2026-11-03",
+      "command": "SCRYER_FINANCIAL_NATIVE_BIN=\"$PWD/engine/build/scryer-native\" PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests/foundation -p 'test_*.py' -q",
+      "result": "passed",
+      "tests": 20,
+      "skipped": 0,
+      "claim": "Financial examples, journey graph/contracts, research-log honesty, PR-body injection and required-job failure propagation. This run is not browser, external usability, remote CI or public release evidence."
+    },
+    {
+      "id": "foundation-artifacts",
+      "date": "2026-11-03",
+      "result": "passed",
+      "claim": "One-shot local validation parsed both JSON files, checked all 41 unique issue criteria and every artifact path/README relative link, counted three Mermaid diagrams, and observed git candidate Markdown inventory containing only README.md.",
+      "commands": [
+        "python3 -m json.tool docs/foundation/acceptance.json",
+        "python3 -m json.tool docs/foundation/financial-examples.json",
+        "git ls-files --cached --others --exclude-standard '*.md'",
+        "git diff --check -- README.md"
+      ],
+      "limits": "Existence/link/JSON checks establish internal consistency only; they do not prove runtime behavior or independent human approval."
+    }
+  ],
+  "issues": [
+    {
+      "number": 32,
+      "title": "Integration baseline and accurate README",
+      "overall": "pending_human_and_remote_verification",
+      "checks": [
+        {
+          "id": "32.1",
+          "criterion": "Compare current main with codex/final-five-issues and review Docker, health-check, summary-card and transaction-table changes.",
+          "implementationStatus": "audit_available",
+          "evidenceStatus": "historical_local_comparison_observed_final_review_pending",
+          "artifacts": [
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": {
+            "date": "2026-11-03",
+            "command": "git diff fc43aef...453c208 -- Dockerfile.backend docker-compose.yml frontend/Dockerfile main.py setup.sh frontend/components/SummaryCard.tsx frontend/components/TransactionTable.tsx frontend/app/page.tsx",
+            "result": "Original Docker, health, summary-card and transaction-table changes read; findings and current disposition recorded in README. This is agent review, not independent maintainer approval."
+          },
+          "accountableRole": "lead_developer",
+          "remaining": "Record the exact compared refs/SHAs and reviewer conclusions for the final foundation candidate. Prior merged PR state does not prove candidate review."
+        },
+        {
+          "id": "32.2",
+          "criterion": "The team names one integration branch.",
+          "implementationStatus": "not_applicable",
+          "evidenceStatus": "pending_human",
+          "artifacts": [
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "Maintainers record the selected canonical branch. Existing backend-local name is not team signoff."
+        },
+        {
+          "id": "32.3",
+          "criterion": "A clean checkout builds and accepted changes pass normal review and merge practice.",
+          "implementationStatus": "tooling_available",
+          "evidenceStatus": "pending_remote_and_environment",
+          "artifacts": [
+            "scripts/check.sh",
+            ".github/workflows/ci.yml",
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "Observe clean candidate checks, independent review, remote CI and the authorized merge. This task does not push, merge, close issues or change settings."
+        },
+        {
+          "id": "32.4",
+          "criterion": "README accurately distinguishes current behavior, target behavior and remaining release work.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "pending_final_local_review",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/acceptance.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "Reconcile the final check results and final candidate SHA; maintainer review remains separate."
+        }
+      ]
+    },
+    {
+      "number": 33,
+      "title": "Product specification and complete journey",
+      "overall": "local_contract_written_team_adoption_pending",
+      "checks": [
+        {
+          "id": "33.1",
+          "criterion": "Document primary user, mission, supported data, demo/self-host behavior and out-of-scope claims.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "available_local",
+          "artifacts": [
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "product_lead",
+          "remaining": "Maintainers review the explicit distinction between visible proposal preview, headless components and full personal-case product."
+        },
+        {
+          "id": "33.2",
+          "criterion": "Document observable December 31, 2026 completion and the $0 cash hosting requirement.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "available_local",
+          "artifacts": [
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "release_lead",
+          "remaining": "Public signup with actual records and complete operation remain the target; capacity, independent backups and hosted release evidence are pending."
+        },
+        {
+          "id": "33.3",
+          "criterion": "Check in import \u2192 review/correction \u2192 insight \u2192 budget \u2192 export/delete journey and have the team adopt it.",
+          "implementationStatus": "aid_contract_replaces_budget_stage",
+          "evidenceStatus": "pending_human_adoption",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/journeys.json",
+            "docs/foundation/prototype.html"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "product_lead",
+          "remaining": "User-approved aid trace replaces the obsolete budget stage with evidence/coverage/refund reconciliation. Record formal maintainer adoption; do not claim monthly budgets exist."
+        },
+        {
+          "id": "33.4",
+          "criterion": "Complete the saved, reviewed, recoverable personal-case interface.",
+          "implementationStatus": "partial_components_only",
+          "evidenceStatus": "pending_implementation",
+          "artifacts": [
+            "README.md",
+            "client/import/review.ts",
+            "client/storage/repository.ts"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "client_lead",
+          "remaining": "Connect review, C++ WASM validation, corrections, encrypted persistence, recovery, sync and deletion to the actual frontend. Current /workspace stops at proposals."
+        }
+      ]
+    },
+    {
+      "number": 34,
+      "title": "Screenflows, low-fidelity prototype and outsider sessions",
+      "overall": "local_design_and_protocol_human_sessions_pending",
+      "checks": [
+        {
+          "id": "34.1",
+          "criterion": "Specify first-run/account/import/mapping/duplicate/correction/dashboard/export/delete successes, empty and failed states.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "pending_final_local_verification",
+          "artifacts": [
+            "docs/foundation/journeys.json",
+            "docs/foundation/prototype.html",
+            "tests/foundation/test_journeys.py",
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "product_lead",
+          "remaining": "Review graph reachability, safe retries and the prototype browser observation for the final artifact."
+        },
+        {
+          "id": "34.2",
+          "criterion": "Include the earlier budget flow without pretending to implement unsupported formulas.",
+          "implementationStatus": "aid_evidence_replacement",
+          "evidenceStatus": "pending_human_adoption",
+          "artifacts": [
+            "docs/foundation/journeys.json",
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "product_lead",
+          "remaining": "The replacement flow explains supported aid evidence and why spending recommendations are unavailable. Maintainers must adopt the change."
+        },
+        {
+          "id": "34.3",
+          "criterion": "Test the prototype with two outsiders before further personal-case implementation and record findings.",
+          "implementationStatus": "protocol_available",
+          "evidenceStatus": "pending_human",
+          "artifacts": [
+            "docs/foundation/usability-sessions.json",
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "research_lead",
+          "remaining": "Recruit two consenting people outside implementation, run actual sessions, record observations, revise the design and review results. No participant/results are invented. The historical before-implementation timing cannot be established retroactively."
+        },
+        {
+          "id": "34.4",
+          "criterion": "Demonstrate human screen-reader usability for the release flow.",
+          "implementationStatus": "automated_component_checks_only",
+          "evidenceStatus": "pending_human",
+          "artifacts": [
+            "README.md",
+            "tests/frontend/browser_demo_accessibility.mjs"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "accessibility_lead",
+          "remaining": "Run a human screen-reader session against the complete candidate; automated role/label assertions are insufficient."
+        }
+      ]
+    },
+    {
+      "number": 35,
+      "title": "Architecture, typed boundaries, migration authority and Prisma retirement",
+      "overall": "local_contract_written_intentional_stack_amendment_pending",
+      "checks": [
+        {
+          "id": "35.1",
+          "criterion": "Provide architecture, dataflow, local deployment and target deployment diagrams with component responsibilities.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "available_local",
+          "artifacts": [
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "architecture_lead",
+          "remaining": "Review diagrams against the final scaffold/readiness changes and retain explicit target-versus-provisioned distinctions."
+        },
+        {
+          "id": "35.2",
+          "criterion": "Define typed frontend/API/engine boundaries and bounded imports with exact rules and durable storage.",
+          "implementationStatus": "implemented_local_components",
+          "evidenceStatus": "available_local",
+          "artifacts": [
+            "README.md",
+            "docs/backend/contracts/case-v1.schema.json",
+            "client/import/types.ts",
+            "engine/include/scryer/api.hpp",
+            "sync/api.py",
+            "sync/protocol.py"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "architecture_lead",
+          "remaining": "Browser production WASM, maintained JWT validation and complete UI integration remain release gates."
+        },
+        {
+          "id": "35.3",
+          "criterion": "Resolve original NextUI / FastAPI rules+persist / SQLAlchemy+Alembic requirements deliberately.",
+          "implementationStatus": "intentional_architecture_replacement",
+          "evidenceStatus": "pending_human_adoption",
+          "artifacts": [
+            "README.md",
+            "sync/migrate.py",
+            "migrations/0001_sync.sql",
+            "frontend/package.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "architecture_lead",
+          "remaining": "Record acceptance of existing Tailwind/Radix frontend, browser C++ rules, opaque FastAPI transport and sole checksum-verified SQL migration authority; do not add a second ORM/migration owner."
+        },
+        {
+          "id": "35.4",
+          "criterion": "Record decisions, rejected alternatives, invariants and verification.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "available_local",
+          "artifacts": [
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "architecture_lead",
+          "remaining": "Obtain actual human review of D01\u2013D09 and attach immutable revision/review evidence. Local authorship is not signoff."
+        },
+        {
+          "id": "35.5",
+          "criterion": "Retire obsolete Prisma without silently migrating floating plaintext transaction data.",
+          "implementationStatus": "retirement_plan_written",
+          "evidenceStatus": "pending_implementation",
+          "artifacts": [
+            "README.md",
+            "prisma/schema.prisma"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "database_lead",
+          "remaining": "Inventory callers/databases; remove inactive synthetic-only scaffolding through reviewed changes, or design a separate consented exact-value legacy migration if user state exists. Prisma files are still present."
+        }
+      ]
+    },
+    {
+      "number": 36,
+      "title": "Financial and time semantics with executable examples",
+      "overall": "aid_examples_verified_budget_acceptance_amendment_pending",
+      "checks": [
+        {
+          "id": "36.1",
+          "criterion": "Specify signed integer cents, source dates/import observation/review time, corrections and evidence uncertainty.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/financial-examples.json",
+            "tests/foundation/test_financial_examples.py",
+            "scryer_reference/money.py"
+          ],
+          "verificationCommands": [
+            "SCRYER_FINANCIAL_NATIVE_BIN=\"$PWD/engine/build/scryer-native\" PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/foundation -p test_financial_examples.py -q"
+          ],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "passed",
+            "tests": 7,
+            "skipped": 0,
+            "scope": "Independent Python hand-calculated examples plus native expectations, receipts/tampering, order invariance and role boundaries."
+          },
+          "accountableRole": "domain_lead",
+          "remaining": "Maintainers review the contract; no float, silent precision rounding or source-date inference is authorized.",
+          "evidenceRefs": [
+            "financial-native"
+          ]
+        },
+        {
+          "id": "36.2",
+          "criterion": "Check expected normal purchases, refunds, both imported transfer accounts, missing income and partial months.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "docs/foundation/financial-examples.json",
+            "tests/foundation/test_financial_examples.py"
+          ],
+          "verificationCommands": [
+            "SCRYER_FINANCIAL_NATIVE_BIN=\"$PWD/engine/build/scryer-native\" PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/foundation -p test_financial_examples.py -q"
+          ],
+          "observed": {
+            "date": "2026-11-03",
+            "result": "passed",
+            "examples": 8,
+            "tests": 7,
+            "skipped": 0
+          },
+          "accountableRole": "domain_lead",
+          "remaining": "These are explicit scope-boundary examples, not a claim of a budget classifier. Eight synthetic scenarios distinguish supported aid results from unavailable budget inferences.",
+          "evidenceRefs": [
+            "financial-native"
+          ]
+        },
+        {
+          "id": "36.3",
+          "criterion": "Define income/expense/refund/transfer/opening/category/budget formulas for the approved product.",
+          "implementationStatus": "aid_formula_supersedes_budget_formulas",
+          "evidenceStatus": "pending_human_adoption",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/financial-examples.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "domain_lead",
+          "remaining": "Adopt the reviewed school-credit-minus-charge metric and separate lifecycle/refund/coverage evidence. Income/expense budgets, categorization, opening balances, transfer classification and allowances remain unsupported."
+        },
+        {
+          "id": "36.4",
+          "criterion": "Never infer complete bank balance or net worth from incomplete history.",
+          "implementationStatus": "contract_and_examples_available",
+          "evidenceStatus": "verified_local",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/financial-examples.json",
+            "tests/foundation/test_financial_examples.py"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "domain_lead",
+          "remaining": "Preserve this limit in the actual UI; null/no-postings, partial-coverage and pending-only examples are checked.",
+          "evidenceRefs": [
+            "financial-native"
+          ]
+        },
+        {
+          "id": "36.5",
+          "criterion": "Use the same production semantics in the browser and prove release parity.",
+          "implementationStatus": "native_and_python_only",
+          "evidenceStatus": "pending_implementation",
+          "artifacts": [
+            "engine/src/api.cpp",
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "engine_lead",
+          "remaining": "Build C++ for WASM and execute the release corpus through the real browser boundary; injected test validators are not that evidence."
+        }
+      ]
+    },
+    {
+      "number": 37,
+      "title": "Privacy lifecycle, release risks and accountable ownership",
+      "overall": "local_policy_written_hosted_controls_and_human_review_pending",
+      "checks": [
+        {
+          "id": "37.1",
+          "criterion": "Document locations, access and lifecycle for CSV bytes, normalized values, secrets, logs, backups and demo fixtures.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "available_local",
+          "artifacts": [
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "privacy_lead",
+          "remaining": "Qualified privacy/security reviewers verify actual provider/ingress/database/browser behavior before real records."
+        },
+        {
+          "id": "37.2",
+          "criterion": "Decide raw-byte retention and explain encrypted export, restore and deletion effects.",
+          "implementationStatus": "implemented_local_contract_and_components",
+          "evidenceStatus": "available_local",
+          "artifacts": [
+            "README.md",
+            "client/export/archive.ts",
+            "client/storage/repository.ts",
+            "sync/deletion_worker.py"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "recovery_lead",
+          "remaining": "Visible export/delete/recovery flow, deployed deletion scheduler and independent backup deletion replay remain pending. Original files and user archives are outside remote deletion control."
+        },
+        {
+          "id": "37.3",
+          "criterion": "Assign upload/auth/access/logging/backups/demo risks to accountable owners with mitigations.",
+          "implementationStatus": "role_and_fallback_table_written",
+          "evidenceStatus": "pending_human_role_acceptance",
+          "artifacts": [
+            "README.md",
+            ".github/CODEOWNERS"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "Lead/admin @yudhiishvs is verified fallback coordinator, not an invented on-call team. Obtain named role acceptance and independent review."
+        },
+        {
+          "id": "37.4",
+          "criterion": "Publish concrete hosted retention, log access/expiry, backup schedule and independent restoration evidence.",
+          "implementationStatus": "not_implemented",
+          "evidenceStatus": "pending_operations",
+          "artifacts": [
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "operations_lead",
+          "remaining": "Select the actual $0 cash hosting and independent backup arrangement; state retention/expiry/capacity and rehearse recovery/deletion/rollback before signup. No hosted compliance claim is made."
+        },
+        {
+          "id": "37.5",
+          "criterion": "Permit real financial records only after approved handling and independent review.",
+          "implementationStatus": "release_block_explicit",
+          "evidenceStatus": "pending_human_and_operations",
+          "artifacts": [
+            "README.md",
+            "docs/foundation/usability-sessions.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "release_lead",
+          "remaining": "Qualified privacy review, consented real-record pilot and independent security assessment are pending. Synthetic automation grants no real-record permission."
+        }
+      ]
+    },
+    {
+      "number": 38,
+      "title": "Contribution workflow, ownership and review",
+      "overall": "local_tooling_written_human_exercise_and_enforcement_pending",
+      "checks": [
+        {
+          "id": "38.1",
+          "criterion": "Document issue selection, local run, branch/PR/review expectations and decision records.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "available_local",
+          "artifacts": [
+            "README.md",
+            ".github/ISSUE_TEMPLATE/bug.yml",
+            ".github/ISSUE_TEMPLATE/engineering.yml"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "Review for a newcomer using the final locks/check commands."
+        },
+        {
+          "id": "38.2",
+          "criterion": "Provide issue/PR templates, ownership and required what/how-tested/user-impact content.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "pending_final_local_verification",
+          "artifacts": [
+            ".github/CODEOWNERS",
+            ".github/PULL_REQUEST_TEMPLATE/contribution.txt",
+            "scripts/check_pr_description.py",
+            "tests/foundation/test_review_gates.py",
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "Run the body validator tests and independently review the candidate. The .txt body is deliberately copied/validated and passed via gh --body-file; automatic GitHub Markdown templating is not claimed."
+        },
+        {
+          "id": "38.3",
+          "criterion": "Reject placeholder PR evidence and treat shell-looking PR input as inert data.",
+          "implementationStatus": "implemented_local",
+          "evidenceStatus": "pending_final_local_verification",
+          "artifacts": [
+            "scripts/check_pr_description.py",
+            "tests/foundation/test_review_gates.py",
+            ".github/workflows/ci.yml"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "security_lead",
+          "remaining": "Record final validator test and workflow review evidence. Never interpolate PR text into shell commands."
+        },
+        {
+          "id": "38.4",
+          "criterion": "A newcomer independently selects an issue, runs the app, writes a PR and responds to review.",
+          "implementationStatus": "exercise_defined",
+          "evidenceStatus": "pending_human",
+          "artifacts": [
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "Run and document an actual newcomer exercise without live author assistance; automation does not satisfy it."
+        },
+        {
+          "id": "38.5",
+          "criterion": "Independent reviewers approve affected boundaries and the lead cannot approve their own changes.",
+          "implementationStatus": "policy_and_payload_available",
+          "evidenceStatus": "pending_human_and_github",
+          "artifacts": [
+            "README.md",
+            ".github/CODEOWNERS",
+            ".github/branch-protection.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "lead_developer",
+          "remaining": "Find another write-access reviewer, obtain actual approval and enable verified repository rules. CODEOWNERS presence is not enforcement."
+        }
+      ]
+    },
+    {
+      "number": 39,
+      "title": "Reproducible checks, dependency locking and merge gates",
+      "overall": "local_tooling_in_progress_remote_activation_pending",
+      "checks": [
+        {
+          "id": "39.1",
+          "criterion": "Run backend tests/lint/types, client checks, frontend lint/build, native coverage/parity and container builds on PRs.",
+          "implementationStatus": "tooling_available",
+          "evidenceStatus": "pending_final_local_and_remote_verification",
+          "artifacts": [
+            "scripts/check.sh",
+            ".github/workflows/ci.yml",
+            "scripts/verify-native-coverage.sh",
+            "pyproject.toml"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "ci_lead",
+          "remaining": "Run applicable local groups, record unavailable tools honestly, then observe a real clean-checkout remote CI run. Keep native 90% line / 85% branch thresholds."
+        },
+        {
+          "id": "39.2",
+          "criterion": "Pin Python dependencies and retain frontend/client locks.",
+          "implementationStatus": "locks_in_progress",
+          "evidenceStatus": "pending_final_local_verification",
+          "artifacts": [
+            "requirements.in",
+            "requirements.txt",
+            "requirements-dev.in",
+            "requirements-dev.txt",
+            "frontend/package-lock.json",
+            "client/package-lock.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "ci_lead",
+          "remaining": "Install with --require-hashes and npm ci in a clean environment; confirm reviewed versions and regeneration procedure."
+        },
+        {
+          "id": "39.3",
+          "criterion": "Add dependency and secret scanning plus dependency update configuration.",
+          "implementationStatus": "tooling_available",
+          "evidenceStatus": "pending_final_local_and_remote_verification",
+          "artifacts": [
+            "scripts/scan_secrets.py",
+            ".github/workflows/ci.yml",
+            ".github/dependabot.yml",
+            "scripts/check.sh"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "security_lead",
+          "remaining": "Run local audits/secret scan; inspect findings. Hosted alert/protection/update activation and actual remote scans remain separate."
+        },
+        {
+          "id": "39.4",
+          "criterion": "Any required failed, missing, skipped or cancelled job blocks Required checks.",
+          "implementationStatus": "aggregate_and_policy_available",
+          "evidenceStatus": "pending_final_local_and_github_verification",
+          "artifacts": [
+            "scripts/check_ci_results.py",
+            "tests/foundation/test_review_gates.py",
+            ".github/workflows/ci.yml",
+            ".github/branch-protection.json"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "ci_lead",
+          "remaining": "Run failure-propagation tests, activate the exact status name in GitHub and observe an intentionally failing PR cannot merge. No settings are changed by this task."
+        },
+        {
+          "id": "39.5",
+          "criterion": "Use pinned actions and safe ordinary PR processing.",
+          "implementationStatus": "configuration_available",
+          "evidenceStatus": "pending_final_local_review",
+          "artifacts": [
+            ".github/workflows/ci.yml",
+            "scripts/check_pr_description.py"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "security_lead",
+          "remaining": "Verify action SHAs, least-privilege permissions and no pull_request_target execution of untrusted branches. PR body remains file data."
+        }
+      ]
+    },
+    {
+      "number": 40,
+      "title": "Safe local stack, readiness and persistent restart",
+      "overall": "tooling_in_progress_real_docker_rehearsal_pending",
+      "checks": [
+        {
+          "id": "40.1",
+          "criterion": "Remove default production-like secrets and unsafe public bindings.",
+          "implementationStatus": "local_safeguards_available",
+          "evidenceStatus": "pending_final_local_verification",
+          "artifacts": [
+            "setup.sh",
+            "docker-compose.yml",
+            "tests/local_stack/test_setup.py",
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "operations_lead",
+          "remaining": "Verify private random .env, loopback frontend/API, no host database port, missing-env/volume mismatch refusal and no secret drift. Local secrets are not production provisioning."
+        },
+        {
+          "id": "40.2",
+          "criterion": "Build the production frontend and provide meaningful database-dependent API readiness.",
+          "implementationStatus": "implementation_in_progress",
+          "evidenceStatus": "pending_final_local_verification",
+          "artifacts": [
+            "frontend/Dockerfile",
+            "Dockerfile.backend",
+            "docker-compose.yml",
+            "main.py",
+            "tests/local_stack/"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "operations_lead",
+          "remaining": "Observe readiness failure with database unavailable and success with correct secret/database. The scaffold is not the ciphertext sync service."
+        },
+        {
+          "id": "40.3",
+          "criterion": "Document a clean-machine frontend/API/database setup with safe stop/restart behavior.",
+          "implementationStatus": "implemented_local_contract",
+          "evidenceStatus": "pending_final_local_review",
+          "artifacts": [
+            "README.md",
+            "setup.sh",
+            "scripts/verify-local-stack.py"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "operations_lead",
+          "remaining": "Review actual project/port overrides and commands after final implementation; a new contributor must reproduce the stack."
+        },
+        {
+          "id": "40.4",
+          "criterion": "Prove a real build/start/write/restart/read cycle retains database data.",
+          "implementationStatus": "rehearsal_tooling_in_progress",
+          "evidenceStatus": "pending_environment",
+          "artifacts": [
+            "scripts/verify-local-stack.py",
+            "tests/local_stack/",
+            "docker-compose.yml",
+            "README.md"
+          ],
+          "verificationCommands": [],
+          "observed": null,
+          "accountableRole": "operations_lead",
+          "remaining": "A running Docker daemon is required. The current environment has not supplied a successful rehearsal; an OS administrative prompt was not authorized. Do not substitute mocked Compose output or delete an existing contributor volume."
+        }
+      ]
+    }
+  ],
+  "publicReleaseGates": [
+    {
+      "id": "R01",
+      "criterion": "Complete reviewed and encrypted personal-case UI, including correction/source traversal and recovery/export/delete",
+      "accountableRole": "client_lead",
+      "status": "pending_implementation",
+      "complete": false
+    },
+    {
+      "id": "R02",
+      "criterion": "C++ WASM build and native/browser/Python release-corpus parity",
+      "accountableRole": "engine_lead",
+      "status": "pending_implementation",
+      "complete": false
+    },
+    {
+      "id": "R03",
+      "criterion": "Supported real UMD aid/bill/refund layouts with safe manual fallback",
+      "accountableRole": "import_lead",
+      "status": "pending_format_evidence",
+      "complete": false
+    },
+    {
+      "id": "R04",
+      "criterion": "Maintained JWT verifier, real-token API isolation and public signup/session abuse controls",
+      "accountableRole": "identity_lead",
+      "status": "pending_implementation",
+      "complete": false
+    },
+    {
+      "id": "R05",
+      "criterion": "Visible stale conflict/recovery/device and account-deletion lifecycle with deployed worker",
+      "accountableRole": "client_sync_lead",
+      "status": "pending_implementation",
+      "complete": false
+    },
+    {
+      "id": "R06",
+      "criterion": "Two actual consenting outsider prototype sessions and reviewed findings",
+      "accountableRole": "research_lead",
+      "status": "pending_human",
+      "complete": false
+    },
+    {
+      "id": "R07",
+      "criterion": "Human screen-reader and full-journey accessibility evidence",
+      "accountableRole": "accessibility_lead",
+      "status": "pending_human",
+      "complete": false
+    },
+    {
+      "id": "R08",
+      "criterion": "Qualified privacy handling review and consented real-record pilot",
+      "accountableRole": "privacy_lead",
+      "status": "pending_human",
+      "complete": false
+    },
+    {
+      "id": "R09",
+      "criterion": "Independent security assessment and incident/rollback rehearsal",
+      "accountableRole": "security_lead",
+      "status": "pending_human_and_operations",
+      "complete": false
+    },
+    {
+      "id": "R10",
+      "criterion": "$0 cash actual hosting capacity and independent backup arrangement, with expiry/capacity limits",
+      "accountableRole": "operations_lead",
+      "status": "pending_operations",
+      "complete": false
+    },
+    {
+      "id": "R11",
+      "criterion": "Tested hosted backup restoration, deletion replay, retention and recovery objectives",
+      "accountableRole": "backup_lead",
+      "status": "pending_operations",
+      "complete": false
+    },
+    {
+      "id": "R12",
+      "criterion": "Measured performance, extended fuzzing and release coverage gates",
+      "accountableRole": "engine_ci_lead",
+      "status": "pending_release_evidence",
+      "complete": false
+    },
+    {
+      "id": "R13",
+      "criterion": "Human maintainer approval of the exact release revision and amended foundation acceptance",
+      "accountableRole": "lead_developer",
+      "status": "pending_human",
+      "complete": false
+    },
+    {
+      "id": "R14",
+      "criterion": "Successful remote clean-checkout CI and verified review/Required checks enforcement",
+      "accountableRole": "ci_lead",
+      "status": "pending_github",
+      "complete": false
+    },
+    {
+      "id": "R15",
+      "criterion": "Real Docker build/readiness/write/restart/read local rehearsal",
+      "accountableRole": "operations_lead",
+      "status": "pending_environment",
+      "complete": false
+    }
+  ],
+  "historicalInventory": {
+    "paths": [
+      "docs/backend/requirements.yaml",
+      "docs/backend/tasks.yaml"
+    ],
+    "note": "The historical S-01\u2013S-78 assignment is distinct from GitHub #32\u2013#40. Former Markdown paths in those inventories refer to Git history at 02252f6, not current documentation or proof of completion."
+  },
+  "updateRule": "Add exact candidate revision, command/toolchain/outcome and reviewer or session evidence when available. Never change a pending human/GitHub/operations criterion to verified because a related local file or test exists.",
+  "integrationBaseline": {
+    "comparison": "fc43aefda41cc9e0a642e4894df890e658189e3d...453c2087399894ec2c89717e4d6f32b8d86dfafa",
+    "kind": "Immutable local historical baseline, not a fresh remote-main observation",
+    "commits": [
+      "2bb77d6",
+      "453c208"
+    ],
+    "filesChanged": 17,
+    "insertions": 430,
+    "deletions": 66,
+    "reviewedAreas": [
+      "Docker/Compose/setup safety and production frontend",
+      "Liveness versus database readiness",
+      "SummaryCard hard-coded net-worth scaffold",
+      "TransactionTable presentation versus real import/review state"
+    ],
+    "findingsLocation": "README.md#verification-evidence-and-its-limits",
+    "independentMaintainerReviewComplete": false
+  }
+}

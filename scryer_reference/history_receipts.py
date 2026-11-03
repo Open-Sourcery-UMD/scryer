@@ -41,7 +41,11 @@ def reanalyze_school_surplus_receipt(
     """Produce a new receipt on explicitly selected heads and link the old digest."""
 
     reproduce_school_surplus_receipt(case, archived)
+    term_id = archived["termId"]
+    prior_digest = archived["digest"]
+    # Reproduction validates these fields before returning.
+    assert isinstance(term_id, str) and isinstance(prior_digest, str)
     receipt = make_school_surplus_receipt(
-        case, new_heads, archived["termId"], engine_version="reference-0.2.0"
+        case, new_heads, term_id, engine_version="reference-0.2.0"
     )
-    return ReanalysisResult(prior_digest=archived["digest"], receipt=receipt)
+    return ReanalysisResult(prior_digest=prior_digest, receipt=receipt)

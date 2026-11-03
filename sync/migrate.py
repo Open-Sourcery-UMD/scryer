@@ -45,9 +45,11 @@ def apply_migrations(conn: Connection, directory: Path) -> list[str]:
     applied_now: list[str] = []
     with conn.transaction():
         conn.execute("SELECT pg_advisory_xact_lock(hashtext('scryer-sync-migrations-v1'))")
-        initialized = conn.execute(
+        initialized_row = conn.execute(
             "SELECT to_regclass('scryer_private.schema_migrations')"
-        ).fetchone()[0] is not None
+        ).fetchone()
+        assert initialized_row is not None  # This scalar SELECT always returns one row.
+        initialized = initialized_row[0] is not None
         if not initialized:
             name, checksum, sql = files[0]
             conn.execute(sql)
@@ -59,7 +61,7 @@ def apply_migrations(conn: Connection, directory: Path) -> list[str]:
             conn.execute("INSERT INTO scryer_private.schema_migrations "
                          "(filename, checksum) VALUES (%s, %s)", (name, checksum))
             applied_now.append(name)
-        existing = dict(conn.execute(
+        existing: dict[str, str] = dict(conn.execute(
             "SELECT filename, checksum FROM scryer_private.schema_migrations"
         ).fetchall())
         available = {name: checksum for name, checksum, _ in files}

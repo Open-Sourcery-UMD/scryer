@@ -1,0 +1,330 @@
+{
+  "schemaVersion": 1,
+  "issue": 34,
+  "preparedAt": "2026-11-03",
+  "status": "not-run",
+  "gate": "pending-two-outside-human-sessions",
+  "requiredOutsideParticipants": 2,
+  "eligibility": "At least two actual people outside the project team. AI agents, developers reviewing their own work, browser tests, and simulated personas do not count.",
+  "reasonNotRun": "No outside participants have been recruited or observed in this local implementation. No interviews, consent, feedback, or results are invented.",
+  "artifact": "docs/foundation/prototype.html",
+  "journeyCatalog": "docs/foundation/journeys.json",
+  "sessions": [],
+  "protocol": {
+    "purpose": "Evaluate whether outside people can understand and recover through the target student-aid evidence journey, including the meaning of uncertainty and encryption boundaries.",
+    "durationMinutes": {
+      "minimum": 30,
+      "maximum": 45
+    },
+    "preparation": [
+      "Open prototype.html directly in a browser; use only embedded fictional records.",
+      "Explain the design badge, navigation, scenario buttons, and that nothing is created, uploaded, saved, exported, synced, or deleted.",
+      "Use participant codes P01 and P02 instead of names, email addresses, school identifiers, account numbers, or other personal data.",
+      "Ask for explicit consent before timing or taking non-sensitive notes; do not record audio, video, or screen unless a separate explicit consent is documented.",
+      "Start each task from its catalog start screen using the target journey navigation or screen selector.",
+      "Reset the prototype between participants. Do not demonstrate a task solution before the participant attempts it."
+    ],
+    "consentScript": "This is a fictional design prototype. We want to learn where the screens are unclear. Please do not use real records, credentials, recovery secrets, or personal details. Participation is voluntary; you may skip any task or stop. With your permission, I will record task outcomes and non-sensitive usability notes under an anonymous code. No recording is needed. May I proceed?",
+    "moderatorScript": [
+      "Ask the task prompt verbatim and invite the participant to think aloud.",
+      "Observe the first attempt before giving help. Ask neutral follow-ups such as \"What would you expect here?\" and \"What tells you that?\".",
+      "Record completion as unassisted, assisted, failed, or skipped; record prompts and elapsed seconds.",
+      "If the participant tries to enter real information, stop that entry and return to synthetic examples.",
+      "After each task ask what felt unclear and ask for confidence from 1 (uncertain) to 5 (certain).",
+      "At the end ask which screen or term they would change first. Do not ask for sensitive student-aid stories."
+    ],
+    "outcomeVocabulary": [
+      "unassisted",
+      "assisted",
+      "failed",
+      "skipped"
+    ],
+    "severityVocabulary": {
+      "critical": "Could lead to false approval, false entitlement/match, secret disclosure, irreversible-loss misunderstanding, or false deletion/backup success.",
+      "major": "Cannot complete a core task or recover without a moderator hint.",
+      "minor": "Hesitation, navigation friction, or language issue without a trust-boundary mistake."
+    },
+    "successCriteria": [
+      "Both sessions belong to distinct outside humans with consent and actual start/end timestamps.",
+      "Every task has an observed outcome, help count, non-sensitive notes, and criterion results; skipped tasks remain visibly skipped.",
+      "Both people can distinguish proposals from approved facts, source-backed explanation from entitlement, and unknown evidence from zero.",
+      "Both people can distinguish login from decryption recovery, local deletion from account purge, and pending sync/deletion from completion.",
+      "Any critical or major issue becomes an explicit design change and retest requirement; local automated tests do not waive it."
+    ],
+    "completionRule": "Keep status not-run and sessions empty until actual consented sessions occur. After observation, report actual results and unresolved issues. Issue 34 external acceptance remains pending until two outside human sessions and resulting fixes/retests are documented.",
+    "tasks": [
+      {
+        "id": "T01",
+        "journeyIds": [
+          "J01",
+          "J02",
+          "J03"
+        ],
+        "startScreen": "welcome",
+        "prompt": "You want to inspect a fictional aid trail while keeping control of who can read it. Start a case, compare a local-only choice with an optional sync account, then explain what you would do after losing access to a device.",
+        "scenarios": [
+          "New local-only case",
+          "Synthetic signup verification failure",
+          "Successful account login but locked case",
+          "Wrong or missing recovery material",
+          "Logout and lock"
+        ],
+        "successCriteria": [
+          "Find local-only setup without being forced to create an account.",
+          "Explain that login-password reset does not recover encryption keys.",
+          "Find a safe exit after wrong recovery material and recognize when a case cannot be recovered.",
+          "Explain that logout does not delete a case or account."
+        ],
+        "observe": [
+          "First choice and reason",
+          "Any real-credential entry attempt (stop it immediately)",
+          "Confusion between account login, local unlock, and recovery",
+          "Whether failure remains recoverable without moderator instruction"
+        ]
+      },
+      {
+        "id": "T02",
+        "journeyIds": [
+          "J04",
+          "J05"
+        ],
+        "startScreen": "import",
+        "prompt": "The fictional bank CSV has a date, amount, and memo. Prepare a preview, then try a source layout that the app cannot read and an empty CSV. Find a way to continue with a manual observation.",
+        "scenarios": [
+          "Supported synthetic CSV mapping",
+          "Missing amount column",
+          "Unsupported synthetic PDF",
+          "Header-only CSV",
+          "Manual source note"
+        ],
+        "successCriteria": [
+          "Identify the date, amount, sign rule, and event role before proceeding.",
+          "Recognize that unsupported, invalid, and empty input has created no approved fact.",
+          "Find manual fallback and identify its provenance as manual."
+        ],
+        "observe": [
+          "Whether sample controls are mistaken for actual file uploads",
+          "Mapping choices and corrected errors",
+          "Whether an empty file is interpreted as zero",
+          "Recovery path chosen for unsupported format"
+        ]
+      },
+      {
+        "id": "T03",
+        "journeyIds": [
+          "J06",
+          "J07"
+        ],
+        "startScreen": "duplicate-review",
+        "prompt": "Two proposed credits look alike and another row is unsupported. Decide what can be approved. Then imagine the case changed on another device just before approval.",
+        "scenarios": [
+          "Repeated source row",
+          "Defer uncertain row",
+          "Approval acknowledgement",
+          "Stale case revision"
+        ],
+        "successCriteria": [
+          "Use source identity and row content rather than equal dollar amounts alone to discuss duplication.",
+          "Keep repeated/deferred and unsupported rows unapproved.",
+          "Check the review acknowledgement before simulated approval.",
+          "Return to review after a stale revision and do not claim the failed action saved a fact."
+        ],
+        "observe": [
+          "Reason for duplicate decision",
+          "Understanding of proposal versus fact",
+          "Whether participant notices unchecked review gate",
+          "Response to stale approval"
+        ]
+      },
+      {
+        "id": "T04",
+        "journeyIds": [
+          "J08"
+        ],
+        "startScreen": "insight",
+        "prompt": "Explain to a friend why the fictional school surplus changed, and show the records that support your explanation. Now the original bill is missing on this device; investigate both a matching and a different replacement.",
+        "scenarios": [
+          "Exact contribution and source inspection",
+          "Separate refund and bank observations",
+          "Missing original bytes",
+          "Source hash mismatch",
+          "Matching reattachment"
+        ],
+        "successCriteria": [
+          "Explain $1,500 to $900 as a $300 grant correction plus a $300 school charge.",
+          "Find source positions and approval/correction records.",
+          "State that equal $900 refund and bank amounts do not confirm a match.",
+          "Recognize a mismatched file does not replace the old source and find the retry path."
+        ],
+        "observe": [
+          "Amounts and source references participant uses",
+          "Entitlement or document-authenticity assumptions",
+          "Whether unavailable source bytes are visible",
+          "Response to mismatch and safe exit"
+        ]
+      },
+      {
+        "id": "T05",
+        "journeyIds": [
+          "J09",
+          "J10"
+        ],
+        "startScreen": "correction",
+        "prompt": "A corrected fictional statement reduces a school charge from $300 to $250. Review the effect and explain what happens to the earlier record. Then identify something the case still cannot tell you.",
+        "scenarios": [
+          "Invalid correction",
+          "Exact impact preview",
+          "Retained original history",
+          "Unknown coverage checklist"
+        ],
+        "successCriteria": [
+          "Predict and confirm a $50 increase in school surplus from $900 to $950.",
+          "Find both original $300 approval and $250 correction history.",
+          "Identify at least one unknown source/date range without inventing zero or a fee.",
+          "Find a way to add evidence or keep the unknown visible."
+        ],
+        "observe": [
+          "Prediction before confirmation",
+          "Whether old source is assumed to be overwritten",
+          "Understanding of the separate correction branch",
+          "Any assumption that provided records establish full coverage"
+        ]
+      },
+      {
+        "id": "T06",
+        "journeyIds": [
+          "J11"
+        ],
+        "startScreen": "sync",
+        "prompt": "You are offline after local work, and later another device has changed the same case. Find out what is safe to say about backup status and review the competing versions.",
+        "scenarios": [
+          "Offline unsent revision",
+          "Newer remote revision",
+          "Two-branch conflict",
+          "Reviewed resolution",
+          "Another concurrent change during review"
+        ],
+        "successCriteria": [
+          "Describe offline changes as local and unsynced.",
+          "Find both branches and compare attribution as well as amount.",
+          "Avoid assuming equal amounts resolve conflicting source attribution.",
+          "Review again if the heads change before committing."
+        ],
+        "observe": [
+          "Whether participant labels offline state backed up",
+          "Local versus remote distinction",
+          "Response to review acknowledgement",
+          "Whether conflicting history is understood as preserved"
+        ]
+      },
+      {
+        "id": "T07",
+        "journeyIds": [
+          "J12"
+        ],
+        "startScreen": "export",
+        "prompt": "Prepare a fictional encrypted backup and inspect how it would be restored on another device. The archive has no original source files. Also try the wrong-key or corrupt-archive outcome.",
+        "scenarios": [
+          "Encrypted archive policy",
+          "Export failure",
+          "Wrong key/account binding",
+          "Corrupt or unsupported archive",
+          "Separate local restore destination",
+          "Missing originals after restore"
+        ],
+        "successCriteria": [
+          "Explain that the prototype creates no real archive.",
+          "Explain why a real archive needs independently retained recovery material.",
+          "Find failed restore recovery without replacing an existing case.",
+          "Notice omitted originals and find source reattachment."
+        ],
+        "observe": [
+          "Whether prepared simulation is mistaken for a downloaded file",
+          "Recovery material versus login-password understanding",
+          "Restore overwrite assumptions",
+          "Whether source missing state is expected after restore"
+        ]
+      },
+      {
+        "id": "T08",
+        "journeyIds": [
+          "J13"
+        ],
+        "startScreen": "deletion",
+        "prompt": "You want to remove a device copy. Later you want to stop using the sync account entirely. Compare what each action removes, what copies remain, and how you would know a deletion request had finished.",
+        "scenarios": [
+          "Device copy confirmation",
+          "Account reauthentication and scope",
+          "Pending server purge",
+          "Purge error and retry",
+          "Verified completion"
+        ],
+        "successCriteria": [
+          "Distinguish local case/key wrappers from server ciphertext, server envelopes, and login identity.",
+          "State that exported archives, independent originals, and other device copies may remain.",
+          "Recognize pending and failed purge as incomplete.",
+          "Find deletion retry and a signed-out exit without claiming success."
+        ],
+        "observe": [
+          "Scope words participant repeats",
+          "Whether login reset or logout is assumed to erase records",
+          "Response to pending and failure states",
+          "Whether confirmation text changes intended choice"
+        ]
+      }
+    ]
+  },
+  "sessionTemplate": {
+    "participantCode": null,
+    "outsideProjectTeam": null,
+    "participantKind": "human (must be verified at session time)",
+    "startedAt": null,
+    "endedAt": null,
+    "consent": {
+      "granted": null,
+      "recordedAt": null,
+      "scope": "Non-sensitive task outcomes and written usability notes only",
+      "recordingRequested": false,
+      "recordingGranted": null
+    },
+    "deviceContext": {
+      "viewportBucket": null,
+      "inputMethod": null,
+      "assistiveTechnologyOptional": null
+    },
+    "prototypeRevision": null,
+    "taskResults": [],
+    "taskResultTemplate": {
+      "taskId": null,
+      "startedAt": null,
+      "endedAt": null,
+      "elapsedSeconds": null,
+      "outcome": null,
+      "moderatorHelpCount": null,
+      "criterionResults": [],
+      "confidence1to5": null,
+      "nonSensitiveNotes": []
+    },
+    "nonSensitiveNotes": [],
+    "issues": [],
+    "issueTemplate": {
+      "id": null,
+      "screenId": null,
+      "taskId": null,
+      "severity": null,
+      "observation": null,
+      "expectedUnderstanding": null,
+      "proposedChange": null,
+      "retestRequired": null,
+      "retestResult": null
+    },
+    "withdrawalOrSkippedNotes": null
+  },
+  "prohibitedNotes": [
+    "Participant identity or contact details",
+    "Real aid amounts or records",
+    "Real login credentials or tokens",
+    "Recovery secrets or encryption keys",
+    "School or bank account identifiers"
+  ]
+}

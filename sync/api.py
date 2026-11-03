@@ -9,7 +9,7 @@ from __future__ import annotations
 from collections.abc import Callable
 import re
 import secrets
-from typing import Literal
+from typing import Any, Literal, overload
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -187,8 +187,10 @@ class ErrorEnvelope(StrictWireModel):
     error: ErrorDetail
 
 
-ERROR_RESPONSES = {status: {"model": ErrorEnvelope} for status in
-                   (400, 401, 403, 404, 409, 412, 413, 415, 428, 500, 503)}
+ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
+    status: {"model": ErrorEnvelope}
+    for status in (400, 401, 403, 404, 409, 412, 413, 415, 428, 500, 503)
+}
 IDEMPOTENCY_HEADER = {"name": "Idempotency-Key", "in": "header", "required": True,
                       "schema": {"type": "string", "minLength": 1, "maxLength": 160}}
 RECOVERY_PRECONDITION_HEADERS = [
@@ -296,6 +298,12 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
             raise ApiError("INVALID_TOKEN", 401) from None
         return verified
 
+    @overload
+    def header_one(request: Request, name: str, *, required: Literal[True] = True) -> str: ...
+
+    @overload
+    def header_one(request: Request, name: str, *, required: Literal[False]) -> str | None: ...
+
     def header_one(request: Request, name: str, *, required: bool = True) -> str | None:
         values = request.headers.getlist(name)
         if len(values) > 1 or (required and len(values) != 1):
@@ -372,7 +380,9 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
             with connect() as conn:
                 with conn.transaction():
                     begin_tenant_transaction(conn, "readiness-probe", context_key)
-                    if not conn.execute("SELECT scryer_private.tenant_ok('readiness-probe')").fetchone()[0]:
+                    tenant_row = conn.execute("SELECT scryer_private.tenant_ok('readiness-probe')").fetchone()
+                    assert tenant_row is not None
+                    if not tenant_row[0]:
                         return error_response(request, "STORAGE_UNAVAILABLE", 503)
                     for table in ("accounts", "cases", "case_revisions", "staged_chunks",
                                   "idempotency", "recovery_wrappers", "devices", "case_tombstones"):
@@ -381,12 +391,15 @@ def create_sync_app(*, connect: Callable[[], Connection], verifier: TokenVerifie
                         "conname='accounts_provider_identity_unique' AND "
                         "conrelid='scryer.accounts'::regclass").fetchone():
                         return error_response(request, "STORAGE_UNAVAILABLE", 503)
-                    if conn.execute("SELECT to_regclass('scryer.cases_live_updated_keyset')") \
-                            .fetchone()[0] is None:
+                    index_row = conn.execute(
+                        "SELECT to_regclass('scryer.cases_live_updated_keyset')").fetchone()
+                    assert index_row is not None
+                    if index_row[0] is None:
                         return error_response(request, "STORAGE_UNAVAILABLE", 503)
-                    if conn.execute("SELECT to_regprocedure("
-                            "'scryer.begin_account_deletion(text,text,text)')") \
-                            .fetchone()[0] is None:
+                    deletion_row = conn.execute("SELECT to_regprocedure("
+                        "'scryer.begin_account_deletion(text,text,text)')").fetchone()
+                    assert deletion_row is not None
+                    if deletion_row[0] is None:
                         return error_response(request, "STORAGE_UNAVAILABLE", 503)
                     for relation, column in (("scryer.accounts", "deletion_key"),
                                              ("scryer.deletion_jobs", "lease_token")):

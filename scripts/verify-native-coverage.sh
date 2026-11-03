@@ -7,6 +7,26 @@ mkdir -p "$run_dir"
 binary="$project_root/engine/build/scryer-native-coverage"
 profile_pattern="$run_dir/%p.profraw"
 
+llvm_tool() {
+    tool_name=$1
+    shift
+    case "$tool_name" in
+      llvm-profdata) configured_tool=${LLVM_PROFDATA:-} ;;
+      llvm-cov) configured_tool=${LLVM_COV:-} ;;
+      *) return 2 ;;
+    esac
+    if [ -n "$configured_tool" ]; then
+        "$configured_tool" "$@"
+    elif command -v "$tool_name" >/dev/null 2>&1; then
+        "$tool_name" "$@"
+    elif command -v xcrun >/dev/null 2>&1; then
+        xcrun "$tool_name" "$@"
+    else
+        printf 'Missing coverage tool: %s\n' "$tool_name" >&2
+        return 2
+    fi
+}
+
 make -C "$project_root/engine" cli-coverage
 (
     cd "$project_root"
@@ -21,7 +41,7 @@ if [ ! -f "$1" ]; then
     exit 1
 fi
 profile_count=$#
-xcrun llvm-profdata merge -sparse "$@" -o "$run_dir/combined.profdata"
+llvm_tool llvm-profdata merge -sparse "$@" -o "$run_dir/combined.profdata"
 set -- "$project_root/engine/src/api.cpp" \
     "$project_root/engine/src/receipt.cpp" \
     "$project_root/engine/src/projection.cpp" \
@@ -31,9 +51,9 @@ set -- "$project_root/engine/src/api.cpp" \
     "$project_root/engine/src/case.cpp" \
     "$project_root/engine/src/json_boundary.cpp" \
     "$project_root/engine/src/money.cpp"
-xcrun llvm-cov report --instr-profile="$run_dir/combined.profdata" \
+llvm_tool llvm-cov report --instr-profile="$run_dir/combined.profdata" \
     --show-branch-summary "$binary" "$@" > "$run_dir/report.txt"
-xcrun llvm-cov export --summary-only --instr-profile="$run_dir/combined.profdata" \
+llvm_tool llvm-cov export --summary-only --instr-profile="$run_dir/combined.profdata" \
     "$binary" "$@" > "$run_dir/summary.json"
 cat "$run_dir/report.txt"
 printf 'profile_count=%s\n' "$profile_count"

@@ -1,0 +1,24 @@
+name: Engineering task
+description: Propose a bounded change with an observable acceptance test.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem and scope
+      description: Link the README product contract or explain a proposed change to it.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and verification
+      description: Specify observable results, tests, failure behavior, and evidence required for closure.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies, owner, and risks
+      description: Identify dependencies, the accountable maintainer role, data boundaries, and review needs.
+    validations:
+      required: true
