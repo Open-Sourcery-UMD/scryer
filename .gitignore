@@ -7,7 +7,6 @@ __pycache__/
 venv/
 env/
 ENV/
-.python-version
 
 # dependencies
 node_modules/

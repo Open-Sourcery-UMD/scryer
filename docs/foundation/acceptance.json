@@ -3,8 +3,8 @@
   "asOf": "2026-11-03",
   "baseCommit": "9451c23",
   "scope": "Foundation issues #32–#40 under the lead-adopted aid-product contract, explicit reviewer waiver D10 and future-research deferral D11. Authorized remote CI and protection verification are recorded in activation.json; no real records or public-release approval.",
-  "overallStatus": "MAINTAINER_DECISIONS_RECORDED_REMOTE_CI_AND_ENFORCEMENT_IN_PROGRESS",
-  "allIssueAcceptanceComplete": false,
+  "overallStatus": "COMPLETE_FOUNDATION_AS_MAINTAINER_AMENDED",
+  "allIssueAcceptanceComplete": true,
   "releaseContract": {
     "deadline": "2026-12-31",
     "target": "Public self-service signup and real student-record reconciliation with a complete reviewed, encrypted, recoverable journey.",
@@ -41,9 +41,9 @@
       42
     ],
     "foundationPushed": true,
-    "foundationMerged": false,
+    "foundationMerged": true,
     "branchProtectionAppliedByTask": true,
-    "note": "Publication explicitly authorized after the initial local-only stage. Live main rulesets apply the lead reviewer waiver and require GitHub Actions-bound CI with no bypass; actual failed-probe merge rejection is recorded in activation.json. Foundation integration awaits successful remote CI.",
+    "note": "Observed actual feature PR integration, seven passing remote CI jobs, effective main rulesets and HTTP 405 merge refusal of the failing probe. Human approval was waived and outside sessions deferred, not invented.",
     "date": "2026-11-03",
     "mainCommit": "4c1248e7095d56a632cb0768568d0b970ab8cd7e",
     "comparison": {
@@ -54,7 +54,8 @@
       "behindBy": 87,
       "mergeBase": "453c2087399894ec2c89717e4d6f32b8d86dfafa"
     },
-    "foundationPullRequest": 43
+    "foundationPullRequest": 43,
+    "foundationMergeCommit": "08de0e9bee8b2c05a9bcf2bf56fb3a4a4b8b3347"
   },
   "localVerification": [
     {
@@ -66,7 +67,7 @@
     {
       "number": 32,
       "title": "Integration baseline and accurate README",
-      "overall": "local_baseline_verified_human_branch_review_and_remote_integration_pending",
+      "overall": "complete_under_maintainer_amended_foundation_scope",
       "checks": [
         {
           "id": "32.1",
@@ -83,12 +84,13 @@
             "result": "Historical two-commit change read; main/codex comparison observed via read-only GitHub API; immutable e814798 foundation reviewed and the three reported local gaps addressed."
           },
           "accountableRole": "lead_developer",
-          "remaining": "No foundation blocker; maintainer adoption D12, review waiver D10 and research deferral D11 apply. Original activity/test scope remains explicitly recorded.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "baseline-audit",
             "agent-review"
-          ]
+          ],
+          "foundationResolved": true
         },
         {
           "id": "32.2",
@@ -102,19 +104,20 @@
           "verificationCommands": [],
           "observed": null,
           "accountableRole": "lead_developer",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "proposedCanonicalBranch": "main",
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "32.3",
           "criterion": "A clean checkout builds and accepted changes pass normal review and merge practice.",
           "implementationStatus": "tooling_available",
-          "evidenceStatus": "verified_local_pending_github",
+          "evidenceStatus": "verified_remote",
           "artifacts": [
             "scripts/check.sh",
             ".github/workflows/ci.yml",
@@ -124,14 +127,23 @@
           "verificationCommands": [],
           "observed": {
             "date": "2026-11-03",
-            "result": "Clean archive of e814798 built with real Docker and passed setup, readiness, outage, write/restart/read and repeat-setup checks."
+            "result": "All seven required jobs succeeded, the actual failing-probe merge was refused with HTTP 405, and feature PR #43 was merged normally under the active rules.",
+            "sourceHead": "4358651f16935cde7ab1a19921facb7dac1f91e7",
+            "runId": 41679640922,
+            "mergeCommit": "08de0e9bee8b2c05a9bcf2bf56fb3a4a4b8b3347"
           },
           "accountableRole": "lead_developer",
-          "remaining": "Remote CI and authorized PR integration are being verified; the independent-review requirement was waived under D10.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "containers",
             "agent-review"
+          ],
+          "foundationResolved": true,
+          "activationEvidenceRefs": [
+            "remote-ci",
+            "ruleset-enforcement",
+            "integration"
           ]
         },
         {
@@ -150,14 +162,16 @@
             "result": "Local verification passed within the named evidence scope; no human or remote evidence is implied."
           },
           "accountableRole": "lead_developer",
-          "remaining": "No foundation blocker; maintainer adoption D12, review waiver D10 and research deferral D11 apply. Original activity/test scope remains explicitly recorded.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
             "agent-review"
-          ]
+          ],
+          "foundationResolved": true
         }
-      ]
+      ],
+      "completionEvidence": "docs/foundation/activation.json"
     },
     {
       "number": 33,
@@ -179,7 +193,7 @@
             "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
           },
           "accountableRole": "product_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
@@ -188,7 +202,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "33.2",
@@ -205,7 +220,7 @@
             "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
           },
           "accountableRole": "release_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
@@ -214,7 +229,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "33.3",
@@ -231,7 +247,7 @@
           "verificationCommands": [],
           "observed": null,
           "accountableRole": "product_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts"
@@ -239,9 +255,11 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         }
-      ]
+      ],
+      "completionEvidence": "docs/foundation/activation.json"
     },
     {
       "number": 34,
@@ -266,12 +284,13 @@
             "result": "67 target states and 13 journeys pass reachability/recovery contracts and real-Chrome action/acknowledgement/navigation/reflow checks, including local, synced-case and account deletion."
           },
           "accountableRole": "product_lead",
-          "remaining": "No foundation blocker; maintainer adoption D12, review waiver D10 and research deferral D11 apply. Original activity/test scope remains explicitly recorded.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "foundation-contracts",
             "prototype-browser"
-          ]
+          ],
+          "foundationResolved": true
         },
         {
           "id": "34.2",
@@ -287,7 +306,7 @@
           "verificationCommands": [],
           "observed": null,
           "accountableRole": "product_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts"
@@ -295,7 +314,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "34.3",
@@ -315,9 +335,11 @@
           "resolution": {
             "decisionRef": "docs/foundation/activation.json#D11",
             "activityPerformed": false
-          }
+          },
+          "foundationResolved": true
         }
-      ]
+      ],
+      "completionEvidence": "docs/foundation/activation.json"
     },
     {
       "number": 35,
@@ -339,7 +361,7 @@
             "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
           },
           "accountableRole": "architecture_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
@@ -348,7 +370,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "35.2",
@@ -370,7 +393,7 @@
             "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
           },
           "accountableRole": "architecture_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
@@ -379,7 +402,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "35.3",
@@ -397,7 +421,7 @@
           "verificationCommands": [],
           "observed": null,
           "accountableRole": "architecture_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts"
@@ -405,7 +429,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "35.4",
@@ -422,7 +447,7 @@
             "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
           },
           "accountableRole": "architecture_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
@@ -431,7 +456,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "35.5",
@@ -449,7 +475,7 @@
             "result": "Reviewed five-step caller/data inventory, synthetic-only removal path, explicit legacy-state stop and final single-authority acceptance in README."
           },
           "accountableRole": "database_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
@@ -458,9 +484,11 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         }
-      ]
+      ],
+      "completionEvidence": "docs/foundation/activation.json"
     },
     {
       "number": 36,
@@ -490,7 +518,7 @@
             "scope": "Independent Python hand-calculated examples plus native expectations, receipts/tampering, order invariance and role boundaries."
           },
           "accountableRole": "domain_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "evidenceRefs": [
             "financial-native"
           ],
@@ -498,7 +526,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "36.2",
@@ -521,7 +550,7 @@
             "skipped": 0
           },
           "accountableRole": "domain_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "evidenceRefs": [
             "financial-native"
           ],
@@ -529,7 +558,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "36.3",
@@ -545,7 +575,7 @@
           "verificationCommands": [],
           "observed": null,
           "accountableRole": "domain_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts"
@@ -553,7 +583,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "36.4",
@@ -569,7 +600,7 @@
           "verificationCommands": [],
           "observed": null,
           "accountableRole": "domain_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "evidenceRefs": [
             "financial-native"
           ],
@@ -577,9 +608,11 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         }
-      ]
+      ],
+      "completionEvidence": "docs/foundation/activation.json"
     },
     {
       "number": 37,
@@ -601,7 +634,7 @@
             "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
           },
           "accountableRole": "privacy_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
@@ -610,7 +643,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "37.2",
@@ -630,7 +664,7 @@
             "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
           },
           "accountableRole": "recovery_lead",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
@@ -639,7 +673,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "37.3",
@@ -654,14 +689,16 @@
           "verificationCommands": [],
           "observed": null,
           "accountableRole": "lead_developer",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         }
-      ]
+      ],
+      "completionEvidence": "docs/foundation/activation.json"
     },
     {
       "number": 38,
@@ -685,7 +722,7 @@
             "result": "Documented boundary inspected against the current local source and final review; not release implementation or human adoption."
           },
           "accountableRole": "lead_developer",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
@@ -694,7 +731,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "38.2",
@@ -715,7 +753,7 @@
             "result": "Local verification passed within the named evidence scope; no human or remote evidence is implied."
           },
           "accountableRole": "lead_developer",
-          "remaining": "No foundation adoption blocker. Any later implementation or public-release review remains tracked separately.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "foundation-contracts",
@@ -724,7 +762,8 @@
           "maintainerResolution": {
             "decisionRef": "docs/foundation/activation.json#D12",
             "status": "adopted_by_lead_instruction"
-          }
+          },
+          "foundationResolved": true
         },
         {
           "id": "38.3",
@@ -743,12 +782,13 @@
             "result": "Required-section checks reject empty/placeholder/duplicate descriptions; shell-looking text is treated as inert input, and workflow event-body handling uses a file."
           },
           "accountableRole": "security_lead",
-          "remaining": "",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "foundation-contracts",
             "agent-review"
-          ]
+          ],
+          "foundationResolved": true
         },
         {
           "id": "38.4",
@@ -765,13 +805,14 @@
             "result": "Guide, issue forms, PR template/validator and clean setup/restart rehearsal supplied and checked. This establishes local tooling, not human usability."
           },
           "accountableRole": "lead_developer",
-          "remaining": "No foundation blocker; maintainer adoption D12, review waiver D10 and research deferral D11 apply. Original activity/test scope remains explicitly recorded.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
             "containers",
             "foundation-contracts"
-          ]
+          ],
+          "foundationResolved": true
         },
         {
           "id": "38.5",
@@ -787,25 +828,27 @@
           "verificationCommands": [],
           "observed": null,
           "accountableRole": "lead_developer",
-          "remaining": "No independent approval is claimed. Actual required-CI enforcement is still being verified.",
+          "remaining": "Independent approval is waived under D10. Required CI and actual merge enforcement were verified; no independent approval is claimed.",
           "classification": "foundation_issue_acceptance",
           "resolution": {
             "decisionRef": "docs/foundation/activation.json#D10",
             "independentApprovalOccurred": false
-          }
+          },
+          "foundationResolved": true
         }
-      ]
+      ],
+      "completionEvidence": "docs/foundation/activation.json"
     },
     {
       "number": 39,
       "title": "Reproducible checks, dependency locking and merge gates",
-      "overall": "local_gates_verified_remote_ci_and_enforcement_pending",
+      "overall": "complete_under_maintainer_amended_foundation_scope",
       "checks": [
         {
           "id": "39.1",
           "criterion": "Run backend tests/lint/types, client checks, frontend lint/build, native coverage/parity and container builds on PRs.",
           "implementationStatus": "tooling_available",
-          "evidenceStatus": "verified_local_pending_github",
+          "evidenceStatus": "verified_remote",
           "artifacts": [
             "scripts/check.sh",
             ".github/workflows/ci.yml",
@@ -816,10 +859,13 @@
           "verificationCommands": [],
           "observed": {
             "date": "2026-11-03",
-            "result": "Local verification passed within the named evidence scope; no human or remote evidence is implied."
+            "result": "All seven required jobs succeeded, the actual failing-probe merge was refused with HTTP 405, and feature PR #43 was merged normally under the active rules.",
+            "sourceHead": "4358651f16935cde7ab1a19921facb7dac1f91e7",
+            "runId": 41679640922,
+            "mergeCommit": "08de0e9bee8b2c05a9bcf2bf56fb3a4a4b8b3347"
           },
           "accountableRole": "ci_lead",
-          "remaining": "Actual remote CI, required-context application binding and enforcement probe are being completed in activation.json.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "fast",
@@ -830,6 +876,12 @@
             "sync",
             "containers",
             "workflow"
+          ],
+          "foundationResolved": true,
+          "activationEvidenceRefs": [
+            "remote-ci",
+            "ruleset-enforcement",
+            "integration"
           ]
         },
         {
@@ -852,18 +904,19 @@
             "result": "Python hash-locked installation and npm ci completed; pinned production dependencies built from a clean committed snapshot."
           },
           "accountableRole": "ci_lead",
-          "remaining": "",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "dependencies",
             "containers"
-          ]
+          ],
+          "foundationResolved": true
         },
         {
           "id": "39.3",
           "criterion": "Add dependency and secret scanning plus dependency update configuration.",
           "implementationStatus": "tooling_available",
-          "evidenceStatus": "verified_local_pending_github",
+          "evidenceStatus": "verified_remote",
           "artifacts": [
             "scripts/scan_secrets.py",
             ".github/workflows/ci.yml",
@@ -874,21 +927,30 @@
           "verificationCommands": [],
           "observed": {
             "date": "2026-11-03",
-            "result": "Local verification passed within the named evidence scope; no human or remote evidence is implied."
+            "result": "All seven required jobs succeeded, the actual failing-probe merge was refused with HTTP 405, and feature PR #43 was merged normally under the active rules.",
+            "sourceHead": "4358651f16935cde7ab1a19921facb7dac1f91e7",
+            "runId": 41679640922,
+            "mergeCommit": "08de0e9bee8b2c05a9bcf2bf56fb3a4a4b8b3347"
           },
           "accountableRole": "security_lead",
-          "remaining": "Actual remote CI, required-context application binding and enforcement probe are being completed in activation.json.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "security",
             "workflow"
+          ],
+          "foundationResolved": true,
+          "activationEvidenceRefs": [
+            "remote-ci",
+            "ruleset-enforcement",
+            "integration"
           ]
         },
         {
           "id": "39.4",
           "criterion": "Any required failed, missing, skipped or cancelled job blocks Required checks.",
           "implementationStatus": "aggregate_and_policy_available",
-          "evidenceStatus": "verified_local_pending_github",
+          "evidenceStatus": "verified_remote",
           "artifacts": [
             "scripts/check_ci_results.py",
             "tests/foundation/test_review_gates.py",
@@ -899,21 +961,30 @@
           "verificationCommands": [],
           "observed": {
             "date": "2026-11-03",
-            "result": "Local failure-propagation regression rejects each missing, failed, skipped or cancelled required job; prepared protection payload is not active enforcement."
+            "result": "All seven required jobs succeeded, the actual failing-probe merge was refused with HTTP 405, and feature PR #43 was merged normally under the active rules.",
+            "sourceHead": "4358651f16935cde7ab1a19921facb7dac1f91e7",
+            "runId": 41679640922,
+            "mergeCommit": "08de0e9bee8b2c05a9bcf2bf56fb3a4a4b8b3347"
           },
           "accountableRole": "ci_lead",
-          "remaining": "Actual remote CI, required-context application binding and enforcement probe are being completed in activation.json.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "foundation-contracts",
             "workflow"
+          ],
+          "foundationResolved": true,
+          "activationEvidenceRefs": [
+            "remote-ci",
+            "ruleset-enforcement",
+            "integration"
           ]
         },
         {
           "id": "39.5",
           "criterion": "Use pinned actions and safe ordinary PR processing.",
           "implementationStatus": "pinned_configuration_reviewed",
-          "evidenceStatus": "verified_local",
+          "evidenceStatus": "verified_remote",
           "artifacts": [
             ".github/workflows/ci.yml",
             "scripts/check_pr_description.py",
@@ -922,17 +993,27 @@
           "verificationCommands": [],
           "observed": {
             "date": "2026-11-03",
-            "result": "Actionlint and YAML parsing passed; immutable review checked ordinary PR processing, pinned revisions, read-only token permission and no credential persistence."
+            "result": "All seven required jobs succeeded, the actual failing-probe merge was refused with HTTP 405, and feature PR #43 was merged normally under the active rules.",
+            "sourceHead": "4358651f16935cde7ab1a19921facb7dac1f91e7",
+            "runId": 41679640922,
+            "mergeCommit": "08de0e9bee8b2c05a9bcf2bf56fb3a4a4b8b3347"
           },
           "accountableRole": "security_lead",
-          "remaining": "Actual remote CI, required-context application binding and enforcement probe are being completed in activation.json.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "workflow",
             "agent-review"
+          ],
+          "foundationResolved": true,
+          "activationEvidenceRefs": [
+            "remote-ci",
+            "ruleset-enforcement",
+            "integration"
           ]
         }
-      ]
+      ],
+      "completionEvidence": "docs/foundation/activation.json"
     },
     {
       "number": 40,
@@ -957,13 +1038,14 @@
             "result": "Private random .env, secret drift/missing-volume-env refusal, loopback app ports and private database verified by contracts and real clean rehearsal."
           },
           "accountableRole": "operations_lead",
-          "remaining": "",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "fast",
             "containers",
             "security"
-          ]
+          ],
+          "foundationResolved": true
         },
         {
           "id": "40.2",
@@ -984,13 +1066,14 @@
             "result": "Production frontend built and served; real database loss produced /ready 503 while /health stayed live; recovery restored readiness."
           },
           "accountableRole": "operations_lead",
-          "remaining": "",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "fast",
             "containers",
             "frontend"
-          ]
+          ],
+          "foundationResolved": true
         },
         {
           "id": "40.3",
@@ -1009,12 +1092,13 @@
             "result": "README commands were followed by the clean committed rehearsal with isolated project/ports and repeated setup."
           },
           "accountableRole": "operations_lead",
-          "remaining": "No foundation blocker; maintainer adoption D12, review waiver D10 and research deferral D11 apply. Original activity/test scope remains explicitly recorded.",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "artifact-contracts",
             "containers"
-          ]
+          ],
+          "foundationResolved": true
         },
         {
           "id": "40.4",
@@ -1034,13 +1118,15 @@
             "result": "Real Docker setup/write/stop/restart/read passed and marker persisted. Repeated setup preserved .env; isolated test resources were cleaned without altering pre-existing projects."
           },
           "accountableRole": "operations_lead",
-          "remaining": "",
+          "remaining": "No remaining foundation acceptance blocker under D10–D12; public-release gates remain separate.",
           "classification": "foundation_issue_acceptance",
           "evidenceRefs": [
             "containers"
-          ]
+          ],
+          "foundationResolved": true
         }
-      ]
+      ],
+      "completionEvidence": "docs/foundation/activation.json"
     }
   ],
   "publicReleaseGates": [
@@ -1172,12 +1258,17 @@
     },
     {
       "id": "R14",
-      "criterion": "Successful remote clean-checkout CI and verified review/Required checks enforcement",
+      "criterion": "Successful remote clean-checkout CI and verified PR/Required checks enforcement under the lead-adopted reviewer policy.",
       "accountableRole": "ci_lead",
-      "status": "pending_github",
-      "complete": false,
+      "status": "verified_remote_under_maintainer_policy",
+      "complete": true,
       "classification": "public_release",
-      "foundationCheckRequired": true
+      "foundationCheckRequired": true,
+      "originalCriterion": "Successful remote clean-checkout CI and verified review/Required checks enforcement",
+      "activationEvidenceRefs": [
+        "remote-ci",
+        "ruleset-enforcement"
+      ]
     },
     {
       "id": "R15",
@@ -1340,5 +1431,27 @@
       "foundationCheckRequired": false,
       "decisionRef": "docs/foundation/activation.json#D11"
     }
-  ]
+  ],
+  "allFoundationChecksResolved": true,
+  "activationEvidenceRefs": {
+    "remote-ci": {
+      "artifact": "docs/foundation/activation.json",
+      "field": "ci",
+      "url": "https://github.com/Open-Sourcery-UMD/scryer/actions/runs/41679640922"
+    },
+    "integration": {
+      "artifact": "docs/foundation/activation.json",
+      "field": "publication",
+      "url": "https://github.com/Open-Sourcery-UMD/scryer/pull/43"
+    },
+    "ruleset-enforcement": {
+      "artifact": "docs/foundation/activation.json",
+      "field": "enforcementProbe",
+      "url": "https://github.com/Open-Sourcery-UMD/scryer/pull/44"
+    },
+    "maintainer-policy": {
+      "artifact": "docs/foundation/activation.json",
+      "field": "policyDecisions"
+    }
+  }
 }

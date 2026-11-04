@@ -5,7 +5,7 @@
   "repository": "Open-Sourcery-UMD/scryer",
   "maintainer": "@yudhiishvs",
   "maintainerCapability": "Authenticated GitHub identity and repository admin permission verified read-only on 2026-11-03.",
-  "status": "AWAITING_REMOTE_CI_AND_RULESET_VERIFICATION",
+  "status": "FOUNDATION_ACCEPTANCE_RESOLVED_AS_AMENDED",
   "scopeChange": "The lead requested resolving the remaining foundation checks, authorized reviewer waiver, and explicitly moved outside sessions to future research. This authorizes publishing the reviewed foundation candidate and verifying GitHub CI/protection; the earlier local-only restriction does not apply to these requested remote steps. Public real-record release remains blocked.",
   "policyDecisions": [
     {
@@ -49,36 +49,42 @@
       "id": 13019585,
       "name": "protect main",
       "payload": ".github/rulesets/main-ci.json",
-      "status": "applied_and_read_back",
+      "status": "applied_and_verified",
       "ciApplication": {
         "id": 15368,
         "slug": "github-actions",
         "verifiedVia": "GET /apps/github-actions"
       },
       "bypassActors": [],
-      "effectiveOn": "refs/heads/main"
+      "effectiveOn": "refs/heads/main",
+      "url": "https://github.com/Open-Sourcery-UMD/scryer/rules/13019585",
+      "updatedAt": "2026-11-03T10:45:06.892-05:00"
     },
     {
       "id": 13560058,
       "name": "main protection",
       "payload": ".github/rulesets/main-review-exception.json",
-      "status": "applied_and_read_back",
+      "status": "applied_and_verified",
       "note": "Existing rule preserved with approving review count zero under D10; independent approval is not claimed.",
-      "effectiveOn": "refs/heads/main"
+      "effectiveOn": "refs/heads/main",
+      "url": "https://github.com/Open-Sourcery-UMD/scryer/rules/13560058",
+      "updatedAt": "2026-11-03T10:45:08.049-05:00"
     }
   ],
   "publication": {
     "branch": "foundation-integration",
     "baseBranch": "main",
     "initialRemoteMain": "4c1248e7095d56a632cb0768568d0b970ab8cd7e",
-    "status": "pushed_pr_open",
+    "status": "merged",
     "localWorkBranch": "backend-local",
-    "headSha": "1fe6d70841d01c7b309f25e0a8deb7e5f59a38eb",
+    "headSha": "4358651f16935cde7ab1a19921facb7dac1f91e7",
     "pullRequest": 43,
-    "url": "https://github.com/Open-Sourcery-UMD/scryer/pull/43"
+    "url": "https://github.com/Open-Sourcery-UMD/scryer/pull/43",
+    "mergeCommit": "08de0e9bee8b2c05a9bcf2bf56fb3a4a4b8b3347",
+    "mergedAt": "2026-11-03T17:10:58Z"
   },
   "ci": {
-    "status": "first_run_found_portability_failure_fix_in_progress",
+    "status": "passed",
     "requiredContext": "Required checks",
     "requiredJobs": [
       "policy",
@@ -96,7 +102,8 @@
       "rootCause": "The realm bind mount was 0600 owned by native Linux runner uid 1001, while Keycloak runs as uid 1000. Docker Desktop maps the bind owner and hid the unreadable mount.",
       "reproduction": "A synthetic native-Linux file in a network-disabled disposable container was unreadable at uid 1000 with uid 1001 ownership and 0600, then readable at 0644.",
       "fix": "Only the read-only mounted synthetic realm file is 0644 inside a private host directory kept 0700; unmounted admin/user secrets remain 0600. A nonroot read preflight fails immediately without printing credentials.",
-      "localRerun": "passed_85_api_tests_3_browser_sync_journeys_1_real_provider_pkce_test"
+      "localRerun": "passed_85_api_tests_3_browser_sync_journeys_1_real_provider_pkce_test",
+      "remoteRerun": "passed_real_Ubuntu_PostgreSQL_API_Chrome_and_Keycloak"
     },
     "cleanBuildFix": {
       "symptom": "Four native parity tests failed with FileNotFoundError on clean Ubuntu runner.",
@@ -104,7 +111,113 @@
       "fix": "Build all four probe targets explicitly before the Python parity tests.",
       "firstFailedRunId": 41667059376,
       "firstFailedJobId": 126025097099,
-      "localRerun": "passed_rebuilt_four_probes_and_all_9_engine_python_tests"
+      "localRerun": "passed_rebuilt_four_probes_and_all_9_engine_python_tests",
+      "remoteRerun": "passed_from_clean_Ubuntu_checkout"
+    },
+    "runId": 41679640922,
+    "url": "https://github.com/Open-Sourcery-UMD/scryer/actions/runs/41679640922",
+    "testedHead": "4358651f16935cde7ab1a19921facb7dac1f91e7",
+    "event": "pull_request",
+    "allSevenJobsSucceeded": true,
+    "jobs": [
+      {
+        "databaseId": 126069565161,
+        "name": "Frontend and journeys",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Open-Sourcery-UMD/scryer/actions/runs/41679640922/job/126069565161",
+        "startedAt": "2026-11-03T16:58:50Z",
+        "completedAt": "2026-11-03T17:01:08Z"
+      },
+      {
+        "databaseId": 126069565603,
+        "name": "Dependency and secret scans",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Open-Sourcery-UMD/scryer/actions/runs/41679640922/job/126069565603",
+        "startedAt": "2026-11-03T16:58:52Z",
+        "completedAt": "2026-11-03T16:59:17Z"
+      },
+      {
+        "databaseId": 126069565737,
+        "name": "Python and PostgreSQL",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Open-Sourcery-UMD/scryer/actions/runs/41679640922/job/126069565737",
+        "startedAt": "2026-11-03T16:58:50Z",
+        "completedAt": "2026-11-03T17:02:12Z"
+      },
+      {
+        "databaseId": 126069565755,
+        "name": "Review policy",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Open-Sourcery-UMD/scryer/actions/runs/41679640922/job/126069565755",
+        "startedAt": "2026-11-03T16:58:50Z",
+        "completedAt": "2026-11-03T16:58:55Z"
+      },
+      {
+        "databaseId": 126069565822,
+        "name": "Native engine and browser client",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Open-Sourcery-UMD/scryer/actions/runs/41679640922/job/126069565822",
+        "startedAt": "2026-11-03T16:58:50Z",
+        "completedAt": "2026-11-03T17:10:09Z"
+      },
+      {
+        "databaseId": 126069566005,
+        "name": "Clean container rehearsal",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Open-Sourcery-UMD/scryer/actions/runs/41679640922/job/126069566005",
+        "startedAt": "2026-11-03T16:58:50Z",
+        "completedAt": "2026-11-03T17:00:36Z"
+      },
+      {
+        "databaseId": 126076251636,
+        "name": "Required checks",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Open-Sourcery-UMD/scryer/actions/runs/41679640922/job/126076251636",
+        "startedAt": "2026-11-03T17:10:12Z",
+        "completedAt": "2026-11-03T17:10:18Z"
+      }
+    ],
+    "observedMetrics": {
+      "pythonReferenceTests": 145,
+      "foundationTestsInFastInvocation": 21,
+      "explicitOptionalFastNativeSkip": 1,
+      "nativeFinancialExamplesTests": 7,
+      "nativeFinancialExamplesSkipped": 0,
+      "localStackTests": 23,
+      "enginePythonTests": 9,
+      "generatedComparisons": 10000,
+      "generatedSkips": 0,
+      "generatedSeconds": 19.165,
+      "nativeSourceLinePercent": 93.11,
+      "nativeSourceBranchPercent": 85.84,
+      "coverageProfiles": 306,
+      "coverageCLITests": 5,
+      "clientNodeTests": 43,
+      "clientChromeTests": 38,
+      "frontendUnitAndLintPolicyTests": 14,
+      "frontendChromeTests": 29,
+      "syncPostgresApiTests": 85,
+      "syncChromeJourneys": 3,
+      "keycloakPKCEChromeTests": 1,
+      "candidateFilesSecretScanned": 270,
+      "candidateSecretFindings": 0,
+      "knownPythonDependencyVulnerabilities": 0,
+      "knownClientNpmVulnerabilities": 0,
+      "knownFrontendNpmVulnerabilities": 0
+    },
+    "countingRule": "Counts are per invocation and overlap across groups. The fast job explicitly skips its optional native test; the native job separately builds and runs that parity check without a skip. All seven required jobs actually succeeded.",
+    "toolchain": {
+      "os": "Ubuntu 24.04 hosted runner",
+      "python": "3.12",
+      "node": "24",
+      "compilerAndCoverage": "Clang/LLVM 18"
     }
   },
   "enforcementProbe": {
@@ -137,5 +250,29 @@
     "source": "Direct user approval in this chat",
     "verbatimInstruction": "Yes, publish and enforce CI",
     "prePushHook": "The earlier unconditional local-only hook remains installed; explicit one-command core.hooksPath override is used only for these authorized pushes."
+  },
+  "resolutionBasis": "Feature PR #43 was actually merged after all seven real CI jobs passed. D10 waived unavailable independent reviewers; D11 deferred outside sessions; D12 records lead adoption. No waived activity is reported as performed.",
+  "evidenceFollowUp": "A documentation-only follow-up records these already observed events; its CI/integration is enforced by the same active rules.",
+  "dependencyUpdateAutomation": {
+    "activationObserved": true,
+    "initialUpdatePullRequestsObserved": [
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54
+    ],
+    "pythonUpdaterFirstRun": 41681719711,
+    "pythonUpdaterFirstJob": 126076820800,
+    "initialFailure": "Dependabot selected Python 3.15.2 and could not resolve the existing psycopg-binary 3.3.5 pin for that interpreter. The app itself and required scans passed on supported Python 3.12.",
+    "fix": "Explicit .python-version 3.12.15 selects the already tested supported interpreter. The three setup-python steps use the same version file. No dependency upgrade is auto-merged.",
+    "selectionMechanismSource": "https://github.com/dependabot/dependabot-core/blob/main/python/lib/dependabot/python/file_parser/python_requirement_parser.rb",
+    "nextUpdaterRunObserved": false,
+    "status": "supported_interpreter_configured"
   }
 }
